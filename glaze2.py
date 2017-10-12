@@ -4,8 +4,10 @@ import collections
 import math
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import pandas as pd
+
+from glob import glob
+from os.path import join
 
 from scipy import optimize as opt
 from scipy.io import loadmat
@@ -16,47 +18,26 @@ from scipy.stats import norm
 # 1.1 Preparation: Get path/file-name from subjectcode, etc.
 
 
-def path_name(sub_code, session, phase, block):
-    '''returns the correct path + file of the matlab file in a specific folder.
+def load_log(sub_code, session, phase, block, base_path):
+    '''
+    returns the correct path + file of the matlab file in a specific folder.
 
-    Input: subjects code, session A/B or C, phase 1 or 2, block 1 - 7.'''
-    directory = os.path.join('/Users/kenohagena/Documents/Data/',
-                             "{}".format(sub_code),
-                             "{}".format(session), 'PH_' +
-                             "{}".format(phase) + 'PH_'
-                             + "{}".format(block))
-    for file in os.listdir(directory):
-        if file.endswith(".mat"):
-            return os.path.join(directory, file)
-
-# Get path/file-name of previous block
-
-
-def former_path_name(sub_code, session, phase, block):
-    '''returns the correct path + file of the matlab file one block before.
-
-    Input: subjects code, session A/B or C, phase 1 or 2, block 1 - 7.'''
-    if block == 1:
-        directory = os.path.join('/Users/kenohagena/Documents/Data/',
-                                 "{}".format(
-                                     sub_code), "{}".format(session),
-                                 'PH_' + "{}".format(phase) +
-                                 'PH_' + "{}".format(block))
-    else:
-        directory = os.path.join('/Users/kenohagena/Documents/Data/',
-                                 sub_code,
-                                 session,
-                                 'PH_' +
-                                 "{}".format(phase) +
-                                 'PH_' +
-                                 "{}".format(block - 1))
-    for file in os.listdir(directory):
-        if file.endswith(".mat"):
-            return os.path.join(directory, file)
-
-# 1.2 load matlab file and create an NUMPY ARRAY
-
-# function to load all data from the matlab file
+    Input: subjects code, session A/B or C, phase 1 or 2, block 1 - 7.
+    '''
+    directory = join(base_path,
+                     "{}".format(sub_code),
+                     "{}".format(session),
+                     'PH_' + "{}".format(phase) +
+                     'PH_' + "{}".format(block))
+    files = glob(join(directory, '*.mat'))
+    if len(files) > 1:
+        raise RuntimeError(
+            'More than one log file found for this block: %s' % files)
+    elif len(files) == 0:
+        raise RuntimeError(
+            'No log file found for this block: %s, %s, %s, %s' %
+            (sub_code, session, phase, block))
+    return loadmat(files[0])
 
 
 def row2dict(item):
@@ -66,109 +47,29 @@ def row2dict(item):
     return {'time': item[0, 0][0, 0],
             'message': item[0, 1][0],
             'value': item[0, 2].ravel()[0],
-            'block': item[0, 3][0, 0],
-            'phase': item[0, 4][0, 0]}
+            'phase': item[0, 3][0, 0],
+            'block': item[0, 4][0, 0]}
 
 
-def load_np_unfiltered(sub_code, session, phase, block, key="p"):
+def log2pd(log, block, key="p"):
     '''loads the matlab file and creates np.array from it
 
-    input_file is path/name of matlab file, key is key in input_file.keys()'''
-    input_file = path_name(sub_code, session, phase, block)
-    x = loadmat(input_file)
-    log = x["p"]['out'][0][0][0, 0][0]
-
+    input_file is path/name of matlab file, key is key in input_file.keys()
+    '''
+    log = log["p"]['out'][0][0][0, 0][0]
     pl = [row2dict(log[i, 0]) for i in range(log.shape[0])]
 
-    return np.array(pl)
-
-# function to load only "new" data from matlab file
-
-
-def load_np_filtered(sub_code, session, phase, block, key="p"):
-    '''loads the matlab file and creates pd.DataFrame from new logs
-
-    input_file is path/name of matlab file, key is key in input_file.keys()'''
-    fsh = load_np_unfiltered(sub_code, session, phase, block - 1).shape[0]
-    ash = load_np_unfiltered(sub_code, session, phase, block).shape[0]
-    input_file = path_name(sub_code, session, phase, block)
-    x = loadmat(input_file)
-    log = x["p"]['out'][0][0][0, 0][0]
-
-    pl = [row2dict(log[i, 0]) for i in range(log.shape[0])]
-    da = np.array(pl)
-    return da[fsh:ash]
-
-# function to decide automatically which of the two options above shall be
-# applied
-
-
-def load_np(sub_code, session, phase, block, key="p"):
-    '''function loads np and decides whether filtered or unfiltered
-
-    shall be applied.'''
-    if block > 1:
-        return load_np_filtered(sub_code, session, phase, block, key="p")
-    else:
-        return load_np_unfiltered(sub_code, session, phase, block, key="p")
-
-# 1.3 load matlab file and create PANDA DATAARRAY
-
-# extract all data
-
-
-def load_pd_unfiltered(sub_code, session, phase, block, key="p"):
-    '''loads the matlab file and creates pd.DataFrame from it
-
-    input_file is path/name of matlab file, key is key in input_file.keys()'''
-    input_file = path_name(sub_code, session, phase, block)
-
-    x = loadmat(input_file)
-    log = x["p"]['out'][0][0][0, 0][0]
-
-    pl = [row2dict(log[i, 0]) for i in range(log.shape[0])]
     df = pd.DataFrame(pl)
     df.loc[:, 'message'] = df.message.astype('str')
-    return df
-
-# load Data filtered for only new  elements
+    return df.query('block==%i' % block)
 
 
-def load_pd_filtered(sub_code, session, phase, block, key="p"):
-    '''loads the matlab file and creates pd.DataFrame from new logs
-
-    input_file is path/name of matlab file, key is key in input_file.keys()'''
-    fsh = load_np_unfiltered(sub_code, session, phase, block - 1).shape[0]
-    ash = load_np_unfiltered(sub_code, session, phase, block).shape[0]
-    input_file = path_name(sub_code, session, phase, block)
-    x = loadmat(input_file)
-    log = x["p"]['out'][0][0][0, 0][0]
-
-    pl = [row2dict(log[i, 0]) for i in range(log.shape[0])]
-    df = pd.DataFrame(pl)
-    df.loc[:, 'message'] = df.message.astype('str')
-    return df[fsh:ash]
-
-# decide function whether all data or just new
-
-
-def load_pd(sub_code, session, phase, block, key="p"):
-    '''function loads np and decides whether filtered or unfiltered
-
-    shall be applied.'''
-    if block > 1:
-        return load_pd_filtered(sub_code, session, phase, block, key="p")
-    else:
-        return load_pd_unfiltered(sub_code, session, phase, block, key="p")
-
-
-# 2. EXTRACT ALL KIND OF STUFF FROM THE DATA
-
-# 2.1 Extract all point locations and theri indices
 def p_loc(DataFrame):
-    '''returns location values of all points as array.
+    '''
+    returns location values of all points as array.
 
-    array contains value of all point locations.'''
+    array contains value of all point locations.
+    '''
     df = DataFrame
     df.message = df.message.astype(str)
     return np.array(df.query('message=="GL_TRIAL_LOCATION"')
@@ -177,9 +78,11 @@ def p_loc(DataFrame):
 
 
 def p_loc_ind(DataFrame):
-    '''returns indices of point locations as an array.
+    '''
+    returns indices of point locations as an array.
 
-    array contains index of all point locations.'''
+    array contains index of all point locations.
+    '''
     df = DataFrame
     df.message = df.message.astype(str)
     index1 = np.array(
@@ -187,59 +90,59 @@ def p_loc_ind(DataFrame):
     firstindex = np.array(df[:1].index.astype(float))
     return np.subtract(index1, firstindex)
 
-# 2.2 EXTRACT RELEVANT SUBJECT DATA AT DECISION TRIALS
-
-# extract all answers
-
 
 def answers(DataFrame):
-    '''returns numpy array with all subject answers.
+    '''
+    returns numpy array with all subject answers.
 
-    0 for x and 1 for m.'''
+    0 for x and 1 for m.
+    '''
     df = DataFrame
     choice = np.array(
         df.query('message=="CHOICE_TRIAL_RESP"').value.astype(float))
     return choice
 
-# extract answer indexes
-
 
 def answer_ind(DataFrame):
-    '''returns numpy array with all indexes of answers.'''
+    '''
+    returns numpy array with all indexes of answers.
+    '''
     df = DataFrame
     choice_ind = np.array(
         df.query('message=="CHOICE_TRIAL_RESP"').index.astype(float))
     return choice_ind
 
-# extract rule response
-
 
 def rule_resp(DataFrame):
-    '''returns onedimensional array containing all rule responses.
+    '''
+    returns onedimensional array containing all rule responses.
 
-    1 corresponds with vertical-left, 0 == vertical right.'''
+    1 corresponds with vertical-left, 0 == vertical right.
+    '''
     df = DataFrame
     rresp = np.array(
         df.query('message=="CHOICE_TRIAL_RULE_RESP"').value.astype(float))
     return rresp
 
 
-# extract stimulus
 def stim(DataFrame):
-    '''returns array with all stimuli.
+    '''
+    returns array with all stimuli.
 
-    1 for horiyontal, 0 for vertical.'''
+    1 for horiyontal, 0 for vertical.
+    '''
     df = DataFrame
     stimulus = np.array(
         df.query('message=="GL_TRIAL_STIM_ID"').value.astype(float))
     return stimulus
 
 
-# extract generation side
 def dist_source(DataFrame):
-    '''returns array with all generating sources.
+    '''
+    returns array with all generating sources.
 
-    -0.5 for left source +0.5 for right source.'''
+    -0.5 for left source +0.5 for right source.
+    '''
     df = DataFrame
     da = np.array(df)
     # first all indexes of 'generation side'
@@ -256,9 +159,10 @@ def dist_source(DataFrame):
     return dist
 
 
-# extract rewards
 def reward(DataFrame):
-    '''returns array with all rewards.'''
+    '''
+    returns array with all rewards.
+    '''
     df = DataFrame
     rewards = np.array(
         df.query('message=="GL_TRIAL_REWARD"').value.astype(float))
