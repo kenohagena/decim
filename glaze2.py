@@ -50,16 +50,16 @@ def row2dict(item):
 
 
 def log2pd(log, block, key="p"):
-    '''loads the matlab file and creates np.array from it
+    '''takes loaded matlab file and returns panda dataframe.
 
-    input_file is path/name of matlab file, key is key in input_file.keys()
+    contains only logs of that block.
     '''
     log = log["p"]['out'][0][0][0, 0][0]
     pl = [row2dict(log[i, 0]) for i in range(log.shape[0])]
 
     df = pd.DataFrame(pl)
     df.loc[:, 'message'] = df.message.astype('str')
-    df.loc[:, 'value'] = df.message.astype('float')
+    df.loc[:, 'value'] = df.value
     return df.query('block==%i' % block)
 
 
@@ -85,28 +85,36 @@ def prior(b_prior, H):
     return psi
 
 
-def belief(loc, H, e1=0.5, e2=-0.5, sigma=1):
+def belief(df, H, e1=0.5, e2=-0.5, sigma=1):
     '''
     Returns models Belief at a given time.
 
     loc is a pandas Series that indexes into the overall
     log file
     '''
-    belief = 0 * loc.values
-    for i, value in enumerate(loc):
+    locs = (df.loc[df.message == "GL_TRIAL_LOCATION", 'value']
+            .astype(float))
+    belief = 0 * locs.values
+    for i, value in enumerate(locs):
         if i == 0:
             belief[i] = LLR(value)
         else:
             belief[i] = prior(belief[i - 1], H) + LLR(value)
-    return pd.Series(belief, index=loc.index)
+    return pd.Series(belief, index=locs.index)
 
 
-def cross_entropy_error(H, choices, point_locations, belief_indices):
+def cross_entropy_error(df, H):
     '''
     Compute cross entropy error
     '''
 
-    pnm = belief(point_locations, H).loc[belief_indices].values
+    choices = (df.loc[df.message == "CHOICE_TRIAL_RULE_RESP", 'value']
+               .astype(float))
+    choices = choices.dropna()
+
+    # Find last point location before choice trial
+    belief_indices = df.loc[choices.index - 12].index.values
+    pnm = belief(df, H).loc[belief_indices].values
     pnm = expit(pnm)
     pn = -choices.values + 1
     return -np.sum(((1 - pn) * np.log(1 - pnm)) + (pn * np.log(pnm)))
@@ -127,8 +135,8 @@ def optimal_H(df):
     # Find last point location before choice trial
     belief_indices = df.loc[choices.index - 12].index.values
 
-    error_function = lambda x: cross_entropy_error(
-        x, choices, point_locations, belief_indices)
+    def error_function(x): return cross_entropy_error(
+        df, x)
     o = opt.minimize_scalar(error_function,
                             bounds=(0, 1), method='bounded')
     return o
@@ -157,7 +165,7 @@ def plot_ce_H(DataFrame, x):
     plt.show()
 
 
-__version__ = '2.1.2'
+__version__ = '3.1'
 '''
 2.1.0
 Version sperated loading functions from calculating functions and extracting
@@ -167,7 +175,12 @@ All other functions take this dataframe as an input.
 Thus, functions dont have to access matlab file and are supposedly faster
 2.1.1
 minor fix to filter_dec function
-2.2.2
+2.1.2
 fix to model_choice function
 H now obligatory parameter for model_choice
+3.0 shortening by N
+3.1
+fix in log2pd: deleted the operation astype(float) on values, because ValueError was raised on subjects answers ('x' or 'm')
+in cross-entropy-error: inserted the definitions of choices and belief_indices from optimal_H
 '''
+
