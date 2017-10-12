@@ -169,44 +169,44 @@ def reward(DataFrame):
     return rewards
 
 
-# 3. CALCULATE STUFF
-
-# 3.1 MODELS CHOICES
 def mod_choice(DataFrame, H):
-    '''calculates belief of model over all trials.
+    '''
+    calculates belief of model over all trials.
 
-    returns choices model would have made before decision trial. 
-    Hazard rate optional argument.'''
+    returns choices model would have made before decision trial.
+    Hazard rate optional argument.
+    '''
     return filter_dec(belief(DataFrame, H), DataFrame)
 
 
-# Log likelihood ratio
 def LLR(value, e1=0.5, e2=-0.5, sigma=1):
-    '''returns log likelihood ratio.
+    '''
+    returns log likelihood ratio.
 
-    Needs means of both distributions and variance and a given value.'''
+    Needs means of both distributions and variance and a given value.
+    '''
     LLR = np.log(norm.pdf(value, e1, sigma)) - \
         np.log(norm.pdf(value, e2, sigma))
     return LLR
 
-# time varying prior expectation psi
-
 
 def prior(b_prior, H):
-    '''returns weighted prior belief.
+    '''
+    returns weighted prior belief.
 
-    given belief at t = n-1 and hazard rate.'''
+    given belief at t = n-1 and hazard rate.
+    '''
     psi = b_prior + np.log((1 - H) / H + np.exp(-b_prior)) - \
         np.log((1 - H) / H + np.exp(b_prior))
     return psi
 
-# belief (as in Glaze et al.)
-
 
 def belief(DataFrame, H, e1=0.5, e2=-0.5, sigma=1):
-    '''Returns models Belief at a given time.
+    '''
+    Returns models Belief at a given time.
 
-    Needs p_loc(Dataframe), means, variance and hazard rate.'''
+    Needs p_loc(Dataframe), means, variance and hazard rate.
+    '''
     result = []
     loc = p_loc(DataFrame)
     for i, value in enumerate(loc):
@@ -217,12 +217,10 @@ def belief(DataFrame, H, e1=0.5, e2=-0.5, sigma=1):
             result.append(belief)
     return np.array(result)
 
-# function to filter out beliefs at relevant postitions, i.e. before
-# decision trials
-
 
 def filter_dec(x, DataFrame):
-    '''filters only relevant values of belief function (above).
+    '''
+    filters only relevant values of belief function (above).
 
     Returns belief values at those timepoints, when a decision trial follows.
     '''
@@ -244,11 +242,6 @@ def filter_dec(x, DataFrame):
     for i in mask:
         maskc.append(np.where(loc_indices == i))
     return np.ravel(x[maskc])
-    # return maskc
-
-# 3.2 MODELS SUCCESS
-
-# first mapping model choice to rule response of subject
 
 
 def map_rresp(x):
@@ -267,71 +260,56 @@ def mod_suc(DataFrame, H):
     counts choices in which the model micmicks succesfully
     the subjects answers.
 
-    returns the count as a fraction of all choices made.'''
+    returns the count as a fraction of all choices made.
+    '''
     model = mod_choice(DataFrame, H)
     sub = rule_resp(DataFrame)
     difference = map_rresp(model) - sub
     return collections.Counter(difference)[0.0] / len(difference)
 
 
-# 3.3 CROSS ENTROPY ERROR
-
-# logistic regression of absolute models belief values
 def log_reg(x):
+    '''
+    Logistic function?
+    '''
     return 1 / (1 + np.exp(-x))
-
-# cross-entropy error function
-# rresp 0 == verticl right, 1==vertical left
 
 
 def ce_error_array(DataFrame, H):
-    '''returns an array with single cross-entropy errors.'''
+    '''
+    returns an array with single cross-entropy errors.
+    '''
     pn = -rule_resp(DataFrame) + 1
     pnm = log_reg(mod_choice(DataFrame, H))
     return((1 - pn) * np.log(1 - pnm)) + (pn * np.log(pnm))
 
-# filters trials with 'nan' as result
-
 
 def filter_nan(x):
-    '''filters only results that are not nan.'''
-    result = []
-    for i in x:
-        if math.isnan(i) is False:
-            result.append(i)
-        else:
-            continue
-    return result
+    '''
+    filters only results that are not nan.
+    '''
+    return x[~np.isnan(x)]
 
 
 def ce_error(DataFrame, H):
     '''
-    returns the cross=entropy error for a given input 
+    returns the cross=entropy error for a given input
     DataFrame dependent on the hazard rate H.
     '''
-
     return -sum(filter_nan(ce_error_array(DataFrame, H)))
 
 
-def count_nan(DataFrame):
+def count_nan(x):
     '''returns count of 'nan' in decision trials in input file'''
-    def get_nan(x):
-        result = []
-        for i in x:
-            if math.isnan(i):
-                result.append(i)
-            else:
-                continue
-        return result
-    return len(get_nan(ce_error(DataFrame, 1 / 70)))
-
-# 3.4 OPTIMAL HAZARD RATE
+    return np.isnan(x).sum()
 
 
 def optimal_H(DataFrame):
-    '''returns hazard rate with best cross entropy error.
+    '''
+    returns hazard rate with best cross entropy error.
 
-    uses simple scalar optimization algorithm. time recquired: 50s.'''
+    uses simple scalar optimization algorithm. time recquired: 50s.
+    '''
 
     o = opt.minimize_scalar(lambda x: ce_error(DataFrame, x),
                             bounds=(0, 1), method='bounded')
