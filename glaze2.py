@@ -1,7 +1,4 @@
 # IMPORT STUFF
-
-import collections
-import math
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -12,6 +9,7 @@ from os.path import join
 from scipy import optimize as opt
 from scipy.io import loadmat
 from scipy.stats import norm
+from scipy.special import expit  # logistic function
 
 # 1. LOAD MATLAB FILE AND EXTRACT RELEVANT DATA IN ARRAY OR DATAFRAME
 
@@ -61,122 +59,8 @@ def log2pd(log, block, key="p"):
 
     df = pd.DataFrame(pl)
     df.loc[:, 'message'] = df.message.astype('str')
+    df.loc[:, 'value'] = df.message.astype('float')
     return df.query('block==%i' % block)
-
-
-def p_loc(DataFrame):
-    '''
-    returns location values of all points as array.
-
-    array contains value of all point locations.
-    '''
-    df = DataFrame
-    df.message = df.message.astype(str)
-    return np.array(df.query('message=="GL_TRIAL_LOCATION"')
-                    .value
-                    .astype(float))
-
-
-def p_loc_ind(DataFrame):
-    '''
-    returns indices of point locations as an array.
-
-    array contains index of all point locations.
-    '''
-    df = DataFrame
-    df.message = df.message.astype(str)
-    index1 = np.array(
-        df.query('message=="GL_TRIAL_LOCATION"').index.astype(float))
-    firstindex = np.array(df[:1].index.astype(float))
-    return np.subtract(index1, firstindex)
-
-
-def answers(DataFrame):
-    '''
-    returns numpy array with all subject answers.
-
-    0 for x and 1 for m.
-    '''
-    df = DataFrame
-    choice = np.array(
-        df.query('message=="CHOICE_TRIAL_RESP"').value.astype(float))
-    return choice
-
-
-def answer_ind(DataFrame):
-    '''
-    returns numpy array with all indexes of answers.
-    '''
-    df = DataFrame
-    choice_ind = np.array(
-        df.query('message=="CHOICE_TRIAL_RESP"').index.astype(float))
-    return choice_ind
-
-
-def rule_resp(DataFrame):
-    '''
-    returns onedimensional array containing all rule responses.
-
-    1 corresponds with vertical-left, 0 == vertical right.
-    '''
-    df = DataFrame
-    rresp = np.array(
-        df.query('message=="CHOICE_TRIAL_RULE_RESP"').value.astype(float))
-    return rresp
-
-
-def stim(DataFrame):
-    '''
-    returns array with all stimuli.
-
-    1 for horiyontal, 0 for vertical.
-    '''
-    df = DataFrame
-    stimulus = np.array(
-        df.query('message=="GL_TRIAL_STIM_ID"').value.astype(float))
-    return stimulus
-
-
-def dist_source(DataFrame):
-    '''
-    returns array with all generating sources.
-
-    -0.5 for left source +0.5 for right source.
-    '''
-    df = DataFrame
-    da = np.array(df)
-    # first all indexes of 'generation side'
-    dist_ind = np.array(
-        df.query('message=="GL_TRIAL_GENSIDE"').index.astype(float))
-    # mask to only contain 'gen side' in decision trial, thus only if
-    # 'stim_id' follows
-    mask = []
-    for n in dist_ind.astype(int):
-        if da[(n - 1), 1] == "GL_TRIAL_STIM_ID":
-            mask.append(n)
-    # all values of 'generation side' in decision trials
-    dist = (da[mask, 4].astype(float))
-    return dist
-
-
-def reward(DataFrame):
-    '''
-    returns array with all rewards.
-    '''
-    df = DataFrame
-    rewards = np.array(
-        df.query('message=="GL_TRIAL_REWARD"').value.astype(float))
-    return rewards
-
-
-def mod_choice(DataFrame, H):
-    '''
-    calculates belief of model over all trials.
-
-    returns choices model would have made before decision trial.
-    Hazard rate optional argument.
-    '''
-    return filter_dec(belief(DataFrame, H), DataFrame)
 
 
 def LLR(value, e1=0.5, e2=-0.5, sigma=1):
@@ -201,117 +85,51 @@ def prior(b_prior, H):
     return psi
 
 
-def belief(DataFrame, H, e1=0.5, e2=-0.5, sigma=1):
+def belief(loc, H, e1=0.5, e2=-0.5, sigma=1):
     '''
     Returns models Belief at a given time.
 
-    Needs p_loc(Dataframe), means, variance and hazard rate.
+    loc is a pandas Series that indexes into the overall
+    log file
     '''
-    result = []
-    loc = p_loc(DataFrame)
+    belief = 0 * loc.values
     for i, value in enumerate(loc):
         if i == 0:
-            result.append(LLR(value))
+            belief[i] = LLR(value)
         else:
-            belief = prior(result[-1], H) + LLR(value)
-            result.append(belief)
-    return np.array(result)
+            belief[i] = prior(belief[i - 1], H) + LLR(value)
+    return pd.Series(belief, index=loc.index)
 
 
-def filter_dec(x, DataFrame):
+def cross_entropy_error(H, choices, point_locations, belief_indices):
     '''
-    filters only relevant values of belief function (above).
-
-    Returns belief values at those timepoints, when a decision trial follows.
+    Compute cross entropy error
     '''
-    # mask contains indices of p_loc in ALL TRIALS of p_locs before decision
-    # trial (thus only if 'stim_id' follows 4 logs later)
-    loc_indices = p_loc_ind(DataFrame)
-    df = DataFrame
-    da = np.array(df)
-    mask = []
-    for n in loc_indices.astype(int):
-        try:
-            if da[(n + 4), 1] == "GL_TRIAL_STIM_ID":
-                mask.append(n)
-        except IndexError:
-            continue
 
-    # mask contains indices of 'p_loc_ind' in extracted beliefs
-    maskc = []
-    for i in mask:
-        maskc.append(np.where(loc_indices == i))
-    return np.ravel(x[maskc])
+    pnm = belief(point_locations, H).loc[belief_indices].values
+    pnm = expit(pnm)
+    pn = -choices.values + 1
+    return -np.sum(((1 - pn) * np.log(1 - pnm)) + (pn * np.log(pnm)))
 
 
-def map_rresp(x):
-    '''
-    function maps input to rule response of subject.
-
-    rule response of subject is mapped as follows:
-        1 == vertical-left
-        0 == vertical righ.
-    '''
-    return -(x > 0).astype(float) + 1
-
-
-def mod_suc(DataFrame, H):
-    '''
-    counts choices in which the model micmicks succesfully
-    the subjects answers.
-
-    returns the count as a fraction of all choices made.
-    '''
-    model = mod_choice(DataFrame, H)
-    sub = rule_resp(DataFrame)
-    difference = map_rresp(model) - sub
-    return collections.Counter(difference)[0.0] / len(difference)
-
-
-def log_reg(x):
-    '''
-    Logistic function?
-    '''
-    return 1 / (1 + np.exp(-x))
-
-
-def ce_error_array(DataFrame, H):
-    '''
-    returns an array with single cross-entropy errors.
-    '''
-    pn = -rule_resp(DataFrame) + 1
-    pnm = log_reg(mod_choice(DataFrame, H))
-    return((1 - pn) * np.log(1 - pnm)) + (pn * np.log(pnm))
-
-
-def filter_nan(x):
-    '''
-    filters only results that are not nan.
-    '''
-    return x[~np.isnan(x)]
-
-
-def ce_error(DataFrame, H):
-    '''
-    returns the cross=entropy error for a given input
-    DataFrame dependent on the hazard rate H.
-    '''
-    return -sum(filter_nan(ce_error_array(DataFrame, H)))
-
-
-def count_nan(x):
-    '''returns count of 'nan' in decision trials in input file'''
-    return np.isnan(x).sum()
-
-
-def optimal_H(DataFrame):
+def optimal_H(df):
     '''
     returns hazard rate with best cross entropy error.
 
     uses simple scalar optimization algorithm. time recquired: 50s.
     '''
+    point_locations = (df.loc[df.message == "GL_TRIAL_LOCATION", 'value']
+                       .astype(float))
+    choices = (df.loc[df.message == "CHOICE_TRIAL_RULE_RESP", 'value']
+               .astype(float))
+    choices = choices.dropna()
 
-    o = opt.minimize_scalar(lambda x: ce_error(DataFrame, x),
+    # Find last point location before choice trial
+    belief_indices = df.loc[choices.index - 12].index.values
+
+    error_function = lambda x: cross_entropy_error(
+        x, choices, point_locations, belief_indices)
+    o = opt.minimize_scalar(error_function,
                             bounds=(0, 1), method='bounded')
     return o
 
