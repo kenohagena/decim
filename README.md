@@ -1,13 +1,16 @@
 # decim
-python functions to analyse matlab data from the experiment
+contains python modules for analyzing data from immuno/decision study
 
 
+glaze.py contains functions to
 
-
-
-glaze is a python module that contains functions to \
 a)extract data from the source matlab files and create feasable data structures from it (np array, pd dataframe)\
-b)extract relevant data from these dataframes, arrays (e.g. reward, answers, et.)\
-c)calculate models choices on the given data (model according to glaze et al 2015)\
-d)calculate cross entropy errors for data and given hazard rate\
-e)calculate optimal hazard rate, i.e. hazard rate with minimal cross entropy error\
+b)calculate models choices on the given data (model according to glaze et al 2015)\
+c)calculate cross entropy errors for data and given hazard rate\
+d)calculate optimal hazard rate, i.e. hazard rate with minimal cross entropy error\
+
+pointsimulation.py is a module to
+
+a)simulate a data set similar to those presented to the subjects\
+b)let the glaze model guess the distribution source (given a hazard rate H)\
+c)evaluate how the model performs (percentage of correct answers)\
