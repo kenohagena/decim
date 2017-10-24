@@ -142,30 +142,7 @@ def optimal_H(df):
     return o
 
 
-# 4.PLOTTING
-
-# 4.1 Plot cross entropy error on hazard rate
-def plot_ce_H(DataFrame, x):
-    '''returns simple plot with cross entropy errors plotted on Hazard rates.
-
-    x is the step interval made.'''
-    t = np.arange(0.00001, 1.0, x)
-
-    def ce_errors(x):
-        result = []
-        for i in x:
-            result.append(ce_error(DataFrame, (i)))
-        return result
-    s = ce_errors(t)
-    plt.plot(t, s)
-    plt.xlabel('Hazard rate (H)')
-    plt.ylabel('cross entropy error')
-    plt.title('cross-entropy error')
-    plt.grid(True)
-    plt.show()
-
-
-__version__ = '3.1'
+__version__ = '3.2'
 '''
 2.1.0
 Version sperated loading functions from calculating functions and extracting
@@ -182,5 +159,7 @@ H now obligatory parameter for model_choice
 3.1
 fix in log2pd: deleted the operation astype(float) on values, because ValueError was raised on subjects answers ('x' or 'm')
 in cross-entropy-error: inserted the definitions of choices and belief_indices from optimal_H
+3.2
+deleted obsolete plotting section
 '''
 
