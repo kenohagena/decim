@@ -15,7 +15,7 @@ def what_trial(i):
     '''Determines subsequent trial type according to p(decision trial): 'dt'.
 
     decides what function to use.'''
-    dt = 1 / 50  # probability of decision trial dt
+    dt = 1 / 35  # probability of decision trial dt
     y = random.random()
     if y < dt:
         x = decision(i)
@@ -111,4 +111,7 @@ def cordec(df):
     return df.loc[df.message == 'decision', 'correct'].mean()
 
 
-__version__ = '1.0'
+__version__ = '1.1'
+
+'''1.1
+changed probability of decision trial to 1/35.'''
