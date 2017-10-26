@@ -1,16 +1,29 @@
 # decim
-contains python modules for analyzing data from immuno/decision study
+Contains python modules for analyzing data from immuno/decision study
 
 
-glaze.py contains functions to
+Module glaze2.py
 
-a)extract data from the source matlab files and create feasable data structures from it (np array, pd dataframe)\
-b)calculate models choices on the given data (model according to glaze et al 2015)\
-c)calculate cross entropy errors for data and given hazard rate\
-d)calculate optimal hazard rate, i.e. hazard rate with minimal cross entropy error\
+functionality consists basically in 3 steps:
 
-pointsimulation.py is a module to
+1. data is extracted from a matlab file using the function load_log()\
+2. log2pd creaets a panda dataframe from the previously loaded log using log2pd()\
+3. two computations of interest can be done:\
+    3.1. cross_entropy_error() computes the cross entropy error given a
+    dataframe and a Hazardrate\
+    3.2 optimal_h() minimizes the cross entropy error and returns the
+    optimal hazardrate
 
-a)simulate a data set similar to those presented to the subjects\
-b)let the glaze model guess the distribution source (given a hazard rate H)\
-c)evaluate how the model performs (percentage of correct answers)\
+
+
+Module pointsimulation.py
+
+basically 3 steps again:
+
+1. data is simulated using fast_sim() function\
+2. cross entropy error and optimal h are computed analog to glaze2.py
+    using the functions cer() and opt_h()\
+3. h_iter() repeats this process n-times and for a list of
+    true generating hazardrates and returns a numpy matrix
+
+
