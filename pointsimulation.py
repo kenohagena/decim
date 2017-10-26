@@ -1,17 +1,13 @@
-# IMPORT STUFF
-
 import numpy as np
 import pandas as pd
 import glaze2 as glaze
-import matplotlib.pyplot as plt
 import random
 from scipy import optimize as opt
 from scipy.special import expit  # logistic function
-
+import datetime
+random.seed()
 
 # SIMULATE POINT LOCATIONS AND DECISION POINTS
-
-# decision trial or location trial
 
 
 def what_trial(i, tH):
@@ -186,3 +182,8 @@ added function to calculate optimal model hazardrate
 made actual generating hazardrate optional parameter in simulate
 '''
 
+# magic numbers
+# readme
+# random seed?
+
+print(opt_h(simulate(1000))['x'])
