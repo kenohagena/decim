@@ -85,7 +85,7 @@ def prior(b_prior, H):
     return psi
 
 
-def belief(df, H, e1=0.5, e2=-0.5, sigma=1):
+def belief(df, H):
     '''
     Returns models Belief at a given time.
 
@@ -114,9 +114,9 @@ def cross_entropy_error(df, H):
 
     # Find last point location before choice trial
     belief_indices = df.loc[choices.index - 12].index.values
-    pnm = belief(df, H).loc[belief_indices].values
+    pnm = -belief(df, H).loc[belief_indices].values
     pnm = expit(pnm)
-    pn = -choices.values + 1
+    pn = choices.values
     return -np.sum(((1 - pn) * np.log(1 - pnm)) + (pn * np.log(pnm)))
 
 
