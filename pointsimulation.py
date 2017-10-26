@@ -4,8 +4,8 @@ import glaze2 as glaze
 import random
 from scipy import optimize as opt
 from scipy.special import expit  # logistic function
-import datetime
 random.seed()
+from scipy.stats import expon, norm
 
 # SIMULATE POINT LOCATIONS AND DECISION POINTS
 
@@ -79,6 +79,32 @@ def simulate(x, tH=1 / 70):
     return df
 
 # FILL IN MISSING INFORMATION
+
+
+def fast_sim(x, tH=1 / 70):
+    inter_change_dists = expon.rvs(scale=1 / (1 / 70), size=1000)
+    inter_choice_dists = np.cumsum(expon.rvs(scale=1 / (1 / 35), size=1000))
+    inter_choice_dists = inter_choice_dists[inter_choice_dists < x]
+    mus = []
+    values = []
+    start = random.choice([0.5, -0.5])
+    cnt = 0
+    for i in inter_change_dists:
+        mus.append([start] * int(i))
+        values.append(norm.rvs(start, 1, size=int(i)))
+        start *= -1
+        if cnt > x:
+            break
+        cnt += i
+
+    df = pd.DataFrame({'rule': np.concatenate(mus)[:x], 'value': np.concatenate(
+        values)[:x]})
+
+    #df.columns = ['rule', 'values']
+    df.loc[:, 'message'] = 'GL_TRIAL_LOCATION'
+    df.loc[inter_choice_dists.astype(int), 'message'] = 'decision'
+    df.loc[:, 'index'] = np.arange(len(df))
+    return df
 
 
 def add_belief(df, H):
@@ -181,9 +207,3 @@ added function to compute cross entropy error
 added function to calculate optimal model hazardrate
 made actual generating hazardrate optional parameter in simulate
 '''
-
-# magic numbers
-# readme
-# random seed?
-
-print(opt_h(simulate(1000))['x'])
