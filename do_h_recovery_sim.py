@@ -2,13 +2,13 @@ import numpy as np
 import pointsimulation as pt
 
 
-H = np.linspace(0.001, 0.999, 20)
-
-
-def list_task(filter=None):
-    for _ in range(150):
-        yield(1000, H)
+def list_tasks(older_than=None, filter=None):
+    for i in range(10):
+        for iters in [400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200]:
+            yield(i, 50, iters)
 
 
 def execute(x):
-    pt.h_iter(x[0], x[1])
+    i, N, trials = x
+    H = np.linspace(0.001, 0.999, 20)
+    pt.h_iter(i, N, H, trials=trials)

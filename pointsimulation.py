@@ -14,22 +14,22 @@ def fast_sim(x, tH=1 / 70):
     """
     Simulates a dataset with x trials and true hazardrate tH. Does so faster.
     """
-    inter_change_dists = expon.rvs(scale=1 / tH, size=10000)
-    inter_choice_dists = np.cumsum(expon.rvs(scale=1 / (1 / 35), size=1000))
+    #inter_change_dists = expon.rvs(scale=1 / tH, size=10000)
+    inter_choice_dists = np.cumsum(expon.rvs(scale=1 / (1 / 35.), size=1000))
     inter_choice_dists = inter_choice_dists[inter_choice_dists < x]
     mus = []
     values = []
     start = random.choice([0.5, -0.5])
     cnt = 0
-    for i in inter_change_dists:
-        mus.append([start] * int(i))
-        values.append(norm.rvs(start, 1, size=int(i)))
+    while cnt < x:
+        i = 1 + int(np.round(expon.rvs(scale=1 / tH)))
+        mus.append([start] * i)
+        values.append(norm.rvs(start, 1, size=i))
         start *= -1
-        if cnt > x:
-            break
-        cnt += int(i)
+        cnt += i
 
-    df = pd.DataFrame({'rule': np.concatenate(mus)[:x], 'value': np.concatenate(
+    df = pd.DataFrame({'rule': np.concatenate(mus)[:x],
+                       'value': np.concatenate(
         values)[:x]})
 
     # df.columns = ['rule', 'values']
@@ -103,10 +103,11 @@ def opt_h(df):
         return cer(df, x)
     o = opt.minimize_scalar(error_function,
                             bounds=(0, 1), method='bounded')
-    return o
+    error = cer(df, o.x)
+    return o.x, error
 
 
-def h_iter(n, hazardrates, trials=1000):
+def h_iter(I, n, hazardrates, trials=1000):
     """
     Returns numpy matrix containing fitted hazardrates
     for given true hazardrates, iterated n times each.
@@ -114,10 +115,20 @@ def h_iter(n, hazardrates, trials=1000):
     Takes number of iterations and hazardrates as a list.
     Saves data in a csv file.
     """
-    M = np.array([[opt_h(fast_sim(trials, j))['x']
-                   for i in range(n)]for j in hazardrates])
-    np.savetxt("{0}its{1}hazrates.csv".format(n, len(hazardrates)), M)
-    return M
+    Ms = []
+
+    for h in hazardrates:
+        for i in range(n + 1):
+            df = fast_sim(trials, h)
+            M, error = opt_h(df)
+            true_err = cer(df, h)
+            Ms.append({'M': M, 'H': h, 'err': error,
+                       'true_error': true_err})
+    df = pd.DataFrame(Ms)
+    df.loc[:, 'trials'] = trials
+    df.to_csv("wt{2}_{0}its{1}hazrates.csv".format(
+        I, len(hazardrates), trials))
+    return df
 
 
 __version__ = '2.1'
