@@ -2,6 +2,7 @@ import pystan
 import glaze2 as gl
 import numpy as np
 import pandas as pd
+import math
 
 # no prior so far
 
@@ -90,8 +91,26 @@ def stan_data(subject, session, phase, blocks, path):
     return data
 
 
-__version__ = '1.1'
+def hdi(smaples, cred_mass=0.95):
+    '''
+    Returns highest density interval.
+
+    Takes MCMC sample array and optional credibility mass.
+    '''
+    sortedpoints = np.sort(smaples)
+    ci = math.ceil(cred_mass * len(smaples))
+    nci = len(smaples) - ci
+    ci_width = []
+    for i in range(nci):
+        ci_width.append(sortedpoints[i + ci] - sortedpoints[i])
+    hdi_min = sortedpoints[np.argmin(ci_width)]
+    hdi_max = sortedpoints[np.argmin(ci_width) + ci]
+    return (hdi_min, hdi_max)
+
+__version__ = '1.2'
 '''
 1.1
 Fits hazardrate over multiple blocks.
+1.2
+HDI functon
 '''
