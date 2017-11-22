@@ -1,4 +1,3 @@
-import pystan
 import glaze2 as gl
 import numpy as np
 import pandas as pd
@@ -67,6 +66,7 @@ def stan_data(subject, session, phase, blocks, path):
         dflist.append(d)
         lp.append(len(single_block_points))
     df = pd.concat(dflist)
+    df.index = np.arange(len(df))
     point_locs = np.array(df.loc[df.message == 'GL_TRIAL_LOCATION']['value']).astype(float)
     point_count = len(point_locs)
     decisions = np.array(df.loc[df.message == 'CHOICE_TRIAL_RULE_RESP']['value']).astype(float)
@@ -107,10 +107,28 @@ def hdi(smaples, cred_mass=0.95):
     hdi_max = sortedpoints[np.argmin(ci_width) + ci]
     return (hdi_min, hdi_max)
 
-__version__ = '1.2'
+
+def mode(samples, bins, decimals=True):
+    '''
+    Return bin with highest modal value.
+
+    If decimals == True (Default), rounded to 5 decimals.
+    '''
+    z = np.argmax(np.histogram(samples, 100)[0])
+    x = np.histogram(samples, 100)[1][z]
+    if decimals is True:
+        return float('%.5f' % (x))
+    else:
+        return x
+
+
+__version__ = '1.2.1'
 '''
 1.1
 Fits hazardrate over multiple blocks.
 1.2
 HDI functon
+1.2.1
+added reindex line in stan_data to account for datasets that were interrupted
+between blocks and started a new index from that point onwards
 '''
