@@ -153,7 +153,17 @@ def performance(sub_code, session, phase, block, base_path):
     return {'no_answer': no_answer, 'rewards': rewards, 'decisions': len(array), 'performance': performance}
 
 
-__version__ = '3.3'
+def mean_rt(sub_code, session, phase, block, base_path):
+    """
+    Returns mean reaction time of given block.
+    """
+    df = log2pd(load_log(sub_code, session, phase, block, base_path), block)
+    rt = df.loc[df.message == 'CHOICE_TRIAL_RT']['value']
+    return rt.mean()
+
+
+
+__version__ = '3.3.1'
 '''
 2.1.0
 Version sperated loading functions from calculating functions and extracting
@@ -176,4 +186,6 @@ deleted obsolete plotting section
 changes for better readability
 3.3
 performance function
+3.3.1
+mean RT
 '''
