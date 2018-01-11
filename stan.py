@@ -18,7 +18,7 @@ transformed parameters {
     real former_belief = 0.0; //belief before first point location
     real psi[N];
     real llr;
-    llr = normal_lpdf(x[1] | 0.5, 1) - normal_lpdf(x[1] | -0.5, 1);
+    llr = normal_lpdf(x[1] | 0.5, gen_var) - normal_lpdf(x[1] | -0.5, gen_var);
     psi[1] = llr;
 
     for (n in 2:N) {
@@ -33,8 +33,11 @@ transformed parameters {
 
 model {
     H ~ normal(0.5,1)T[0.0001,0.9999]; //prior on H from truncated normal
+    V ~ normal(1,1)T[0.000001, 100]; //prior on internal noise parameter
+    gen_var ~ normal(1,1)T[0.000001, 100];
     for (i in 1:I) {
-        y[i] ~ bernoulli_logit((psi[D[i]]));
+        choice_value = 0.5+0.5*erf(psi[D[i]]/sqrt(2*V));
+        y[i] ~ bernoulli_logit(choice_value);
   }
 }
 """
