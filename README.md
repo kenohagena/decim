@@ -25,5 +25,14 @@ basically 3 steps again:
     using the functions cer() and opt_h()\
 3. h_iter() repeats this process n-times and for a list of
     true generating hazardrates and returns a numpy matrix
+    
+    
+    
+glaze_stan.py
+
+has two functions:
+
+1. return stan model code for glaze model
+2. take subject, session, phase, etc. and return dictionary with data adequate to fit glaze model
 
 

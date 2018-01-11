@@ -1,5 +1,4 @@
 # IMPORT STUFF
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -47,7 +46,6 @@ def row2dict(item):
             'block': item[0, 4][0, 0]}
 
 
-
 def log2pd(log, block, key="p"):
     """
     Takes loaded matlab log and returns panda dataframe.
@@ -63,7 +61,7 @@ def log2pd(log, block, key="p"):
     return df.query('block==%i' % block)
 
 
-#CALCULATIONS
+# CALCULATIONS
 
 
 def LLR(value, e1=0.5, e2=-0.5, sigma=1):
@@ -142,7 +140,30 @@ def optimal_H(df):
     return o
 
 
-__version__ = '3.2.1'
+def performance(sub_code, session, phase, block, base_path):
+    """
+    returns dictionary containing number of decisions, number of NaNs and count of rewards.
+    """
+    df = log2pd(load_log(sub_code, session, phase, block, base_path), block)
+    rews = (df.loc[df.message == "GL_TRIAL_REWARD", 'value'])
+    array = np.array(rews.values).astype(float)
+    no_answer = np.count_nonzero(np.isnan(array))
+    rewards = np.count_nonzero((array)) - np.count_nonzero(np.isnan(array))
+    performance = rewards / len(array)
+    return {'no_answer': no_answer, 'rewards': rewards, 'decisions': len(array), 'performance': performance}
+
+
+def mean_rt(sub_code, session, phase, block, base_path):
+    """
+    Returns mean reaction time of given block.
+    """
+    df = log2pd(load_log(sub_code, session, phase, block, base_path), block)
+    rt = df.loc[df.message == 'CHOICE_TRIAL_RT']['value']
+    return rt.mean()
+
+
+
+__version__ = '3.3.1'
 '''
 2.1.0
 Version sperated loading functions from calculating functions and extracting
@@ -163,4 +184,8 @@ in cross-entropy-error: inserted the definitions of choices and belief_indices f
 deleted obsolete plotting section
 3.2.1
 changes for better readability
+3.3
+performance function
+3.3.1
+mean RT
 '''
