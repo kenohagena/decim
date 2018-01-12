@@ -22,10 +22,15 @@ def model_code():
     }
     parameters {
         real<lower=0, upper=1> H; //Hazardrate used in glaze
+        real<lower=1> V; //Variance used in glaze
+        real<lower=1> gen_var; //Variance used in glaze
     }
+
     transformed parameters {
         real psi[N];
+        real choice_value[N];
         real llr;
+
         for (i in 1:B) {
             llr = normal_lpdf(x[b[i]+1] | 0.5, 1) - normal_lpdf(x[b[i]+1] | -0.5, 1);
             psi[b[i]+1] = llr;
@@ -34,8 +39,8 @@ def model_code():
                 llr = normal_lpdf(x[n] | 0.5, 1) - normal_lpdf(x[n] | -0.5, 1);
                 psi[n] = psi[n-1] + log((1 - H) / H + exp(-psi[n-1]))
                         - log((1 - H) / H + exp(psi[n-1]));
-                psi[n] = psi[n] + llr;
-
+                psi[n] = (psi[n] + gen_var*llr);
+                choice_value[n] = 0.5+0.5*erf(psi[n]/sqrt(2*V));  
                 }
 
 
@@ -43,10 +48,12 @@ def model_code():
     }
 
     model {
-        H ~ uniform(0,1); //prior on H from truncated normal
-        for (i in 1:I) {
-            y[i] ~ bernoulli_logit((psi[D[i]]));
-      }
+        H ~ uniform(0, 1); // T[0.0001,0.9999]; //prior on H from truncated normal
+        V ~ gamma(1.1, 10);  // Gamma centered on 1 covering until ~60
+        gen_var ~ gamma(1.2, 5); // Gamma centered on 1 covering until ~30
+        for (i in 1:I) {            
+            y[i] ~ bernoulli(choice_value[D[i]]);
+        }
     }
     """
     return glaze_code
