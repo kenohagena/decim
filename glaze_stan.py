@@ -21,7 +21,7 @@ def model_code():
         int D[I]; // integer array with indices of decision point locations
     }
     parameters {
-        real<lower=0, upper=1> H; //Hazardrate used in glaze
+        real<lower=0.0001, upper=0.9999> H; //Hazardrate used in glaze
         real<lower=1> V; //Variance used in glaze
         real<lower=1> gen_var; //Variance used in glaze
     }
@@ -34,6 +34,7 @@ def model_code():
         for (i in 1:B) {
             llr = normal_lpdf(x[b[i]+1] | 0.5, 1) - normal_lpdf(x[b[i]+1] | -0.5, 1);
             psi[b[i]+1] = llr;
+            choice_value[b[i]+1] = 0.5+0.5*erf(psi[b[i]+1]/sqrt(2*V));
             for (n in (b[i]+2):b[i+1]) {
 
                 llr = normal_lpdf(x[n] | 0.5, 1) - normal_lpdf(x[n] | -0.5, 1);
@@ -48,7 +49,7 @@ def model_code():
     }
 
     model {
-        H ~ uniform(0, 1); // T[0.0001,0.9999]; //prior on H from truncated normal
+        H ~ uniform(0.0001, 0.9999); // T[0.0001,0.9999]; //prior on H from truncated normal
         V ~ gamma(1.1, 10);  // Gamma centered on 1 covering until ~60
         gen_var ~ gamma(1.2, 5); // Gamma centered on 1 covering until ~30
         for (i in 1:I) {
