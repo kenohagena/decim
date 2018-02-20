@@ -40,7 +40,7 @@ def model_code():
                 psi[n] = psi[n-1] + log((1 - H) / H + exp(-psi[n-1]))
                         - log((1 - H) / H + exp(psi[n-1]));
                 psi[n] = (psi[n] + gen_var*llr);
-                choice_value[n] = 0.5+0.5*erf(psi[n]/sqrt(2*V));  
+                choice_value[n] = 0.5+0.5*erf(psi[n]/sqrt(2*V));
                 }
 
 
@@ -51,7 +51,7 @@ def model_code():
         H ~ uniform(0, 1); // T[0.0001,0.9999]; //prior on H from truncated normal
         V ~ gamma(1.1, 10);  // Gamma centered on 1 covering until ~60
         gen_var ~ gamma(1.2, 5); // Gamma centered on 1 covering until ~30
-        for (i in 1:I) {            
+        for (i in 1:I) {
             y[i] ~ bernoulli(choice_value[D[i]]);
         }
     }
@@ -98,38 +98,7 @@ def stan_data(subject, session, phase, blocks, path):
     return data
 
 
-def hdi(smaples, cred_mass=0.95):
-    '''
-    Returns highest density interval.
-
-    Takes MCMC sample array and optional credibility mass.
-    '''
-    sortedpoints = np.sort(smaples)
-    ci = math.ceil(cred_mass * len(smaples))
-    nci = len(smaples) - ci
-    ci_width = []
-    for i in range(nci):
-        ci_width.append(sortedpoints[i + ci] - sortedpoints[i])
-    hdi_min = sortedpoints[np.argmin(ci_width)]
-    hdi_max = sortedpoints[np.argmin(ci_width) + ci]
-    return (hdi_min, hdi_max)
-
-
-def mode(samples, bins, decimals=True):
-    '''
-    Return bin with highest modal value.
-
-    If decimals == True (Default), rounded to 5 decimals.
-    '''
-    z = np.argmax(np.histogram(samples, 100)[0])
-    x = np.histogram(samples, 100)[1][z]
-    if decimals is True:
-        return float('%.5f' % (x))
-    else:
-        return x
-
-
-__version__ = '1.2.1'
+__version__ = '2.0'
 '''
 1.1
 Fits hazardrate over multiple blocks.
@@ -138,4 +107,7 @@ HDI functon
 1.2.1
 added reindex line in stan_data to account for datasets that were interrupted
 between blocks and started a new index from that point onwards
+2.0
+-model contains internal noise parameters
+-deleted mode, hdi functions
 '''

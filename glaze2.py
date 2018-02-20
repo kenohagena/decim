@@ -124,15 +124,6 @@ def optimal_H(df):
 
     Takes dataframe and uses simple scalar optimization algorithm.
     """
-    point_locations = (df.loc[df.message == "GL_TRIAL_LOCATION", 'value']
-                       .astype(float))
-    choices = (df.loc[df.message == "CHOICE_TRIAL_RULE_RESP", 'value']
-               .astype(float))
-    choices = choices.dropna()
-
-    # Find last point location before choice trial
-    belief_indices = df.loc[choices.index - 12].index.values
-
     def error_function(x):
         return cross_entropy_error(df, x)
     o = opt.minimize_scalar(error_function,
@@ -162,8 +153,37 @@ def mean_rt(sub_code, session, phase, block, base_path):
     return rt.mean()
 
 
+def acc_ev(sub_code, session, phase, block, base_path, H):
+    '''
+    takes sub, ses, etc. and returns accumulated evidence at decision points and reaction time.
 
-__version__ = '3.3.1'
+    Accumulated evidence corresponds to the belief strength of the glaze model.
+    '''
+    df = log2pd(load_log(sub_code, session, phase, block, base_path), block)
+    # drop these, because sometimes missing or duplicated
+
+    df = df.loc[df.message != 'BUTTON_PRESS']
+    df = df.reset_index()
+    choices = (df.loc[df.message == "CHOICE_TRIAL_RULE_RESP", 'value']
+               .astype(float))
+    belief_indices = df.iloc[choices.index - 11].index.values
+    rt = df.loc[df.message == 'CHOICE_TRIAL_RT']['value']
+    accum_ev = belief(df, H).loc[belief_indices].values
+    obj_accum_ev = belief(df, 1 / 70).loc[belief_indices].values
+    decision = df.loc[df.message == 'CHOICE_TRIAL_RULE_RESP']['value']
+
+    try:
+        assert len(rt) == len(accum_ev) == len(decision)
+    except AssertionError:
+        print('''Length of rt, accumulated evidence and/or decisions did not match in block {0},
+            session {1} of subject {2}
+            '''.format(block, session, sub_code)
+              )
+    return pd.DataFrame({'reaction_time': rt.values, 'accumulated_evidence': accum_ev,
+                         'decision': decision.values, 'objective_accumulated_evidence': obj_accum_ev})
+
+
+__version__ = '3.3.2'
 '''
 2.1.0
 Version sperated loading functions from calculating functions and extracting
@@ -188,4 +208,10 @@ changes for better readability
 performance function
 3.3.1
 mean RT
+3.3.2
+-accumulated evidence: now contains decision values in order to calculate choice consistency
+-accumulated evidence: contains 'objective evidence', i.e. evidence of model when given true H
 '''
+
+
+#print(acc_ev('VPIM01', 'B', 3, 4, '/users/kenohagena/documents/immuno/data/vaccine', 1 / 20))
