@@ -35,6 +35,7 @@ def model_code():
             llr = normal_lpdf(x[b[i]+1] | 0.5, 1) - normal_lpdf(x[b[i]+1] | -0.5, 1);
             psi[b[i]+1] = llr;
             choice_value[b[i]+1] = 0.5+0.5*erf(psi[b[i]+1]/sqrt(2*V));
+
             for (n in (b[i]+2):b[i+1]) {
 
                 llr = normal_lpdf(x[n] | 0.5, 1) - normal_lpdf(x[n] | -0.5, 1);
