@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import glaze2 as gl
-import pupil_pp as pop
+import pupil_frame as pop
 
 
 sessions = {1: 'A', 2: 'B', 3: 'C'}
@@ -94,14 +94,14 @@ class Choiceframe(object):
         self.choices.loc[:, ('behavior', 'parameter', 'subjective_evidence')] = glaze_belief_subjective
         self.choices.loc[:, ('behavior', 'parameter', 'true_evidence')] = glaze_belief_true
 
-    def choice_pupil(self, pupil_frame=None, save_path=None, artifact_threshhold=.2):
+    def choice_pupil(self, pupilframe=None, artifact_threshhold=.2, choicelock=True, tw=4500):
         '''
         Takes existing pupilframe and makes choicepupil frame.
         If there is no existing pupilframe, a new one is created.
         '''
         frames = []
-        if pupil_frame != None:
-            pupilframe = pupil_frame
+        if pupilframe != None:
+            pass
         else:
             for block in self.blocks:
                 p = pop.Pupilframe(self.sub, self.ses, block, self.path)
@@ -115,7 +115,7 @@ class Choiceframe(object):
                 frames.append(p.pupil_frame)
             pupilframe = pd.concat(frames, ignore_index=True)
 
-        df = pupilframe.loc[:, ['message', 'bp_interpol', 'message_value', 'blink', 'all_artifacts', 'block', 'trial_id']]
+        df = pupilframe.loc[:, ['message', 'bp_interpol', 'message_value', 'blink', 'all_artifacts', 'block', 'trial_id', 'gaze_angle']]
         choicepupil = []
         #print(len(df.loc[df.message == "CHOICE_TRIAL_ONSET"]))
         #print(len(df.loc[df.message == "RT"]))
@@ -124,51 +124,64 @@ class Choiceframe(object):
                 continue
             else:
                 resp = df.iloc[onset - 1000: onset + 3500, :].loc[df.message == 'RT', 'message_value']
-                trial = df.loc[np.arange(onset - 1000, onset + 3500).astype(int), 'bp_interpol'].values
+                trial = df.loc[np.arange(onset - 1000, onset + tw - 1000).astype(int), 'bp_interpol'].values
                 trial = np.append(trial, df.loc[np.arange(onset, onset + resp + 1500), 'all_artifacts'].mean())
                 trial = np.append(trial, df.loc[np.arange(onset, onset + resp + 1500), 'blink'].mean())
                 trial = np.append(trial, df.loc[onset, 'block'])
+                trial = np.append(trial, df.loc[onset + resp, 'gaze_angle'])
                 trial = np.append(trial, onset)
+                trial = np.append(trial, df.loc[onset, 'gaze_angle'])
                 trial = np.append(trial, resp)
                 trial = np.append(trial, df.loc[onset, 'trial_id'])
+
                 choicepupil.append(trial)
         choicedf = pd.DataFrame(choicepupil)
 
         # z-score per trial
         for i, row in choicedf.iterrows():
-            choicedf.iloc[i, 0:4500] = (choicedf.iloc[i, 0:4500] - choicedf.iloc[i, 0:4500].mean()) / choicedf.iloc[i, 0:4500].std()
+            choicedf.iloc[i, 0:tw] = (choicedf.iloc[i, 0:tw] - choicedf.iloc[i, 0:tw].mean()) / choicedf.iloc[i, 0:tw].std()
         # subtract baseline per trial
         for i, row in choicedf.iterrows():
-            choicedf.iloc[i, 0:4500] = (choicedf.iloc[i, 0:4500] - choicedf.iloc[i, 0:1000].mean())
+            choicedf.iloc[i, 0:tw] = (choicedf.iloc[i, 0:tw] - choicedf.iloc[i, 0:1000].mean())
 
-        c1 = pd.MultiIndex.from_product([['pupil'], ['triallock'], range(4500)], names=['source', 'type', 'name'])
-        c2 = pd.MultiIndex.from_product([['pupil'], ['choicelock'], range(2500)], names=['source', 'type', 'name'])
-        c3 = pd.MultiIndex.from_product([['pupil'], ['parameter'], ['rt', 'onset', 'blink', 'all_artifacts', 'trial_id', 'block']], names=['source', 'type', 'name'])
-        design = pd.concat([pd.DataFrame(np.full((len(choicedf), 4500), np.nan), columns=c1),
-                            pd.DataFrame(np.full((len(choicedf), 2500), np.nan), columns=c2),
-                            pd.DataFrame(np.full((len(choicedf), 6), np.nan), columns=c3)], ignore_index=True)
-        design = design.iloc[0:len(choicedf)]
+        c1 = pd.MultiIndex.from_product([['pupil'], ['triallock'], range(tw)], names=['source', 'type', 'name'])
+        c1 = pd.DataFrame(np.full((len(choicedf), tw), np.nan), columns=c1)
+        c3 = pd.MultiIndex.from_product([['pupil'], ['parameter'], ['rt', 'onset', 'blink', 'all_artifacts', 'trial_id', 'block', 'onset_gaze', 'choice_gaze']], names=['source', 'type', 'name'])
+        c3 = pd.DataFrame(np.full((len(choicedf), 8), np.nan), columns=c3)
 
-        design.loc[:, ('pupil', 'triallock')] = choicedf.iloc[:, :4500].values
-        design.loc[:, ('pupil', 'parameter')] = choicedf.iloc[:, 4500:].values
+        if choicelock == False:
+            design = pd.concat([c1, c3], ignore_index=True)
+            design = design.iloc[0:len(choicedf)]
+            design.loc[:, ('pupil', 'triallock')] = choicedf.iloc[:, :tw].values
+            design.loc[:, ('pupil', 'parameter')] = choicedf.iloc[:, tw:].values
+            self.pupil = design
 
-        design.pupil.parameter.tpr = np.nan
+        else:
+            c2 = pd.MultiIndex.from_product([['pupil'], ['choicelock'], range(2500)], names=['source', 'type', 'name'])
+            c2 = pd.DataFrame(np.full((len(choicedf), 2500), np.nan), columns=c2)
+            design = pd.concat([c1, c2, c3], ignore_index=True)
+            design = design.iloc[0:len(choicedf)]
 
-        for i, row in design.iterrows():
-            reaction = int(row.pupil.parameter.rt) + 1000
-            if reaction > 3000:
-                choicelock = np.full(2500, np.nan)
-            else:
-                choicelock = row.pupil.triallock.iloc[reaction - 1000:reaction + 1500].values
-            row.loc[('pupil', 'choicelock')] = choicelock
+            design.loc[:, ('pupil', 'triallock')] = choicedf.iloc[:, :tw].values
+            design.loc[:, ('pupil', 'parameter')] = choicedf.iloc[:, tw:].values
 
-        design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'parameter', 'tpr')] =\
-        np.dot(design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'choicelock')],
-        design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'choicelock')].mean()) /\
-        np.dot(design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'choicelock')].mean(),
-        design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'choicelock')].mean())
+            design.pupil.parameter.tpr = np.nan
 
-        self.pupil = design
+            for i, row in design.iterrows():
+                reaction = int(row.pupil.parameter.rt) + 1000
+                if reaction > 3000:
+                    choicelock = np.full(2500, np.nan)
+                else:
+                    choicelock = row.pupil.triallock.iloc[reaction - 1000:reaction + 1500].values
+                row.loc[('pupil', 'choicelock')] = choicelock
+
+            design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'parameter', 'tpr')] =\
+                np.dot(design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'choicelock')],
+                       design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'choicelock')].mean()) /\
+                np.dot(design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'choicelock')].mean(),
+                       design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'choicelock')].mean())
+
+            self.pupil = design
 
     def merge(self):
         '''
@@ -181,19 +194,14 @@ class Choiceframe(object):
                                       right_on=[('pupil', 'parameter', 'trial_id'), ('pupil', 'parameter', 'block')])
 
 
-#c = Choiceframe(7, 1, '/Users/kenohagena/Documents/immuno/data/vaccine/', blocks=[7])
-# c.choicetrials()
-# c.points()
-# c.glaze_belief(1 / 5)
-#c.choice_pupil()
-# print(c.pupil.trial_id)
-# c.merge()
-#print(c.pupil.pupil.parameter.rt)
-
-
 __version__ = '1.2'
 '''
 1.2
 -triallocked period now 1000ms before offset and total of 4500ms
 -if rt > 2000ms choicelocked is set to np.nan
 '''
+#c = Choiceframe(1, 2, '/Users/kenohagena/Documents/immuno/data/vaccine', blocks=[1])
+# c.choicetrials()
+#c.choice_pupil(choicelock=False, tw=4500)
+#print(c.choicedf.iloc[:, 4500:])
+#print(c.pupil.pupil.parameter)
