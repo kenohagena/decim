@@ -118,7 +118,7 @@ class Pupilframe(object):
 
         return pd.concat([onset, resp, stimoff, reward, rt, location])
 
-    def basicframe(self, events=True, messages=True, save_path=None):
+    def basicframe(self, events=True, messages=True):
         '''
         Loads pupil data and optionally events, messages, velocity and acceleration.
 
@@ -136,8 +136,7 @@ class Pupilframe(object):
             pupil_frame = pd.merge(pupil_frame, messages, how='left', on=['time'])
 
         pupil_frame = pupil_frame.drop(pupil_frame[pupil_frame.time == 0].index)
-        if save_path is not None:
-            pupil_frame.to_csv('{3}/pupil_frame_{0}{1}{2}.csv'.format(subject, session, block, save_path), index=False)
+
         self.pupil_frame = pupil_frame
 
     def get_velocity(self, Hz=1000):
@@ -251,6 +250,9 @@ class Pupilframe(object):
             self.pupil_frame = self.pupil_frame.iloc[:ev_start[len(ev_start) - 1], :]
 
     def filter(self, highpass=.01, lowpass=6, sample_rate=1000):
+        '''
+        Apply 3rd order Butterworth bandpass filter.
+        '''
         # High pass:
         pupil_interpolated = self.pupil_frame.interpol
         hp_cof_sample = highpass / (sample_rate / 2)
@@ -267,10 +269,12 @@ class Pupilframe(object):
         self.pupil_frame['bp_interpol'] = pupil_interpolated_bp
 
     def z_score(self):
-
+        '''
+        Normalize over session
+        '''
         self.pupil_frame['biz'] = (self.pupil_frame.bp_interpol - self.pupil_frame.bp_interpol.mean()) / self.pupil_frame.bp_interpol.std()
 
 
 #p = Pupilframe(1, 3, 4, '/Users/kenohagena/Documents/immuno/data/vaccine/')
-#p.basicframe()
-## print(p.pupil_frame.loc[~p.pupil_frame.message.isnull()])
+# p.basicframe()
+# print(p.pupil_frame.loc[~p.pupil_frame.message.isnull()])
