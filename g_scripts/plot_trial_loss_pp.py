@@ -8,7 +8,7 @@ import seaborn as sns
 subjects = [1, 2, 3, 4, 6, 7, 9]
 
 # INPUT DATA
-df = pd.read_csv('pupilframes/choiceframes200218/cpf_all.csv',
+df = pd.read_csv('/Users/kenohagena/Documents/immuno/da/decim/g_pupilframes/cpf12_all.csv',
                  header=[0, 1, 2],
                  index_col=[0, 1, 2, 3],
                  dtype=np.float64)
