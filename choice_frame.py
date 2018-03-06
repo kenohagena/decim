@@ -111,11 +111,12 @@ class Choiceframe(object):
                 p.small_fragments()
                 p.interpol()
                 p.filter()
+                p.z_score()
                 p.pupil_frame['block'] = block
                 frames.append(p.pupil_frame)
             pupilframe = pd.concat(frames, ignore_index=True)
 
-        df = pupilframe.loc[:, ['message', 'bp_interpol', 'message_value', 'blink', 'all_artifacts', 'block', 'trial_id', 'gaze_angle']]
+        df = pupilframe.loc[:, ['message', 'biz', 'message_value', 'blink', 'all_artifacts', 'block', 'trial_id', 'gaze_angle']]
         choicepupil = []
         #print(len(df.loc[df.message == "CHOICE_TRIAL_ONSET"]))
         #print(len(df.loc[df.message == "RT"]))
@@ -124,7 +125,7 @@ class Choiceframe(object):
                 continue
             else:
                 resp = df.iloc[onset - 1000: onset + 3500, :].loc[df.message == 'RT', 'message_value']
-                trial = df.loc[np.arange(onset - 1000, onset + tw - 1000).astype(int), 'bp_interpol'].values
+                trial = df.loc[np.arange(onset - 1000, onset + tw - 1000).astype(int), 'biz'].values
                 trial = np.append(trial, df.loc[np.arange(onset, onset + resp + 1500), 'all_artifacts'].mean())
                 trial = np.append(trial, df.loc[np.arange(onset, onset + resp + 1500), 'blink'].mean())
                 trial = np.append(trial, df.loc[onset, 'block'])
@@ -137,9 +138,6 @@ class Choiceframe(object):
                 choicepupil.append(trial)
         choicedf = pd.DataFrame(choicepupil)
 
-        # z-score per trial
-        for i, row in choicedf.iterrows():
-            choicedf.iloc[i, 0:tw] = (choicedf.iloc[i, 0:tw] - choicedf.iloc[i, 0:tw].mean()) / choicedf.iloc[i, 0:tw].std()
         # subtract baseline per trial
         for i, row in choicedf.iterrows():
             choicedf.iloc[i, 0:tw] = (choicedf.iloc[i, 0:tw] - choicedf.iloc[i, 0:1000].mean())
@@ -204,4 +202,4 @@ __version__ = '1.2'
 # c.choicetrials()
 #c.choice_pupil(choicelock=False, tw=4500)
 #print(c.choicedf.iloc[:, 4500:])
-#print(c.pupil.pupil.parameter)
+# print(c.pupil.pupil.parameter)
