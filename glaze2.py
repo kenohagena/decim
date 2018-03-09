@@ -84,7 +84,7 @@ def prior(b_prior, H):
     return psi
 
 
-def belief(df, H):
+def belief(df, H, gen_var=1):
     """
     Returns models belief at a given time.
 
@@ -97,7 +97,7 @@ def belief(df, H):
         if i == 0:
             belief[i] = LLR(value)
         else:
-            belief[i] = prior(belief[i - 1], H) + LLR(value)
+            belief[i] = prior(belief[i - 1], H) + LLR(value) * gen_var
     return pd.Series(belief, index=locs.index)
 
 
