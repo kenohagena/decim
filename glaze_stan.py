@@ -22,8 +22,8 @@ def model_code():
     }
     parameters {
         real<lower=0.0001, upper=0.9999> H; //Hazardrate used in glaze
-        real<lower=1> V; //Variance used in glaze
-        real<lower=1> gen_var; //Variance used in glaze
+        real<lower=0> V; //Variance used in glaze
+        real<lower=0> gen_var; //Variance used in glaze
     }
 
     transformed parameters {
