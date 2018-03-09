@@ -3,7 +3,7 @@ import pandas as pd
 import glaze2 as glaze
 import random
 from scipy import optimize as opt
-from scipy.special import expit  # logistic function
+from scipy.special import expit, erf  # logistic function
 random.seed()
 from scipy.stats import expon, norm
 
@@ -14,7 +14,7 @@ def fast_sim(x, tH=1 / 70):
     """
     Simulates a dataset with x trials and true hazardrate tH. Does so faster.
     """
-    #inter_change_dists = expon.rvs(scale=1 / tH, size=10000)
+    # inter_change_dists = expon.rvs(scale=1 / tH, size=10000)
     inter_choice_dists = np.cumsum(expon.rvs(scale=1 / (1 / 35.), size=1000))
     inter_choice_dists = inter_choice_dists[inter_choice_dists < x]
     mus = []
@@ -41,13 +41,13 @@ def fast_sim(x, tH=1 / 70):
 # FILL IN MISSING INFORMATION
 
 
-def add_belief(df, H):
+def add_belief(df, H, gen_var=1):
     """
     Computes models belief according to glaze at location trials
 
     Takes simulated dataframe and hazardrate
     """
-    glazes = glaze.belief(df, H)
+    glazes = glaze.belief(df, H, gen_var=gen_var)
     glazesdf = pd.DataFrame(glazes, columns=['belief'])
     df = pd.concat([df, glazesdf], axis=1)
     return df
@@ -73,11 +73,22 @@ def fill_decrule(df):
     return df
 
 
-def complete(df, H):
+def dec_choice(df, V=1):
+    '''
+    Chooses at decision trials between 'left' and 'right' based on belief and internal noise V.
+    '''
+    df['noisy_belief'] = .5 + .5 * erf(df.belief / V)
+    df['choice'] = np.random.rand(len(df))
+    df['choice'] = df.noisy_belief > df.choice
+    df = df.replace({"choice": {True: 'right', False: 'left'}})
+    return df
+
+
+def complete(df, H, gen_var=1, V=1):
     """
     Completes simulated dataframe with message, location, belief, rule and correctness
     """
-    return fill_decrule(fill_decbel(add_belief(df, H)))
+    return dec_choice(fill_decrule(fill_decbel(add_belief(df, H, gen_var=gen_var))), V=V)
 
 
 def cer(df, H):
