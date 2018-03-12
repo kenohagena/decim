@@ -6,17 +6,19 @@ from scipy import optimize as opt
 from scipy.special import expit, erf  # logistic function
 random.seed()
 from scipy.stats import expon, norm
+import math
 
 # SIMULATE POINT LOCATIONS AND DECISION POINTS
 
 
-def fast_sim(x, tH=1 / 70):
+def fast_sim(x, tH=1 / 70, nodec=10):
     """
     Simulates a dataset with x trials and true hazardrate tH. Does so faster.
     """
     # inter_change_dists = expon.rvs(scale=1 / tH, size=10000)
     inter_choice_dists = np.cumsum(expon.rvs(scale=1 / (1 / 35.), size=1000))
-    inter_choice_dists = inter_choice_dists[inter_choice_dists < x]
+    inter_choice_dists = inter_choice_dists[inter_choice_dists < x - nodec]
+    inter_choice_dists = inter_choice_dists + nodec
     mus = []
     values = []
     start = random.choice([0.5, -0.5])
@@ -75,12 +77,12 @@ def fill_decrule(df):
 
 def dec_choice(df, V=1):
     '''
-    Chooses at decision trials between 'left' and 'right' based on belief and internal noise V.
+    Chooses at decision trials between 0 ('left') and 1 ('right') based on belief and internal noise V.
     '''
-    df['noisy_belief'] = .5 + .5 * erf(df.belief / V)
+    df['noisy_belief'] = .5 + .5 * erf(df.belief / math.sqrt(2 * V))
     df['choice'] = np.random.rand(len(df))
     df['choice'] = df.noisy_belief > df.choice
-    df = df.replace({"choice": {True: 'right', False: 'left'}})
+    df.choice = df.choice.astype(int)
     return df
 
 
@@ -165,3 +167,6 @@ Made the module slightly faster by deleting obsolete functions
 calculating correct answers of model.
 Readability according to PEP-257
 '''
+
+for i in range(2, 5):
+    print(i)
