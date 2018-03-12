@@ -48,11 +48,12 @@ class fit_result(object):
                 self.chain_samples[parameter] = ex[:, :, position]
             self.chain_samples = pd.DataFrame(self.chain_samples)
 
-    def to_csv(self, chainwise=False):
+    def to_csv(self, samples=False, chainwise=False):
         '''
         Save as csv...
         '''
-        self.summary.to_csv('summary_{}'.format(self.name), index=True)
-        self.sample_df.to_csv('samples_{}'.format(self.name), index=False)
+        self.summary.to_csv('summary_{}.csv'.format(self.name), index=True)
+        if samples == True:
+            self.sample_df.to_csv('samples_{}.csv'.format(self.name), index=False)
         if chainwise == True:
-            self.chain_samples.to_csv('samples_chain_{}'.format(self.name), index=False)
+            self.chain_samples.to_csv('samples_chain_{}.csv'.format(self.name), index=False)
