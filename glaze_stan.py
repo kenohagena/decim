@@ -31,19 +31,22 @@ def model_code():
         real llr;
 
         for (i in 1:B) {
-            llr = normal_lpdf(x[b[i]+1] | 0.5, 1) - normal_lpdf(x[b[i]+1] | -0.5, 1);
+            llr = normal_lpdf(x[b[i]+1] | 0.5, gen_var) - \
+                              normal_lpdf(x[b[i]+1] | -0.5, gen_var);
             psi[b[i]+1] = llr;
             choice_value[b[i]+1] = 0.5+0.5*erf(psi[b[i]+1]/sqrt(2*V));
 
             for (n in (b[i]+2):b[i+1]) {
 
-                llr = normal_lpdf(x[n] | 0.5, 1) - normal_lpdf(x[n] | -0.5, 1);
-                psi[n] = psi[n-1] + log((1 - H) / H + exp(-psi[n-1]))
+                llr = normal_lpdf(x[n] | 0.5, gen_var) - \
+                                  normal_lpdf(x[n] | -0.5, gen_var);
+                psi[n] = psi[n-1] + log( (1 - H) / H + exp(-psi[n-1]))
                         - log((1 - H) / H + exp(psi[n-1]));
-                psi[n] = (psi[n] + gen_var*llr);
+                psi[n] = (psi[n] + llr);
                 choice_value[n] = 0.5+0.5*erf(psi[n]/sqrt(2*V));
                 }
         }
+        //print("H: ", H, " gen_var: ", gen_var, " V: ", V)
     }
 
     model {
@@ -67,16 +70,21 @@ def stan_data(subject, session, phase, blocks, path):
     dflist = []
     lp = [0]
     for i in range(len(blocks)):
-        d = gl.log2pd(gl.load_log(subject, session, phase, blocks[i], path), blocks[i])
-        single_block_points = np.array(d.loc[d.message == 'GL_TRIAL_LOCATION']['value'].index).astype(int)
+        d = gl.log2pd(gl.load_log(subject, session,
+                      phase, blocks[i], path), blocks[i])
+        single_block_points = np.array(d.loc[d.message == 'GL_TRIAL_LOCATION'][
+                                       'value'].index).astype(int)
         dflist.append(d)
         lp.append(len(single_block_points))
     df = pd.concat(dflist)
     df.index = np.arange(len(df))
-    point_locs = np.array(df.loc[df.message == 'GL_TRIAL_LOCATION']['value']).astype(float)
+    point_locs = np.array(df.loc[df.message == 'GL_TRIAL_LOCATION'][
+                          'value']).astype(float)
     point_count = len(point_locs)
-    decisions = np.array(df.loc[df.message == 'CHOICE_TRIAL_RULE_RESP']['value']).astype(float)
-    decisions = -(decisions[~np.isnan(decisions)].astype(int)) + 1  # '-', '+1', because of mapping of rule response
+    decisions = np.array(df.loc[df.message == 'CHOICE_TRIAL_RULE_RESP'][
+                         'value']).astype(float)
+    # '-', '+1', because of mapping of rule response
+    decisions = -(decisions[~np.isnan(decisions)].astype(int)) + 1
     dec_count = len(decisions)
     choices = (df.loc[df.message == "CHOICE_TRIAL_RULE_RESP", 'value']
                .astype(float))
@@ -84,7 +92,8 @@ def stan_data(subject, session, phase, blocks, path):
     belief_indices = df.loc[choices.index - 12].index.values
     ps = df.loc[df.message == 'GL_TRIAL_LOCATION']['value'].astype(float)
     pointinds = np.array(ps.index)
-    dec_indices = np.searchsorted(pointinds, belief_indices) + 1  # '+1' because stan starts counting from 1
+    # '+1' because stan starts counting from 1
+    dec_indices = np.searchsorted(pointinds, belief_indices) + 1
     data = {
         'I': dec_count,
         'N': point_count,
@@ -97,6 +106,50 @@ def stan_data(subject, session, phase, blocks, path):
     return data
 
 
+def data_from_df(df):
+    '''
+    Returns dictionary with data that fits requirement of stan model.
+
+    Takes subject, session, phase, list of blocks and filepath.
+    '''
+    decisions = df.loc[df.message == 'decision']
+    points = df.loc[df.message == 'GL_TRIAL_LOCATION']
+    data = {
+        'I': len(decisions),
+        'N': len(points),
+        'y': decisions.choice.values,
+        'x': points.value.values,
+        'D': [int(j - (np.where(decisions.index.values == j)[0])) for j in decisions.index.values],
+        'B': 1,
+        'b': [0, len(points)]}
+    return data
+    df.index = np.arange(len(df))
+    point_locs = np.array(df.loc[df.message == 'GL_TRIAL_LOCATION'][
+                          'value']).astype(float)
+    point_count = len(point_locs)
+    decisions = np.array(df.loc[df.message == 'decision'][
+                         'choice']).astype(float)
+    # '-', '+1', because of mapping of rule response
+    decisions = -(decisions[~np.isnan(decisions)].astype(int)) + 1
+    dec_count = len(decisions)
+    choices = (df.loc[df.message == "decision", 'choice']
+               .astype(float))
+    choices = choices.dropna()
+    belief_indices = df.loc[choices.index - 12].index.values
+    ps = df.loc[df.message == 'GL_TRIAL_LOCATION']['value'].astype(float)
+    pointinds = np.array(ps.index)
+    # '+1' because stan starts counting from 1
+    dec_indices = np.searchsorted(pointinds, belief_indices) + 1
+    data = {
+        'I': dec_count,
+        'N': point_count,
+        'y': decisions,
+        'x': point_locs,
+        'D': dec_indices,
+        'B': 1,
+        'b': [1, point_count]
+    }
+    return data
 __version__ = '2.0'
 '''
 1.1

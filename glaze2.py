@@ -95,9 +95,9 @@ def belief(df, H, gen_var=1):
     belief = 0 * locs.values
     for i, value in enumerate(locs):
         if i == 0:
-            belief[i] = LLR(value) * gen_var
+            belief[i] = LLR(value, sigma=gen_var) 
         else:
-            belief[i] = prior(belief[i - 1], H) + LLR(value) * gen_var
+            belief[i] = prior(belief[i - 1], H) + LLR(value, sigma=gen_var)
     return pd.Series(belief, index=locs.index)
 
 
