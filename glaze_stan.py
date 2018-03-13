@@ -71,7 +71,7 @@ def stan_data(subject, session, phase, blocks, path):
     lp = [0]
     for i in range(len(blocks)):
         d = gl.log2pd(gl.load_log(subject, session,
-                      phase, blocks[i], path), blocks[i])
+                                  phase, blocks[i], path), blocks[i])
         single_block_points = np.array(d.loc[d.message == 'GL_TRIAL_LOCATION'][
                                        'value'].index).astype(int)
         dflist.append(d)
@@ -123,33 +123,8 @@ def data_from_df(df):
         'B': 1,
         'b': [0, len(points)]}
     return data
-    df.index = np.arange(len(df))
-    point_locs = np.array(df.loc[df.message == 'GL_TRIAL_LOCATION'][
-                          'value']).astype(float)
-    point_count = len(point_locs)
-    decisions = np.array(df.loc[df.message == 'decision'][
-                         'choice']).astype(float)
-    # '-', '+1', because of mapping of rule response
-    decisions = -(decisions[~np.isnan(decisions)].astype(int)) + 1
-    dec_count = len(decisions)
-    choices = (df.loc[df.message == "decision", 'choice']
-               .astype(float))
-    choices = choices.dropna()
-    belief_indices = df.loc[choices.index - 12].index.values
-    ps = df.loc[df.message == 'GL_TRIAL_LOCATION']['value'].astype(float)
-    pointinds = np.array(ps.index)
-    # '+1' because stan starts counting from 1
-    dec_indices = np.searchsorted(pointinds, belief_indices) + 1
-    data = {
-        'I': dec_count,
-        'N': point_count,
-        'y': decisions,
-        'x': point_locs,
-        'D': dec_indices,
-        'B': 1,
-        'b': [1, point_count]
-    }
-    return data
+
+
 __version__ = '2.0'
 '''
 1.1
