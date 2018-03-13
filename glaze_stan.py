@@ -25,7 +25,6 @@ def model_code():
         real<lower=0> V; //Variance used in glaze
         real<lower=0> gen_var; //Variance used in glaze
     }
-
     transformed parameters {
         real psi[N];
         real choice_value[N];
@@ -44,15 +43,13 @@ def model_code():
                 psi[n] = (psi[n] + gen_var*llr);
                 choice_value[n] = 0.5+0.5*erf(psi[n]/sqrt(2*V));
                 }
-
-
         }
     }
 
     model {
         H ~ uniform(0.0001, 0.9999); // T[0.0001,0.9999]; //prior on H from truncated normal
         V ~ gamma(1.1, 10);  // Gamma centered on 1 covering until ~60
-        gen_var ~ gamma(1.2, 5); // Gamma centered on 1 covering until ~30
+        gen_var ~ gamma(1.2, 0.0001); // Gamma centered on 1 covering until ~30
         for (i in 1:I) {
             y[i] ~ bernoulli(choice_value[D[i]]);
         }
