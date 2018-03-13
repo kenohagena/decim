@@ -11,12 +11,12 @@ import math
 # SIMULATE POINT LOCATIONS AND DECISION POINTS
 
 
-def fast_sim(x, tH=1 / 70, nodec=10):
+def fast_sim(x, tH=1 / 70, nodec=10, isi=35.):
     """
     Simulates a dataset with x trials and true hazardrate tH. Does so faster.
     """
     # inter_change_dists = expon.rvs(scale=1 / tH, size=10000)
-    inter_choice_dists = np.cumsum(expon.rvs(scale=1 / (1 / 35.), size=1000))
+    inter_choice_dists = np.cumsum(expon.rvs(scale=1 / (1 / isi), size=1000))
     inter_choice_dists = inter_choice_dists[inter_choice_dists < x - nodec]
     inter_choice_dists = inter_choice_dists + nodec
     mus = []
@@ -31,8 +31,7 @@ def fast_sim(x, tH=1 / 70, nodec=10):
         cnt += i
 
     df = pd.DataFrame({'rule': np.concatenate(mus)[:x],
-                       'value': np.concatenate(
-        values)[:x]})
+                       'value': np.concatenate(values)[:x]})
 
     # df.columns = ['rule', 'values']
     df.loc[:, 'message'] = 'GL_TRIAL_LOCATION'
