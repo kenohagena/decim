@@ -11,14 +11,16 @@ import math
 # SIMULATE POINT LOCATIONS AND DECISION POINTS
 
 
-def fast_sim(x, tH=1 / 70, nodec=10, isi=35.):
+def fast_sim(x, tH=1 / 70, nodec=5, isi=35.):
     """
     Simulates a dataset with x trials and true hazardrate tH. Does so faster.
+
+    nodec = minimum points between decisions. Nodec points are shown, after that 'isi' determines decision probability.
     """
-    # inter_change_dists = expon.rvs(scale=1 / tH, size=10000)
     inter_choice_dists = np.cumsum(expon.rvs(scale=1 / (1 / isi), size=1000))
-    inter_choice_dists = inter_choice_dists[inter_choice_dists < x - nodec]
-    inter_choice_dists = inter_choice_dists + nodec
+    inter_choice_dists = np.array([int(j + nodec + nodec * (np.where(inter_choice_dists == j)[0])) for j in inter_choice_dists])  # adds 5 (nodec) points between every decision
+    inter_choice_dists = inter_choice_dists[inter_choice_dists < x]
+
     mus = []
     values = []
     start = random.choice([0.5, -0.5])
@@ -35,7 +37,7 @@ def fast_sim(x, tH=1 / 70, nodec=10, isi=35.):
 
     # df.columns = ['rule', 'values']
     df.loc[:, 'message'] = 'GL_TRIAL_LOCATION'
-    df.loc[inter_choice_dists.astype(int), 'message'] = 'decision'
+    df.loc[inter_choice_dists, 'message'] = 'decision'
     df.loc[:, 'index'] = np.arange(len(df))
     return df
 
@@ -166,6 +168,3 @@ Made the module slightly faster by deleting obsolete functions
 calculating correct answers of model.
 Readability according to PEP-257
 '''
-
-for i in range(2, 5):
-    print(i)
