@@ -155,6 +155,36 @@ def likelihood(data, parameters):
     return math.log(df.product(axis=0)['p'])
 
 
+def inv_transV(Vt):
+    '''
+    Takes transformed V, returns original parameter space.
+    '''
+    return 1 / (10 - Vt)
+
+
+def inv_transGV(GVt):
+    '''
+    takes transformed generative variance, returns original.
+    '''
+    return 1 / (25 - GVt * 2.5)**.5
+
+
+def transV(V):
+    '''
+    Input: original V
+    Return: transformed
+    '''
+    return -1 / V + 10
+
+
+def transGV(GV):
+    '''
+    Input: original gen_var
+    Return: transformed
+    '''
+    return -1 / 2.5 * (1 / GV)**2 + 10
+
+
 __version__ = '2.0'
 '''
 1.1
