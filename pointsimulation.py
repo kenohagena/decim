@@ -80,7 +80,7 @@ def dec_choice(df, V=1):
     '''
     Chooses at decision trials between 0 ('left') and 1 ('right') based on belief and internal noise V.
     '''
-    df['noisy_belief'] = .5 + .5 * erf(df.belief / math.sqrt(2 * V))
+    df['noisy_belief'] = .5 + .5 * erf(df.belief / np.sqrt(2) * V)
     df['choice'] = np.random.rand(len(df))
     df['choice'] = df.noisy_belief > df.choice
     df.choice = df.choice.astype(int)
