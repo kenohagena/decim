@@ -2,8 +2,8 @@ import glaze2 as gl
 import numpy as np
 import pandas as pd
 import math
-
-# no prior so far
+from scipy.special import erf
+import pointsimulation as pt
 
 
 def model_code():
@@ -22,8 +22,8 @@ def model_code():
     }
     parameters {
         real<lower=0.0001, upper=0.9999> H; //Hazardrate used in glaze
-        real<lower=0> V; //Variance used in glaze
-        real<lower=0> gen_var; //Variance used in glaze
+        real<lower=0.1> V; //Variance used in glaze
+        real<lower=0.1, upper=9.9> gen_var; //Variance used in glaze
     }
     transformed parameters {
         real psi[N];
@@ -31,19 +31,23 @@ def model_code():
         real llr;
 
         for (i in 1:B) {
-            llr = normal_lpdf(x[b[i]+1] | 0.5, gen_var) - \
-                              normal_lpdf(x[b[i]+1] | -0.5, gen_var);
+            llr = normal_lpdf(x[b[i]+1] | 0.5, 1/sqrt(25-gen_var*2.5)) - \
+                              normal_lpdf(x[b[i]+1] | -0.5, 1/sqrt(25-gen_var*2.5));
+            //print(llr);
+            //print(gen_var);
             psi[b[i]+1] = llr;
-            choice_value[b[i]+1] = 0.5+0.5*erf(psi[b[i]+1]/sqrt(2*V));
+            choice_value[b[i]+1] = 0.5+0.5*erf(psi[b[i]+1]/(sqrt(2)*1/(10-V)));
 
             for (n in (b[i]+2):b[i+1]) {
 
-                llr = normal_lpdf(x[n] | 0.5, gen_var) - \
-                                  normal_lpdf(x[n] | -0.5, gen_var);
+                llr = normal_lpdf(x[n] | 0.5, 1/sqrt(25-gen_var*2.5)) - \
+                                  normal_lpdf(x[n] | -0.5, 1/sqrt(25-gen_var*2.5));
                 psi[n] = psi[n-1] + log( (1 - H) / H + exp(-psi[n-1]))
                         - log((1 - H) / H + exp(psi[n-1]));
+
                 psi[n] = (psi[n] + llr);
-                choice_value[n] = 0.5+0.5*erf(psi[n]/sqrt(2*V));
+                choice_value[n] = 0.5+0.5*erf(psi[n]/(sqrt(2)*1/(10-V)));
+                //print(choice_value[n]);
                 }
         }
         //print("H: ", H, " gen_var: ", gen_var, " V: ", V)
@@ -51,8 +55,8 @@ def model_code():
 
     model {
         H ~ uniform(0.0001, 0.9999); // T[0.0001,0.9999]; //prior on H from truncated normal
-        V ~ gamma(1.1, 10);  // Gamma centered on 1 covering until ~60
-        gen_var ~ gamma(1.2, 0.0001); // Gamma centered on 1 covering until ~30
+        V ~ normal(9, 0.5); //gamma(1.1, 10);  // Gamma centered on 1 covering until ~60
+        gen_var ~ normal(9.6, 0.4); // Gamma centered on 1 covering until ~30
         for (i in 1:I) {
             y[i] ~ bernoulli(choice_value[D[i]]);
         }
@@ -125,6 +129,32 @@ def data_from_df(df):
     return data
 
 
+def likelihood(data, parameters):
+    '''
+    Return likelihood of data given parameter values.
+
+    Data in the format for stan model, parameters is a dictionary.
+    Just for one block...
+    '''
+    points = np.array(data['x'])
+    decisions = np.array(data['y'])
+    decision_indices = np.array(data['D']) - 1
+    belief = 0 * points
+    for i, value in enumerate(points):
+        if i == 0:
+            b = gl.LLR(value, sigma=parameters['gen_var'])
+            belief[i] = .5 + .5 * erf(b / math.sqrt(2 * parameters['V']))
+        else:
+            b = gl.prior(belief[i - 1], parameters['H']) + gl.LLR(value, sigma=parameters['gen_var'])
+            belief[i] = .5 + .5 * erf(b / math.sqrt(2 * parameters['V']))
+    model_decs = belief[decision_indices]
+    df = pd.DataFrame({'model': model_decs.astype(float), 'data': decisions.astype(float)})
+    df['p'] = np.nan
+    for i, row in df.iterrows():
+        row.p = math.pow(row.model, row[0]) * math.pow((1 - row.model), (1 - row[0]))
+    return math.log(df.product(axis=0)['p'])
+
+
 __version__ = '2.0'
 '''
 1.1
@@ -138,3 +168,9 @@ between blocks and started a new index from that point onwards
 -model contains internal noise parameters
 -deleted mode, hdi functions
 '''
+
+
+#sim = pt.complete(pt.fast_sim(1000, 1 / 70), 1 / 70)
+#data = data_from_df(sim)
+
+#print(likelihood(data, parameters={'V': 2, 'H': 1 / 10, 'gen_var': 1}))
