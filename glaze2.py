@@ -84,18 +84,21 @@ def prior(b_prior, H):
     return psi
 
 
-def belief(df, H, gen_var=1):
+def belief(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION'):
     """
     Returns models belief at a given time.
 
     Takes panda dataframe and a hazardrate.
     """
-    locs = (df.loc[df.message == "GL_TRIAL_LOCATION", 'value']
-            .astype(float))
+    if point_message == None:
+        locs = df.value
+    else:
+        locs = (df.loc[df.message == message, 'value']
+                .astype(float))
     belief = 0 * locs.values
     for i, value in enumerate(locs):
         if i == 0:
-            belief[i] = LLR(value, sigma=gen_var) 
+            belief[i] = LLR(value, sigma=gen_var)
         else:
             belief[i] = prior(belief[i - 1], H) + LLR(value, sigma=gen_var)
     return pd.Series(belief, index=locs.index)
