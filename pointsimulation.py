@@ -3,7 +3,7 @@ import pandas as pd
 import glaze2 as glaze
 import random
 from scipy import optimize as opt
-from scipy.special import expit, erf  # logistic function
+from scipy.special import expit, erf
 random.seed()
 from scipy.stats import expon, norm
 import math
@@ -50,29 +50,9 @@ def add_belief(df, H, gen_var=1):
 
     Takes simulated dataframe and hazardrate
     """
-    glazes = glaze.belief(df, H, gen_var=gen_var)
+    glazes = glaze.belief(df, H, gen_var=gen_var, point_message=None)
     glazesdf = pd.DataFrame(glazes, columns=['belief'])
     df = pd.concat([df, glazesdf], axis=1)
-    return df
-
-
-def fill_decbel(df):
-    """
-    Fills belief fields at decision trials.
-    """
-    decision_indices = df.loc[df.message == 'decision'].index
-    df.loc[df.message == 'decision', 'belief'] = \
-        df.loc[decision_indices - 1, 'belief'].values
-    return df
-
-
-def fill_decrule(df):
-    """
-    Fills rule field at decision trials.
-    """
-    decision_indices = df.loc[df.message == 'decision'].index
-    df.loc[df.message == 'decision', 'rule'] = \
-        df.loc[decision_indices - 1, 'rule'].values
     return df
 
 
@@ -97,11 +77,14 @@ def dec_choice(df, gauss=1):
     return df
 
 
-def complete(df, H, gen_var=1, gauss=1):
+def complete(df, H, gen_var=1, gauss=1, V=1, method='sign'):
     """
     Completes simulated dataframe with message, location, belief, rule and correctness
     """
-    return dec_choice(fill_decrule(fill_decbel(add_belief(df, H, gen_var=gen_var))), gauss=gauss)
+    if method == 'sign':
+        return dec_choice(add_belief(df, H, gen_var=gen_var), gauss=gauss)
+    if method == 'erf':
+        return dec_choice_depr(add_belief(df, H, gen_var=gen_var), V=V)
 
 
 def cer(df, H):
