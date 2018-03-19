@@ -18,7 +18,8 @@ def fast_sim(x, tH=1 / 70, nodec=5, isi=35.):
     nodec = minimum points between decisions. Nodec points are shown, after that 'isi' determines decision probability.
     """
     inter_choice_dists = np.cumsum(expon.rvs(scale=1 / (1 / isi), size=1000))
-    inter_choice_dists = np.array([int(j + nodec + nodec * (np.where(inter_choice_dists == j)[0])) for j in inter_choice_dists])  # adds 5 (nodec) points between every decision
+    inter_choice_dists = np.array([int(j + nodec + nodec * (np.where(inter_choice_dists == j)[0]))
+                                   for j in inter_choice_dists])  # adds 5 (nodec) points between every decision
     inter_choice_dists = inter_choice_dists[inter_choice_dists < x]
 
     mus = []
@@ -80,7 +81,7 @@ def dec_choice(df, V=1):
     '''
     Chooses at decision trials between 0 ('left') and 1 ('right') based on belief and internal noise V.
     '''
-    df['noisy_belief'] = .5 + .5 * erf(df.belief / np.sqrt(2) * V)
+    df['noisy_belief'] = expit(df.belief / V)
     df['choice'] = np.random.rand(len(df))
     df['choice'] = df.noisy_belief > df.choice
     df.choice = df.choice.astype(int)
