@@ -8,8 +8,8 @@ random.seed()
 from scipy.stats import expon, norm
 import math
 
-# SIMULATE POINT LOCATIONS AND DECISION POINTS
 
+# SIMULATE POINT LOCATIONS AND DECISION POINTS
 
 def fast_sim(x, tH=1 / 70, nodec=5, isi=35.):
     """
@@ -76,22 +76,32 @@ def fill_decrule(df):
     return df
 
 
-def dec_choice(df, V=1):
+def dec_choice_depr(df, V=1):
     '''
     Chooses at decision trials between 0 ('left') and 1 ('right') based on belief and internal noise V.
     '''
-    df['noisy_belief'] = .5 + .5 * erf(df.belief / np.sqrt(2) * V)
+    df['noisy_belief'] = .5 + .5 * erf(df.belief / (np.sqrt(2) * V))
     df['choice'] = np.random.rand(len(df))
     df['choice'] = df.noisy_belief > df.choice
     df.choice = df.choice.astype(int)
     return df
 
 
-def complete(df, H, gen_var=1, V=1):
+def dec_choice(df, gauss=1):
+    '''
+    Chooses at decision trials between 0 ('left') and 1 ('right') based on belief and internal noise V.
+    '''
+    df['noisy_belief'] = df.belief + np.random.normal(scale=gauss, size=len(df))
+    df['choice'] = df.noisy_belief > 0
+    df.choice = df.choice.astype(int)
+    return df
+
+
+def complete(df, H, gen_var=1, gauss=1):
     """
     Completes simulated dataframe with message, location, belief, rule and correctness
     """
-    return dec_choice(fill_decrule(fill_decbel(add_belief(df, H, gen_var=gen_var))), V=V)
+    return dec_choice(fill_decrule(fill_decbel(add_belief(df, H, gen_var=gen_var))), gauss=gauss)
 
 
 def cer(df, H):
