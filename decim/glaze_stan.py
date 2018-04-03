@@ -1,4 +1,4 @@
-import glaze2 as gl
+from decim import glaze2 as gl
 import numpy as np
 import pandas as pd
 import math

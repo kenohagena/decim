@@ -1,7 +1,6 @@
-import glaze2 as gl
 import numpy as np
-import pandas as pd
-import math
+
+from decim import glaze2 as gl
 
 # no prior so far
 
