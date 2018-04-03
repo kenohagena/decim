@@ -1,10 +1,11 @@
-from pyedfread import edf
-from pyedfread import edfread
+import math
 import numpy as np
 import pandas as pd
+
 from glob import glob
 from os.path import join
-import math
+from pyedfread import edf
+from pyedfread import edfread
 from scipy import signal
 
 

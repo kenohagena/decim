@@ -1,9 +1,9 @@
-import glaze2 as gl
+import math
 import numpy as np
 import pandas as pd
-import math
+
+from decim import glaze2 as gl
 from scipy.special import erf
-import pointsimulation as pt
 
 
 def model_code():
@@ -101,14 +101,16 @@ def likelihood(data, parameters):
             b = gl.LLR(value, sigma=parameters['gen_var'])
             belief[i] = .5 + .5 * erf(b / math.sqrt(2 * parameters['V']))
         else:
-            b = gl.prior(belief[i - 1], parameters['H']) + gl.LLR(value, sigma=parameters['gen_var'])
+            b = gl.prior(belief[i - 1], parameters['H']) + \
+                gl.LLR(value, sigma=parameters['gen_var'])
             belief[i] = .5 + .5 * erf(b / math.sqrt(2 * parameters['V']))
     model_decs = belief[decision_indices]
     df = pd.DataFrame({'model': model_decs.astype(
         float), 'data': decisions.astype(float)})
     df['p'] = np.nan
     for i, row in df.iterrows():
-        row.p = math.pow(row.model, row[0]) * math.pow((1 - row.model), (1 - row[0]))
+        row.p = math.pow(row.model, row[0]) * \
+            math.pow((1 - row.model), (1 - row[0]))
     return math.log(df.product(axis=0)['p'])
 
 

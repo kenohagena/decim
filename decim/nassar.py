@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-from glob import glob
-from os.path import join
+
+
+from decim import glaze2 as gl
 from scipy.io import loadmat
-import glaze2 as gl
-import math
+
 
 sessions = {1: 'A', 2: 'B', 3: 'C'}
 

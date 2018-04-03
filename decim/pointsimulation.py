@@ -1,12 +1,15 @@
 import numpy as np
 import pandas as pd
-import glaze2 as glaze
 import random
+
+from decim import glaze2 as glaze
 from scipy import optimize as opt
-from scipy.special import expit, erf
+from scipy.special import erf
+from scipy.special import expit
 random.seed()
-from scipy.stats import expon, norm
-import math
+from scipy.stats import expon
+from scipy.stats import norm
+
 
 
 # SIMULATE POINT LOCATIONS AND DECISION POINTS

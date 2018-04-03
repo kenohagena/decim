@@ -1,5 +1,5 @@
 import pystan
-import decim 
+import decim
 from decim import pointsimulation as pt
 from decim import pystan_workflow as pw
 from decim import glaze_stan as gs
@@ -24,6 +24,7 @@ def keys():
     for gen_var in [1, 1.5, 2, 2.5, 3, 3.5]:
         for i in range(20):
             yield(.015, 1, gen_var, i, 'gen_var')
+
 
 def execute(H, V, gv, i, var):
     model_file = decim.get_data('stan_models/inv_glaze_b.stan')

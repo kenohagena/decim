@@ -2,7 +2,7 @@ from glob import glob
 from os.path import join
 from scipy.io import loadmat
 import numpy as np
-import glaze2 as gl
+from decim import glaze2 as gl
 import difflib
 import pandas as pd
 
