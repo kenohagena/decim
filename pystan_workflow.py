@@ -16,7 +16,7 @@ import numpy as np
 
 class fit_result(object):
 
-    def __init__(self, fit, name, parameters):
+    def __init__(self, fit, name, parameters, path=None):
         '''
         fit: StanFit4model instance, result of stan sampling
         name: 'str', e.g. 'subject_session'
@@ -24,6 +24,7 @@ class fit_result(object):
         self.fit = fit
         self.name = name
         self.parameters = parameters
+        self.path = path
 
     def summary(self):
         '''
@@ -38,8 +39,7 @@ class fit_result(object):
 
         Chainwise can define parameters, for which samples separately per chain are extracted.
         '''
-        self.samples = self.fit.extract()
-        self.sample_df = pd.DataFrame({parameter: self.fit[parameter] for parameter in self.parameters})
+        self.sample_df = pd.DataFrame({parameter: self.fit.extract(parameter)[parameter] for parameter in self.parameters})
         if chainwise == True:
             self.chain_samples = {}
             for parameter in self.parameters:
@@ -48,12 +48,13 @@ class fit_result(object):
                 self.chain_samples[parameter] = ex[:, :, position]
             self.chain_samples = pd.DataFrame(self.chain_samples)
 
-    def to_csv(self, samples=False, chainwise=False):
+    def to_csv(self, summary=False, samples=False, chainwise=False):
         '''
         Save as csv...
         '''
-        self.summary.to_csv('summary_{}.csv'.format(self.name), index=True)
+        if summary==True:
+            self.summary.to_csv('{0}summary_{1}.csv'.format(self.path, self.name), index=True)
         if samples == True:
-            self.sample_df.to_csv('samples_{}.csv'.format(self.name), index=False)
+            self.sample_df.to_csv('{0}samples_{1}.csv'.format(self.path, self.name), index=False)
         if chainwise == True:
             self.chain_samples.to_csv('samples_chain_{}.csv'.format(self.name), index=False)
