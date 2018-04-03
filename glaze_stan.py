@@ -6,65 +6,6 @@ from scipy.special import erf
 import pointsimulation as pt
 
 
-def model_code():
-    '''
-    Returns stan modelling code for glaze model for multiple blocks in one session.
-    '''
-    glaze_code = """
-    data {
-        int<lower=0> B; // number of blocks
-        int b[B+1]; // integer array with indices of last point locations of block
-        int<lower=0> I; // number of decision trials
-        int<lower=0> N; // number of point locations
-        int<lower=0, upper=1> y[I]; // subjects answer (0 or 1)
-        vector[N] x; // vector with N point locations
-        int D[I]; // integer array with indices of decision point locations
-    }
-    parameters {
-        real<lower=0.0001, upper=0.9999> H; //Hazardrate used in glaze
-        real<lower=0.1> V; //Variance used in glaze
-        real<lower=0.1, upper=9.9> gen_var; //Variance used in glaze
-    }
-    transformed parameters {
-        real psi[N];
-        real choice_value[N];
-        real llr;
-
-        for (i in 1:B) {
-            llr = normal_lpdf(x[b[i]+1] | 0.5, 1/sqrt(25-gen_var*2.5)) - \
-                              normal_lpdf(x[b[i]+1] | -0.5, 1/sqrt(25-gen_var*2.5));
-            //print(llr);
-            //print(gen_var);
-            psi[b[i]+1] = llr;
-            choice_value[b[i]+1] = 0.5+0.5*erf(psi[b[i]+1]/(sqrt(2)*1/(10-V)));
-
-            for (n in (b[i]+2):b[i+1]) {
-
-                llr = normal_lpdf(x[n] | 0.5, 1/sqrt(25-gen_var*2.5)) - \
-                                  normal_lpdf(x[n] | -0.5, 1/sqrt(25-gen_var*2.5));
-                psi[n] = psi[n-1] + log( (1 - H) / H + exp(-psi[n-1]))
-                        - log((1 - H) / H + exp(psi[n-1]));
-
-                psi[n] = (psi[n] + llr);
-                choice_value[n] = 0.5+0.5*erf(psi[n]/(sqrt(2)*1/(10-V)));
-                //print(choice_value[n]);
-                }
-        }
-        //print("H: ", H, " gen_var: ", gen_var, " V: ", V)
-    }
-
-    model {
-        H ~ uniform(0.0001, 0.9999); // T[0.0001,0.9999]; //prior on H from truncated normal
-        V ~ normal(9, 0.5); //gamma(1.1, 10);  // Gamma centered on 1 covering until ~60
-        gen_var ~ normal(9.6, 0.4); // Gamma centered on 1 covering until ~30
-        for (i in 1:I) {
-            y[i] ~ bernoulli(choice_value[D[i]]);
-        }
-    }
-    """
-    return glaze_code
-
-
 def stan_data(subject, session, phase, blocks, path):
     '''
     Returns dictionary with data that fits requirement of stan model.
@@ -101,9 +42,9 @@ def stan_data(subject, session, phase, blocks, path):
     data = {
         'I': dec_count,
         'N': point_count,
-        'y': decisions,
+        'obs_decisions': decisions,
         'x': point_locs,
-        'D': dec_indices,
+        'obs_idx': dec_indices,
         'B': len(blocks),
         'b': np.cumsum(lp)
     }
@@ -112,20 +53,18 @@ def stan_data(subject, session, phase, blocks, path):
 
 def data_from_df(df):
     '''
-    Returns dictionary with data that fits requirement of stan model.
-
-    Takes subject, session, phase, list of blocks and filepath.
+    Returns stan ready data dict from pointsimulation dataframe.
     '''
     decisions = df.loc[df.message == 'decision']
-    points = df.loc[df.message == 'GL_TRIAL_LOCATION']
     data = {
         'I': len(decisions),
-        'N': len(points),
-        'y': decisions.choice.values,
-        'x': points.value.values,
-        'D': [int(j - (np.where(decisions.index.values == j)[0])) for j in decisions.index.values],
+        'N': len(df),
+        'obs_decisions': decisions.choice.values,
+        'obs_idx': np.array(decisions.index.values).astype(int) + 1,
+        'x': df.value.values,
         'B': 1,
-        'b': [0, len(points)]}
+        'b': np.array([0, len(df)]).astype(int)
+    }
     return data
 
 
@@ -153,36 +92,6 @@ def likelihood(data, parameters):
     for i, row in df.iterrows():
         row.p = math.pow(row.model, row[0]) * math.pow((1 - row.model), (1 - row[0]))
     return math.log(df.product(axis=0)['p'])
-
-
-def inv_transV(Vt):
-    '''
-    Takes transformed V, returns original parameter space.
-    '''
-    return 1 / (10 - Vt)
-
-
-def inv_transGV(GVt):
-    '''
-    takes transformed generative variance, returns original.
-    '''
-    return 1 / (25 - GVt * 2.5)**.5
-
-
-def transV(V):
-    '''
-    Input: original V
-    Return: transformed
-    '''
-    return -1 / V + 10
-
-
-def transGV(GV):
-    '''
-    Input: original gen_var
-    Return: transformed
-    '''
-    return -1 / 2.5 * (1 / GV)**2 + 10
 
 
 __version__ = '2.0'
