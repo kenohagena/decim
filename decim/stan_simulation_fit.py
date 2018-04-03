@@ -1,7 +1,8 @@
 import pystan
-import pointsimulation as pt
-import pystan_workflow as pw
-import glaze_stan as gs
+import decim 
+from decim import pointsimulation as pt
+from decim import pystan_workflow as pw
+from decim import glaze_stan as gs
 
 # SIMULATE DATA
 rH = 1 / 70
@@ -25,7 +26,8 @@ def keys():
             yield(.015, 1, gen_var, i, 'gen_var')
 
 def execute(H, V, gv, i, var):
-    sm = pystan.StanModel(file='inv_glaze_b.stan')
+    model_file = decim.get_data('stan_models/inv_glaze_b.stan')
+    sm = pystan.StanModel(file=model_file)
     points = pt.fast_sim(trials, isi=isi)
     data = pt.complete(points, V=V, gen_var=gv, H=H, method='inverse')
     data = gs.data_from_df(data)
