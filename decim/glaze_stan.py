@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import math
 from scipy.special import erf
-import pointsimulation as pt
+from decim import pointsimulation as pt
 
 
 def model_code():
