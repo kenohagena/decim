@@ -16,15 +16,13 @@ import numpy as np
 
 class fit_result(object):
 
-    def __init__(self, fit, name, parameters, path=None):
+    def __init__(self, fit, parameters):
         '''
         fit: StanFit4model instance, result of stan sampling
         name: 'str', e.g. 'subject_session'
         '''
         self.fit = fit
-        self.name = name
         self.parameters = parameters
-        self.path = path
 
     def summary(self):
         '''
@@ -48,13 +46,13 @@ class fit_result(object):
                 self.chain_samples[parameter] = ex[:, :, position]
             self.chain_samples = pd.DataFrame(self.chain_samples)
 
-    def to_csv(self, summary=False, samples=False, chainwise=False):
+    def to_csv(self, name, path='', summary=False, samples=False, chainwise=False):
         '''
         Save as csv...
         '''
         if summary==True:
-            self.summary.to_csv('{0}summary_{1}.csv'.format(self.path, self.name), index=True)
+            self.summary.to_csv('{0}summary_{1}.csv'.format(path, name), index=True)
         if samples == True:
-            self.sample_df.to_csv('{0}samples_{1}.csv'.format(self.path, self.name), index=False)
+            self.sample_df.to_csv('{0}samples_{1}.csv'.format(path, name), index=False)
         if chainwise == True:
-            self.chain_samples.to_csv('samples_chain_{}.csv'.format(self.name), index=False)
+            self.chain_samples.to_csv('samples_chain_{}.csv'.format(name), index=False)
