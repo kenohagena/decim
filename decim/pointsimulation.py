@@ -62,7 +62,9 @@ def add_belief(df, H, gen_var=1):
 
 def dec_choice_depr(df, V=1):
     '''
-    Chooses at decision trials between 0 ('left') and 1 ('right') based on belief and internal noise V.
+    Chooses at decision trials between 0 ('left') and 1 ('right').
+
+    Based on belief and internal noise V.
     '''
     df['noisy_belief'] = .5 + .5 * erf(df.belief / (np.sqrt(2) * V))
     df['choice'] = np.random.rand(len(df))
@@ -73,7 +75,9 @@ def dec_choice_depr(df, V=1):
 
 def dec_choice(df, gauss=1):
     '''
-    Chooses at decision trials between 0 ('left') and 1 ('right') based on belief and internal noise V.
+    Chooses at decision trials between 0 ('left') and 1 ('right').
+
+    Based on belief and gaussian noise.
     '''
     df['noisy_belief'] = df.belief + np.random.normal(scale=gauss, size=len(df))
     df['choice'] = df.noisy_belief > 0
@@ -83,7 +87,9 @@ def dec_choice(df, gauss=1):
 
 def dec_choice_inv(df, V=1):
     '''
-    Chooses at decision trials between 0 ('left') and 1 ('right') based on belief and internal noise V.
+    Chooses at decision trials between 0 ('left') and 1 ('right').
+
+    Based on belief and internal noise V.
     '''
     df['noisy_belief'] = expit(df.belief / V)
     df['choice'] = np.random.rand(len(df))
