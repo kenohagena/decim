@@ -61,9 +61,11 @@ class fit_result(object):
         Save as csv...
         '''
         if just_modes is True:
-            return {'{}'.format(parameter):
+            dict = {'{}'.format(parameter):
                     ds.mode(self.sample_df[parameter], 50)
                     for parameter in self.parameters}
+            dict['name'] = name
+            return dict
         if summary is True:
             self.summary.to_csv('{0}summary_{1}.csv'.format(path, name),
                                 index=True)
