@@ -2,6 +2,7 @@ import pystan
 # import stan_utility  # https://github.com/betanalpha/jupyter_case_studies
 import pandas as pd
 import numpy as np
+import decim.statmisc as ds
 
 '''
 1. import model and data (e.g. from glaze_stan.py)
@@ -29,30 +30,47 @@ class fit_result(object):
         Get summary (over all chains) of fit and turn into pandas DataFrame.
         '''
         e = pystan.misc._summary(self.fit)
-        self.summary = pd.DataFrame(e['summary'], columns=e['summary_colnames'], index=e['summary_rownames'])
+        self.summary = pd.DataFrame(e['summary'],
+                                    columns=e['summary_colnames'],
+                                    index=e['summary_rownames'])
 
     def samples(self, chainwise=False):
         '''
-        Extracts diciotnary with permuted (chains are concatenated and warmup is discarded) sampled distribution of all parameters.
+        Extracts diciotnary with permuted
+        (=chains are concatenated and warmup is discarded)
+        sampled distribution of all parameters.
 
-        Chainwise can define parameters, for which samples separately per chain are extracted.
+        Chainwise defines parameters, for which chains are separated.
         '''
-        self.sample_df = pd.DataFrame({parameter: self.fit.extract(parameter)[parameter] for parameter in self.parameters})
+        self.sample_df = pd.DataFrame({parameter: self.fit.extract(parameter)
+                                      [parameter] for parameter
+                                      in self.parameters})
         if chainwise == True:
             self.chain_samples = {}
             for parameter in self.parameters:
-                position = self.summary.reset_index().loc[self.summary.index == parameter].index[0]
+                position = self.summary.reset_index().loc[self.summary.index ==
+                                                          parameter].index[0]
                 ex = self.fit.extract(permuted=False)
                 self.chain_samples[parameter] = ex[:, :, position]
             self.chain_samples = pd.DataFrame(self.chain_samples)
 
-    def to_csv(self, name, path='', summary=False, samples=False, chainwise=False):
+    def to_csv(self, name, path='', summary=False,
+               samples=False, chainwise=False,
+               just_modes=False):
         '''
         Save as csv...
         '''
-        if summary==True:
-            self.summary.to_csv('{0}summary_{1}.csv'.format(path, name), index=True)
-        if samples == True:
-            self.sample_df.to_csv('{0}samples_{1}.csv'.format(path, name), index=False)
-        if chainwise == True:
-            self.chain_samples.to_csv('samples_chain_{}.csv'.format(name), index=False)
+        if just_modes is True:
+            pd.Series({'{}'.format(parameter):
+                       ds.mode(self.sample_df[parameter], 50)
+                       for parameter in self.parameters}).\
+                       to_csv('modes_{}.csv'.format(name))
+        if summary is True:
+            self.summary.to_csv('{0}summary_{1}.csv'.format(path, name),
+                                index=True)
+        if samples is True:
+            self.sample_df.to_csv('{0}samples_{1}.csv'.format(path, name),
+                                  index=False)
+        if chainwise is True:
+            self.chain_samples.to_csv('samples_chain_{}.csv'.format(name),
+                                      index=False)
