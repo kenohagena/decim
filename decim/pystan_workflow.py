@@ -61,10 +61,9 @@ class fit_result(object):
         Save as csv...
         '''
         if just_modes is True:
-            pd.Series({'{}'.format(parameter):
-                       ds.mode(self.sample_df[parameter], 50)
-                       for parameter in self.parameters}).\
-                       to_csv('modes_{}.csv'.format(name))
+            return {'{}'.format(parameter):
+                    ds.mode(self.sample_df[parameter], 50)
+                    for parameter in self.parameters}
         if summary is True:
             self.summary.to_csv('{0}summary_{1}.csv'.format(path, name),
                                 index=True)
