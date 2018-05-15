@@ -32,12 +32,12 @@ def fix_keys():
         trials = np.round(60 * 70 / (0.4 + 2. / isi)).astype(int)
         for V in [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]:
             for H in Hs:
-                for i in range(75):
+                for i in range(1):
                     yield(H, V, 1, i, 'V', models['gvfix'], 'gvfix', ['H', 'V'], isi, trials)
 
         for gen_var in [1, 1.5, 2, 2.5, 3, 3.5]:
             for H in Hs:
-                for i in range(75):
+                for i in range(1):
                     yield(H, 1, gen_var, i, 'gen_var', models['vfix'], 'vfix', ['H', 'gen_var'], isi, trials)
 
 
@@ -91,6 +91,6 @@ def grouper(iterable, n, fillvalue=None):
 
 def submit():
     from decim import slurm_submit as slu
-    for ii, chunk in enumerate(grouper(fix_keys(), 1500)):
-        slu.pmap(par_execute, ii, chunk, walltime='00:00:30',
+    for ii, chunk in enumerate(grouper(fix_keys(), 300)):
+        slu.pmap(par_execute, ii, chunk, walltime='12:00:00',
                  memory=5, nodes='1', tasks=16, name='PRECOVERY')

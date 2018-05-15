@@ -11,7 +11,7 @@ import errno
 
 
 def submit(walltime, memory, tmpdir, cwd, script, name,
-           nodes=1, tasks=1,
+           nodes=1, tasks=16,
            shellfname=None):
     '''
     Submit a script to torque
