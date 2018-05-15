@@ -80,7 +80,7 @@ from %s import %s
         return script.name
 
 
-def pmap(func, args, walltime=12, memory=10, logdir=None, tmpdir=None,
+def pmap(func, *args, walltime=12, memory=10, logdir=None, tmpdir=None,
          name=None, tasks=16, env=None, nodes=1):
     if name is None:
         name = func.__name__
@@ -95,7 +95,7 @@ def pmap(func, args, walltime=12, memory=10, logdir=None, tmpdir=None,
         tmpdir = join(home, 'cluster_logs', 'tmp')
         mkdir_p(tmpdir)
     out = []
-    script = to_script(func, tmpdir, args)
+    script = to_script(func, tmpdir, *args)
     print(script)
     pid = submit(walltime=walltime, memory=memory, cwd=logdir,
                  tmpdir=tmpdir, script=script, name=name, nodes=nodes,
