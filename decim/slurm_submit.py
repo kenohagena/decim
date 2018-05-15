@@ -76,7 +76,7 @@ from {module} import {function}
                       'function': func.__name__,
                       'args': args})
         script.write(code)
-        return script.name
+        return str(script.name)
 
 
 def pmap(func, *args, walltime=12, memory=10, logdir=None, tmpdir=None,
