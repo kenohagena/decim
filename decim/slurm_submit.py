@@ -50,7 +50,7 @@ def submit(walltime, memory, tmpdir, cwd, script, name,
     srun python3 {script}
     '''.format(**{'script': script})
     command = sbatch_directives + environment_variables
-    with tempfile.NamedTemporaryFile(delete=False, dir=tmpdir,
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, dir=tmpdir,
                                      prefix='delete_me_tmp') as shellfname:
         shellfname.write(command)
         shellfname = shellfname.name
