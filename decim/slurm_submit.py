@@ -18,21 +18,21 @@ def submit(walltime, memory, tmpdir, cwd, script, name,
     '''
     print('script in submit {}'.format(script))
     sbatch_directives = '''
-    #!/bin/sh
-    #SBATCH --job-name={name}
-    #SBATCH --nodes={nodes}
-    #SBATCH --tasks-per-node={tasks}
-    #SBATCH --time={walltime}
-    #SBATCH --export=NONE
-    #SBATCH --memory={memory}
+#!/bin/sh
+#SBATCH --job-name={name}
+#SBATCH --nodes={nodes}
+#SBATCH --tasks-per-node={tasks}
+#SBATCH --time={walltime}
+#SBATCH --export=NONE
+#SBATCH --memory={memory}
 
 
-    cd {cwd}
-    mkdir -p cluster
-    chmod a+rwx cluster
-    #### set journal & error options
-    #SBATCH -error {cwd}/cluster/$SLURM_JOB_ID.o
-    #SBATCH -output {cwd}/cluster/$SLURM_JOB_ID.e
+cd {cwd}
+mkdir -p cluster
+chmod a+rwx cluster
+#### set journal & error options
+#SBATCH -error {cwd}/cluster/$SLURM_JOB_ID.o
+#SBATCH -output {cwd}/cluster/$SLURM_JOB_ID.e
     '''.format(**{'walltime': walltime,
                   'nodes': nodes,
                   'memory': memory,
@@ -41,13 +41,13 @@ def submit(walltime, memory, tmpdir, cwd, script, name,
                   'cwd': cwd})
 
     environment_variables = '''
-    module purge
-    module load env
-    module load site/slurm
+module purge
+module load env
+module load site/slurm
 
 
 
-    srun python3 {script}
+srun python3 {script}
     '''.format(**{'script': script})
     command = sbatch_directives + environment_variables
     with tempfile.NamedTemporaryFile(mode='w', delete=False, dir=tmpdir,
