@@ -69,7 +69,7 @@ def to_script(func, tmpdir, *args):
     Write a simple stub python function that calls this function.
     '''
 
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, dir=tmpdir,
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, dir='/home/faty014/',
                                      prefix='delete_me_tmp') as script:
         code = """
 from {module} import {function}
@@ -87,7 +87,7 @@ def pmap(func, *args, walltime=12, memory=10, tmpdir=None,
         name = func.__name__
     if tmpdir is None:
         from os.path import join
-        tmp=tempfile.TemporaryDirectory().name
+        tmp = tempfile.TemporaryDirectory().name
         tmpdir = join(tmp, 'cluster_logs', 'tmp')
         logdir = join(tmp, 'cluster_logs', func.__name__)
         mkdir_p(tmpdir)
