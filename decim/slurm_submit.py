@@ -52,8 +52,8 @@ srun python3 {script}
 cp -r tmpdir /work/faty014
     '''.format(**{'script': script})
     command = sbatch_directives + environment_variables
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, dir=tmpdir,
-                                     prefix='delete_me_tmp') as shellfname:
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, dir='/home/faty014/',
+                                     prefix='test_1') as shellfname:
         shellfname.write(command)
         shellfname = shellfname.name
     command = "sbatch %s" % (shellfname)
