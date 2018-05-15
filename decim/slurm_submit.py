@@ -73,8 +73,8 @@ def to_script(func, tmpdir, *args):
 from {module} import {function}
 {function}{args}
         """.format(**{'module': func.__module__,
-                  'function': func.__name__,
-                  'args': args})
+                      'function': func.__name__,
+                      'args': args})
         script.write(code)
         return script.name
 
@@ -95,7 +95,7 @@ def pmap(func, *args, walltime=12, memory=10, logdir=None, tmpdir=None,
         mkdir_p(tmpdir)
     out = []
     script = to_script(func, tmpdir, *args)
-    print(script)
+    print('script in pmap = {}'.format(script))
     pid = submit(walltime=walltime, memory=memory, cwd=logdir,
                  tmpdir=tmpdir, script=script, name=name, nodes=nodes,
                  tasks=tasks)
