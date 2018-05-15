@@ -27,8 +27,8 @@ def submit(walltime, memory, tmpdir, logdir, workdir, script, name,
 #SBATCH --partition=std
 #SBATCH --mail-user=kenohagena@gmail.com
 #SBATCH --mail-type=ALL
-#SBATCH -error {logdir}/slurm_%j.out
-#SBATCH -output {logdir}/slurm_%j.err
+#SBATCH -error={logdir}/slurm_%j.out
+#SBATCH -output={logdir}/slurm_%j.err
 
 source /sw/modules/rrz-modules.sh
 
