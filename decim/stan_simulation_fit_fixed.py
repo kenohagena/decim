@@ -90,7 +90,7 @@ def grouper(iterable, n, fillvalue=None):
 
 
 def submit():
-    import slurm_submit as slu
+    from decim import slurm_submit as slu
     for ii, chunk in enumerate(grouper(fix_keys(), 1500)):
         slu.pmap(func=par_execute,
                  args=chunk, walltime='00:00:30',
