@@ -10,7 +10,7 @@ import os
 import errno
 
 
-def submit(walltime, memory, tmpdir, cwd, script, name,
+def submit(walltime, memory, tmpdir, logdir, workdir, script, name,
            nodes=1, tasks=16,
            shellfname=None):
     '''
@@ -23,40 +23,39 @@ def submit(walltime, memory, tmpdir, cwd, script, name,
 #SBATCH --tasks-per-node={tasks}
 #SBATCH --time={walltime}
 #SBATCH --export=NONE
-#SBATCH --mem={memory}g
+#SBATCH --mem={memory}GB
 #SBATCH --partition=std
 #SBATCH --mail-user=kenohagena@gmail.com
 #SBATCH --mail-type=ALL
+#SBATCH -error {logdir}/slurm_%j.out
+#SBATCH -output {logdir}/slurm_%j.err
+
+source /sw/modules/rrz-modules.sh
 
 
-
-cd /work/faty014/
-mkdir -p cluster
-chmod a+rwx cluster
-#### set journal & error options
-#SBATCH -error /work/faty014/cluster/$SLURM_JOB_ID.o
-#SBATCH -output /work/faty014/cluster/$SLURM_JOB_ID.e
-
-cd {cwd}
+cd {workdir}
     '''.format(**{'walltime': walltime,
                   'nodes': nodes,
                   'memory': memory,
                   'tasks': tasks,
                   'name': name,
-                  'cwd': cwd})
+                  'workdir': workdir,
+                  'logdir': logdir})
 
     environment_variables = '''
 module purge
 module load env
-module load site/slurm
+module load site/hummel
+source ~/bashrc
 
-srun python3 {script}
+python3 {script}
 
-cp -r tmpdir /work/faty014
-    '''.format(**{'script': script})
+cp -r {workdir} /work/faty014
+    '''.format(**{'script': script,
+                  'workdir': workdir})
     command = sbatch_directives + environment_variables
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, dir='/home/faty014/',
-                                     prefix='test_1') as shellfname:
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, dir=tmpdir,
+                                     prefix='sbatch_script') as shellfname:
         shellfname.write(command)
         shellfname = shellfname.name
     command = "sbatch %s" % (shellfname)
@@ -72,8 +71,8 @@ def to_script(func, tmpdir, *args):
     Write a simple stub python function that calls this function.
     '''
 
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, dir='/home/faty014/',
-                                     prefix='delete_me_tmp') as script:
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, dir=tmpdir,
+                                     prefix='py_script') as script:
         code = """
 from {module} import {function}
 {function}{args}
@@ -91,16 +90,17 @@ def pmap(func, *args, walltime=12, memory=10, tmp=None,
     if tmp is None:
         from os.path import join
         tmp = tempfile.TemporaryDirectory().name
-    tmpdir = join(tmp, 'cluster_logs', 'tmp')
-    logdir = join(tmp, 'cluster_logs', func.__name__)
+    workdir = join(tmp, name)
+    tmpdir = join(workdir, 'tmp')
+    logdir = join(workdir, 'cluster_logs')
     mkdir_p(tmpdir)
     mkdir_p(logdir)
     out = []
     script = to_script(func, tmpdir, *args)
     print('script in pmap = {}'.format(script))
-    pid = submit(walltime=walltime, memory=memory, cwd=tmp,
+    pid = submit(walltime=walltime, memory=memory, logdir=logdir,
                  tmpdir=tmpdir, script=script, name=name, nodes=nodes,
-                 tasks=tasks)
+                 tasks=tasks, workdir=workdir)
     out.append(pid)
     return out
 
