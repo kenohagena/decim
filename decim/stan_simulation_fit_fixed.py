@@ -93,5 +93,5 @@ def submit():
     from decim import slurm_submit as slu
     for ii, chunk in enumerate(grouper(fix_keys(), 1500)):
         slu.pmap(func=par_execute,
-                 args=[ii, chunk], walltime='00:00:30',
+                 args=(ii, chunk), walltime='00:00:30',
                  memory=5, nodes='1', tasks=16, name='PRECOVERY')
