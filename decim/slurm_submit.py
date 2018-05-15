@@ -72,7 +72,7 @@ def to_script(func, tmpdir, *args):
         code = """
 print('Parameters:', '%s', '%s')
 from %s import %s
-%s(*%s)
+%s(%s)
         """ % (str(args).replace("'", ''), func.__name__,
                func.__module__, func.__name__,
                func.__name__, str(args))
