@@ -45,8 +45,6 @@ module purge
 module load env
 module load site/slurm
 
-cd tmpdir
-
 srun python3 {script}
 
 cp -r tmpdir /work/faty014
@@ -81,21 +79,21 @@ from {module} import {function}
         return str(script.name)
 
 
-def pmap(func, *args, walltime=12, memory=10, tmpdir=None,
+def pmap(func, *args, walltime=12, memory=10, tmp=None,
          name=None, tasks=16, env=None, nodes=1):
     if name is None:
         name = func.__name__
-    if tmpdir is None:
+    if tmp is None:
         from os.path import join
         tmp = tempfile.TemporaryDirectory().name
-        tmpdir = join(tmp, 'cluster_logs', 'tmp')
-        logdir = join(tmp, 'cluster_logs', func.__name__)
-        mkdir_p(tmpdir)
-        mkdir_p(logdir)
+    tmpdir = join(tmp, 'cluster_logs', 'tmp')
+    logdir = join(tmp, 'cluster_logs', func.__name__)
+    mkdir_p(tmpdir)
+    mkdir_p(logdir)
     out = []
     script = to_script(func, tmpdir, *args)
     print('script in pmap = {}'.format(script))
-    pid = submit(walltime=walltime, memory=memory, cwd=logdir,
+    pid = submit(walltime=walltime, memory=memory, cwd=tmp,
                  tmpdir=tmpdir, script=script, name=name, nodes=nodes,
                  tasks=tasks)
     out.append(pid)
