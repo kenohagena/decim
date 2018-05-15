@@ -54,7 +54,7 @@ cp -r {workdir} /work/faty014
     '''.format(**{'script': script,
                   'workdir': workdir})
     command = sbatch_directives + environment_variables
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, dir=tmpdir,
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, dir='/work/faty014/',
                                      prefix='sbatch_script') as shellfname:
         shellfname.write(command)
         shellfname = shellfname.name
@@ -71,7 +71,7 @@ def to_script(func, tmpdir, *args):
     Write a simple stub python function that calls this function.
     '''
 
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, dir=tmpdir,
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, dir='/work/faty014/',
                                      prefix='py_script') as script:
         code = """
 from {module} import {function}
