@@ -42,7 +42,7 @@ def fix_keys():
 
 
 def par_execute(ii, chunk):
-    print(ii, len(chunk))
+    #print(ii, len(chunk))
     chunk = [arg for arg in chunk if arg is not None]
     with Pool(16) as p:
         values = p.starmap(execute, chunk)

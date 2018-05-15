@@ -70,12 +70,11 @@ def to_script(func, tmpdir, *args):
     with tempfile.NamedTemporaryFile(mode='w', delete=False, dir=tmpdir,
                                      prefix='delete_me_tmp') as script:
         code = """
-print('Parameters:', '%s', '%s')
-from %s import %s
-%s(%s)
-        """ % (str(args).replace("'", ''), func.__name__,
-               func.__module__, func.__name__,
-               func.__name__, str(args))
+from {module} import {function}
+{function}{args}
+        """.format(**{'module': func.__module__,
+                  'function': func.__name__,
+                  'args': args})
         script.write(code)
         return script.name
 
