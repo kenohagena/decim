@@ -27,12 +27,14 @@ def submit(walltime, memory, tmpdir, cwd, script, name,
 #SBATCH --partition=std
 
 
-cd {cwd}
+cd /work/faty014/
 mkdir -p cluster
 chmod a+rwx cluster
 #### set journal & error options
-#SBATCH -error {cwd}/cluster/$SLURM_JOB_ID.o
-#SBATCH -output {cwd}/cluster/$SLURM_JOB_ID.e
+#SBATCH -error /work/faty014/cluster/$SLURM_JOB_ID.o
+#SBATCH -output /work/faty014/cluster/$SLURM_JOB_ID.e
+
+cd {cwd}
     '''.format(**{'walltime': walltime,
                   'nodes': nodes,
                   'memory': memory,
