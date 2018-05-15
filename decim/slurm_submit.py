@@ -16,7 +16,7 @@ def submit(walltime, memory, tmpdir, cwd, script, name,
     '''
     Submit a script to torque
     '''
-
+    print('script in submit {}'.format(script))
     sbatch_directives = '''
     #!/bin/env python
     #SBATCH --job-name={name}
