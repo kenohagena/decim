@@ -95,13 +95,12 @@ def pmap(func, args, walltime=12, memory=10, logdir=None, tmpdir=None,
         tmpdir = join(home, 'cluster_logs', 'tmp')
         mkdir_p(tmpdir)
     out = []
-    for arg in args:
-        script = to_script(func, tmpdir, *arg)
-        print(script)
-        pid = submit(walltime=walltime, memory=memory, cwd=logdir,
-                     tmpdir=tmpdir, script=script, name=name, nodes=nodes,
-                     tasks=tasks)
-        out.append(pid)
+    script = to_script(func, tmpdir, *arg)
+    print(script)
+    pid = submit(walltime=walltime, memory=memory, cwd=logdir,
+                 tmpdir=tmpdir, script=script, name=name, nodes=nodes,
+                 tasks=tasks)
+    out.append(pid)
     return out
 
 
