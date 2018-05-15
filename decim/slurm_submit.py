@@ -23,8 +23,11 @@ def submit(walltime, memory, tmpdir, cwd, script, name,
 #SBATCH --tasks-per-node={tasks}
 #SBATCH --time={walltime}
 #SBATCH --export=NONE
-#SBATCH --memory={memory}
+#SBATCH --mem={memory}g
 #SBATCH --partition=std
+#SBATCH --mail-user=kenohagena@gmail.com
+#SBATCH --mail-type=ALL
+
 
 
 cd /work/faty014/
