@@ -44,9 +44,11 @@ module purge
 module load env
 module load site/slurm
 
-
+cd tmpdir
 
 srun python3 {script}
+
+cp -r tmpdir /work/faty014
     '''.format(**{'script': script})
     command = sbatch_directives + environment_variables
     with tempfile.NamedTemporaryFile(mode='w', delete=False, dir=tmpdir,
@@ -78,20 +80,17 @@ from {module} import {function}
         return str(script.name)
 
 
-def pmap(func, *args, walltime=12, memory=10, logdir=None, tmpdir=None,
+def pmap(func, *args, walltime=12, memory=10, tmpdir=None,
          name=None, tasks=16, env=None, nodes=1):
     if name is None:
         name = func.__name__
-    if logdir is None:
-        from os.path import expanduser, join
-        home = expanduser("~")
-        logdir = join(home, 'cluster_logs', func.__name__)
-        mkdir_p(logdir)
     if tmpdir is None:
-        from os.path import expanduser, join
-        home = expanduser("~")
-        tmpdir = join(home, 'cluster_logs', 'tmp')
+        from os.path import join
+        tmp=tempfile.TemporaryDirectory().name
+        tmpdir = join(tmp, 'cluster_logs', 'tmp')
+        logdir = join(tmp, 'cluster_logs', func.__name__)
         mkdir_p(tmpdir)
+        mkdir_p(logdir)
     out = []
     script = to_script(func, tmpdir, *args)
     print('script in pmap = {}'.format(script))
