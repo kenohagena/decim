@@ -18,7 +18,7 @@ def submit(walltime, memory, tmpdir, cwd, script, name,
     '''
     print('script in submit {}'.format(script))
     sbatch_directives = '''
-    #!/bin/bash
+    #!/bin/sh
     #SBATCH --job-name={name}
     #SBATCH --nodes={nodes}
     #SBATCH --tasks-per-node={tasks}
