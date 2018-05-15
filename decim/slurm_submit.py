@@ -24,6 +24,7 @@ def submit(walltime, memory, tmpdir, cwd, script, name,
 #SBATCH --time={walltime}
 #SBATCH --export=NONE
 #SBATCH --memory={memory}
+#SBATCH --partition=std
 
 
 cd {cwd}
