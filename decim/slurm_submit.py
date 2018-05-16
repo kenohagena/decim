@@ -81,8 +81,7 @@ from {module} import {function}
         return str(script.name)
 
 
-def pmap(func, *args, walltime=12, memory=10, tmp=None,
-         name=None, tasks=16, env=None, nodes=1):
+def pmap(func, *args, walltime=12, memory=10, tmp=None, name=None, tasks=16, env=None, nodes=1):
     if name is None:
         name = func.__name__
     if tmp is None:
