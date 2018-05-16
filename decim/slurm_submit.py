@@ -37,7 +37,7 @@ source /sw/modules/rrz-modules.sh
                   'nodes': nodes,
                   'memory': memory,
                   'tasks': tasks,
-                  'name': name
+                  'name': name,
                   'logdir': logdir})
 
     environment_variables = '''
