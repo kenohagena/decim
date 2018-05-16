@@ -66,11 +66,11 @@ def execute(H, V, gv, i, var, model, fixed_variable, parameters, isi, trials):
     fit = sm.sampling(data=data, iter=5000, chains=2, n_jobs=1)
     d = {parameter: fit.extract(parameter)[parameter] for parameter in parameters}
     if fixed_variable == 'gvfix':
-        dr = {'vmode': statmisc.mode(d['V'], 50), 'vupper': statmisc.hdi(d['V'][1]), 'vlower': statmisc.hdi(d['V'][0]),
+        dr = {'vmode': statmisc.mode(d['V'], 50), 'vupper': statmisc.hdi(d['V'])[1], 'vlower': statmisc.hdi(d['V'])[0],
               'gvmode': np.nan, 'gvupper': np.nan, 'gvlower': np.nan}
     else:
         dr = {'vmode': np.nan, 'vupper': np.nan, 'vlower': np.nan,
-              'gvmode': statmisc.mode(d['gen_var'], 50), 'gvupper': statmisc.hdi(d['gen_var']), 'gvlower': statmisc.hdi(d['gen_var'])}
+              'gvmode': statmisc.mode(d['gen_var'], 50), 'gvupper': statmisc.hdi(d['gen_var'])[1], 'gvlower': statmisc.hdi(d['gen_var'])[0]}
     dr['true_V'] = V
     dr['true_H'] = H
     dr['true_gen_var'] = gv
