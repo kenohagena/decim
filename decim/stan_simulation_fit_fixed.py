@@ -77,7 +77,7 @@ def execute(H, V, gv, i, var, model, fixed_variable, parameters, isi, trials):
     dr['fixed'] = fixed_variable
     dr['trials'] = total_trials
     dr['isi'] = isi
-    dr['choices'] = len(data['I'])
+    dr['choices'] = data['I']
     dr['hmode'] = statmisc.mode(fit['H'], 50)
     dr['hupper'] = statmisc.hdi(fit['H'])[1]
     dr['hlower'] = statmisc.hdi(fit['H'])[0]
