@@ -44,7 +44,7 @@ source /sw/modules/rrz-modules.sh
 module purge
 module load env
 module load site/hummel
-source ~/bashrc
+source ~/.bashrc
 
 python3 {script}
 
