@@ -47,6 +47,7 @@ def par_execute(ii, chunk):
     with Pool(16) as p:
         values = p.starmap(execute, chunk)
         df = pd.DataFrame(values)
+        print(df)
         df.to_csv('chunk%i.csv' % ii)
 
 
