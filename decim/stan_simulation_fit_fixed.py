@@ -47,7 +47,6 @@ def par_execute(ii, chunk):
     with Pool(16) as p:
         values = p.starmap(execute, chunk)
         df = pd.DataFrame(values)
-        print(df)
         df.to_csv('chunk%i.csv' % ii)
 
 
@@ -66,7 +65,7 @@ def execute(H, V, gv, i, var, model, fixed_variable, parameters, isi, trials):
 
     fit = sm.sampling(data=data, iter=5000, chains=2, n_jobs=1)
     d = {parameter: fit.extract(parameter)[parameter] for parameter in parameters}
-    if fixed_variable == 'vfix':
+    if fixed_variable == 'gvfix':
         dr = {'vmode': statmisc.mode(d['V'], 50), 'vupper': statmisc.hdi(d['V'][1]), 'vlower': statmisc.hdi(d['V'][0]),
               'gvmode': np.nan, 'gvupper': np.nan, 'gvlower': np.nan}
     else:
