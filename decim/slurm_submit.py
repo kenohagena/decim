@@ -33,13 +33,11 @@ def submit(walltime, memory, tmpdir, logdir, workdir, script, name,
 source /sw/modules/rrz-modules.sh
 
 
-cd {workdir}
     '''.format(**{'walltime': walltime,
                   'nodes': nodes,
                   'memory': memory,
                   'tasks': tasks,
-                  'name': name,
-                  'workdir': workdir,
+                  'name': name
                   'logdir': logdir})
 
     environment_variables = '''

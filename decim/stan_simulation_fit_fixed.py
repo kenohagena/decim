@@ -92,5 +92,5 @@ def grouper(iterable, n, fillvalue=None):
 def submit():
     from decim import slurm_submit as slu
     for ii, chunk in enumerate(grouper(fix_keys(), 300)):
-        slu.pmap(par_execute, ii, chunk, walltime='00:10:00',
-                 memory=5, nodes='1', tasks=16, name='PRECOVERY')
+        slu.pmap(par_execute, ii, chunk, walltime='11:30:00',
+                 memory=64, nodes='1', tasks=16, name='PRECOVERY')
