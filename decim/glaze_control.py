@@ -63,9 +63,9 @@ def stan_data_control(subject, session, path, swap=False):
     data = {
         'I': dec_count,
         'N': point_count,
-        'y': decisions.values,
+        'obs_decisions': decisions.values,
         'x': points.values,
-        'D': dec_indices,
+        'obs_idx': dec_indices,
         'B': len(logs),
         'b': np.cumsum(lp)
     }
