@@ -17,7 +17,7 @@ def keys():
 def fit_session(subject, session):
     data = gl.stan_data_control(subject, session, bids_mr)
     model_file = decim.get_data('stan_models/inv_glaze_b_fixgen_var.stan')
-    compilefile = 'inv_glaze_b_fixgen_var_compiled.stan'
+    compilefile = '/work/faty014/inv_glaze_b_fixgen_var_compiled.stan'
     try:
         sm = pickle.load(open(compilefile, 'rb'))
     except IOError:
