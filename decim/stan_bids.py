@@ -1,11 +1,10 @@
 import decim
 import pandas as pd
-import numpy as np
-from os.path import join, expanduser
 import pickle
 from decim import glaze_control as gl
 from itertools import zip_longest
 from multiprocessing import Pool
+import pystan
 bids_mr = '/work/faty014/bids_mr/'
 
 
@@ -18,6 +17,7 @@ def keys():
 def fit_session(subject, session):
     data = gl.stan_data_control(subject, session, bids_mr)
     model_file = decim.get_data('stan_models/inv_glaze_b_fixgen_var.stan')
+    compilefile = 'inv_glaze_b_fixgen_var_compiled.stan'
     try:
         sm = pickle.load(open(compilefile, 'rb'))
     except IOError:
@@ -38,7 +38,7 @@ def par_execute(chunk):
     # print(ii, len(chunk))
     chunk = [arg for arg in chunk if arg is not None]
     with Pool(16) as p:
-        p.starmap(execute, chunk)
+        p.starmap(fit_session, chunk)
 
 
 def submit():
