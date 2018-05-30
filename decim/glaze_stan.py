@@ -34,11 +34,11 @@ def stan_data(subject, session, phase, blocks, path):
     choices = (df.loc[df.message == "CHOICE_TRIAL_RULE_RESP", 'value']
                .astype(float))
     choices = choices.dropna()
-    belief_indices = df.loc[choices.index - 12].index.values
+    belief_indices = df.loc[choices.index].index.values
     ps = df.loc[df.message == 'GL_TRIAL_LOCATION']['value'].astype(float)
     pointinds = np.array(ps.index)
     # '+1' because stan starts counting from 1
-    dec_indices = np.searchsorted(pointinds, belief_indices) + 1
+    dec_indices = np.searchsorted(pointinds, belief_indices)
     data = {
         'I': dec_count,
         'N': point_count,

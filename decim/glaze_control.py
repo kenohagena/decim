@@ -57,9 +57,9 @@ def stan_data_control(subject, session, path, swap=False):
     dec_count = len(decisions)
 
     decisions = decisions.dropna()
-    belief_indices = df.loc[decisions.index - 11].index.values
+    belief_indices = df.loc[decisions.index].index.values
     pointinds = np.array(points.index)
-    dec_indices = np.searchsorted(pointinds, belief_indices) + 1
+    dec_indices = np.searchsorted(pointinds, belief_indices)  # np.searchsorted looks for position where belief index would fit into pointinds
     data = {
         'I': dec_count,
         'N': point_count,
