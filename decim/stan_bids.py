@@ -26,7 +26,7 @@ def fit_session(subject, session):
     fit = sm.sampling(data=data, iter=5000, chains=4, n_jobs=1)
     d = {parameter: fit.extract(parameter)[parameter] for parameter in ['H', 'V']}
     d = pd.DataFrame(d)
-    d.to_csv('sub-{0}_ses-{1}_stanfit.csv'.format(subject, session))
+    d.to_csv('/work/faty014/sub-{0}_ses-{1}_stanfit.csv'.format(subject, session))
 
 
 def grouper(iterable, n, fillvalue=None):
