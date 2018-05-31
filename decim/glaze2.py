@@ -84,7 +84,7 @@ def prior(b_prior, H):
     return psi
 
 
-def belief(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION'):
+def belief(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='message'):
     """
     Returns models belief at a given time.
 
@@ -93,7 +93,7 @@ def belief(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION'):
     if point_message == None:
         locs = df.value
     else:
-        locs = (df.loc[df.message == message, 'value']
+        locs = (df.loc[df['{}'.format(ident)] == point_message, 'value']
                 .astype(float))
     belief = 0 * locs.values
     for i, value in enumerate(locs):

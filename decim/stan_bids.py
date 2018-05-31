@@ -15,18 +15,21 @@ def keys():
 
 
 def fit_session(subject, session):
-    data = gl.stan_data_control(subject, session, bids_mr)
-    model_file = decim.get_data('stan_models/inv_glaze_b_fixgen_var.stan')
-    compilefile = '/work/faty014/inv_glaze_b_fixgen_var_compiled.stan'
     try:
-        sm = pickle.load(open(compilefile, 'rb'))
-    except IOError:
-        sm = pystan.StanModel(file=model_file)
-        pickle.dump(sm, open(compilefile, 'wb'))
-    fit = sm.sampling(data=data, iter=5000, chains=4, n_jobs=1)
-    d = {parameter: fit.extract(parameter)[parameter] for parameter in ['H', 'V']}
-    d = pd.DataFrame(d)
-    d.to_csv('/work/faty014/sub-{0}_ses-{1}_stanfit.csv'.format(subject, session))
+        data = gl.stan_data_control(subject, session, bids_mr)
+        model_file = decim.get_data('stan_models/inv_glaze_b_fixgen_var.stan')
+        compilefile = '/work/faty014/inv_glaze_b_fixgen_var_compiled.stan'
+        try:
+            sm = pickle.load(open(compilefile, 'rb'))
+        except IOError:
+            sm = pystan.StanModel(file=model_file)
+            pickle.dump(sm, open(compilefile, 'wb'))
+        fit = sm.sampling(data=data, iter=5000, chains=4, n_jobs=1)
+        d = {parameter: fit.extract(parameter)[parameter] for parameter in ['H', 'V']}
+        d = pd.DataFrame(d)
+        d.to_csv('/work/faty014/sub-{0}_ses-{1}_stanfit.csv'.format(subject, session))
+    except RuntimeError:
+        print("No file found for subject {0}, session {1}".format(subject, session))
 
 
 def grouper(iterable, n, fillvalue=None):

@@ -11,11 +11,15 @@ from scipy import signal
 
 class Pupilframe(object):
 
-    def __init__(self, subject, session, block, base_path, pupil_frame=None):
-        self.subject = 'VPIM0{}'.format(subject)
-        sesdict = {1: 'A', 2: 'B', 3: 'C'}
-        self.session = sesdict[session]
-        self.block = block
+    def __init__(self, subject, session, block, base_path, pupil_frame=None, bids=False):
+        if bids is True:
+            self.subject = subject
+            self.session = session
+        else:
+            self.subject = 'VPIM0{}'.format(subject)
+            sesdict = {1: 'A', 2: 'B', 3: 'C'}
+            self.session = sesdict[session]
+            self.block = block
         self.base_path = base_path
         self.pupil_frame = pupil_frame
         if pupil_frame is None:
@@ -23,27 +27,30 @@ class Pupilframe(object):
         else:
             self.pupilside = self.pupil_frame.columns[0][3:]
 
-    def load_pupil(self):
+    def load_pupil(self, directory=None):
         '''
         Concatenates path and file name and loads sa, ev, and m file.
 
         Recquires subject code, session, phase and block.
         '''
-        sessions = {'A': 1, 'B': 3, 'C': 5}
-        phase = sessions[self.session]
-        directory = join(self.base_path,
-                         "{}".format(self.subject),
-                         "{}".format(self.session),
-                         'PH_' + "{}".format(phase) +
-                         'PH_' + "{}".format(self.block))
-        files = glob(join(directory, '*.edf'))
+        if directory is not None:
+            files = directory
+        else:
+            sessions = {'A': 1, 'B': 3, 'C': 5}
+            phase = sessions[self.session]
+            directory = join(self.base_path,
+                             "{}".format(self.subject),
+                             "{}".format(self.session),
+                             'PH_' + "{}".format(phase) +
+                             'PH_' + "{}".format(self.block))
+            files = glob(join(directory, '*.edf'))
         if len(files) > 1:
             raise RuntimeError(
                 'More than one log file found for this block: %s' % files)
         elif len(files) == 0:
             raise RuntimeError(
-                'No log file found for this block: %s, %s, %s, %s' %
-                (self.subject, self.session, phase, self.block))
+                'No log file found for this block: %s, %s' %
+                (self.subject, self.session))
         return edf.pread(files[0], trial_marker=b'trial_id')
 
     def get_pupil(self, sa):
@@ -119,13 +126,13 @@ class Pupilframe(object):
 
         return pd.concat([onset, resp, stimoff, reward, rt, location])
 
-    def basicframe(self, events=True, messages=True):
+    def basicframe(self, events=True, messages=True, directory=None):
         '''
         Loads pupil data and optionally events, messages, velocity and acceleration.
 
         merges and concatenates to one dataframe (per subject, session & block).
         '''
-        sa, ev, m = self.load_pupil()
+        sa, ev, m = self.load_pupil(directory=directory)
         pupil_frame = self.get_pupil(sa)
         self.pupilside = pupil_frame.columns[0][3:]
         if events is True:
