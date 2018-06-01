@@ -186,6 +186,21 @@ def acc_ev(sub_code, session, phase, block, base_path, H):
                          'decision': decision.values, 'objective_accumulated_evidence': obj_accum_ev})
 
 
+def murphy_surprise(prior_belief, new_belief):
+    from math import exp
+
+    def p_right(Ln):
+        return exp(Ln) / (exp(Ln) + 1)
+
+    def p_left(Ln):
+        return 1 / (exp(Ln) + 1)
+    surprise = np.log(p_left(new_belief) / p_left(prior_belief)) *\
+        np.log(p_right(prior_belief) / p_left(prior_belief)) +\
+        np.log(p_right(new_belief) / p_right(prior_belief)) *\
+        np.log(p_left(prior_belief) / p_right(prior_belief))
+    return surprise
+
+
 __version__ = '3.3.2'
 '''
 2.1.0
