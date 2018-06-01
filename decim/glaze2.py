@@ -187,13 +187,14 @@ def acc_ev(sub_code, session, phase, block, base_path, H):
 
 
 def murphy_surprise(prior_belief, new_belief):
-    from math import exp
-
+    '''
+    Calculate new surprise measure of Peter
+    '''
     def p_right(Ln):
-        return exp(Ln) / (exp(Ln) + 1)
+        return np.exp(Ln) / (np.exp(Ln) + 1)
 
     def p_left(Ln):
-        return 1 / (exp(Ln) + 1)
+        return 1 / (np.exp(Ln) + 1)
     surprise = np.log(p_left(new_belief) / p_left(prior_belief)) *\
         np.log(p_right(prior_belief) / p_left(prior_belief)) +\
         np.log(p_right(new_belief) / p_right(prior_belief)) *\
