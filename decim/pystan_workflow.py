@@ -45,7 +45,7 @@ class fit_result(object):
         self.sample_df = pd.DataFrame({parameter: self.fit.extract(parameter)
                                       [parameter] for parameter
                                       in self.parameters})
-        if chainwise == True:
+        if chainwise is True:
             self.chain_samples = {}
             for parameter in self.parameters:
                 position = self.summary.reset_index().loc[self.summary.index ==
@@ -62,8 +62,8 @@ class fit_result(object):
         '''
         if just_modes is True:
             d = {'{}'.format(parameter):
-                    ds.mode(self.sample_df[parameter], 50)
-                    for parameter in self.parameters}
+                 ds.mode(self.sample_df[parameter], 50)
+                 for parameter in self.parameters}
             d['name'] = name
             return d
         if summary is True:
