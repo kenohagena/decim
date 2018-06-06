@@ -14,7 +14,7 @@ def submit(walltime, memory, tmpdir, logdir, workdir, script, name,
            nodes=1, tasks=16,
            shellfname=None):
     '''
-    Submit a script to torque
+    Submit a script to SLURM
     '''
     print('script in submit {}'.format(script))
     sbatch_directives = '''#!/bin/bash
@@ -56,12 +56,7 @@ cp -r {workdir} /work/faty014
                                      prefix='sbatch_script') as shellfname:
         shellfname.write(command)
         shellfname = shellfname.name
-    command = "sbatch %s" % (shellfname)
-    output = subprocess.check_output(
-        command,
-        stderr=subprocess.STDOUT,
-        shell=True)
-    return output
+
 
 
 def to_script(func, tmpdir, *args):

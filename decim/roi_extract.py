@@ -1,19 +1,14 @@
-import numpy as np
 import pandas as pd
 from nilearn import image, masking
 import os
 from glob import glob
-from os.path import join, expanduser, isdir
+from os.path import join, expanduser
 import errno
-
-
 import random
 import string
 
 
 def randomword(length):
-    import random
-    import string
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(length))
 

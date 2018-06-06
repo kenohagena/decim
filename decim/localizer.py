@@ -26,7 +26,9 @@ class Localizer(object):
         else:
             pupilside = 'right'
 
-        sa_frame = sa.loc[:, ['pa_{}'.format(pupilside), 'time', 'gx_{}'.format(pupilside), 'gy_{}'.format(pupilside)]]
+        sa_frame = sa.loc[:, ['pa_{}'.format(pupilside), 'time',
+                              'gx_{}'.format(pupilside),
+                              'gy_{}'.format(pupilside)]]
 
         return sa_frame
 
@@ -34,7 +36,7 @@ class Localizer(object):
         '''
         Loads automatically detected blinks and saccades from ev file.
 
-        Returns np.arrays with original time loactions of blinked/saccaded samples
+        Returns np.arrays with orig. time loactions of blinked/saccaded samples
         '''
         sac_frame = ev[ev.type == 'saccade'].loc[:, ['start', 'end']]
         sactime = []
@@ -51,19 +53,27 @@ class Localizer(object):
 
     def get_messages(self, m):
         '''
-        Takes message frame and returns a simpler frame containing the fields time, message and value.
+        Takes message frame and returns a one with just time, message and value
         '''
-        message_frame = m.loc[:, ['CHOICE_TRIAL_ONSET', 'CHOICE_TRIAL_ONSET_time',
-                                  'CHOICE_TRIAL_STIMOFF', 'CHOICE_TRIAL_STIMOFF_time',
+        message_frame = m.loc[:, ['CHOICE_TRIAL_ONSET',
+                                  'CHOICE_TRIAL_ONSET_time',
+                                  'CHOICE_TRIAL_STIMOFF',
+                                  'CHOICE_TRIAL_STIMOFF_time',
                                   'LOCALIZER_STIM', 'LOCALIZER_STIM_time']]
 
-        onset = message_frame.loc[:, ['CHOICE_TRIAL_ONSET', 'CHOICE_TRIAL_ONSET_time']].dropna(how='all')
-        onset = onset.rename(columns={'CHOICE_TRIAL_ONSET_time': 'time', 'CHOICE_TRIAL_ONSET': 'stim_ID'})
+        onset = message_frame.loc[:, ['CHOICE_TRIAL_ONSET',
+                                      'CHOICE_TRIAL_ONSET_time']].\
+            dropna(how='all')
+        onset = onset.rename(columns={'CHOICE_TRIAL_ONSET_time': 'time',
+                                      'CHOICE_TRIAL_ONSET': 'stim_ID'})
         onset['message'] = 'CHOICE_TRIAL_ONSET'
         onset['stim_ID'] = message_frame.loc[:, 'LOCALIZER_STIM'].dropna()
 
-        stimoff = message_frame.loc[:, ['CHOICE_TRIAL_STIMOFF', 'CHOICE_TRIAL_STIMOFF_time']].dropna(how='all')
-        stimoff = stimoff.rename(columns={'CHOICE_TRIAL_STIMOFF_time': 'time', 'CHOICE_TRIAL_STIMOFF': 'stim_ID'})
+        stimoff = message_frame.loc[:, ['CHOICE_TRIAL_STIMOFF',
+                                        'CHOICE_TRIAL_STIMOFF_time']].\
+            dropna(how='all')
+        stimoff = stimoff.rename(columns={'CHOICE_TRIAL_STIMOFF_time': 'time',
+                                          'CHOICE_TRIAL_STIMOFF': 'stim_ID'})
         stimoff['message'] = 'CHOICE_TRIAL_STIMOFF'
         stimoff['stim_ID'] = message_frame.loc[:, 'LOCALIZER_STIM'].dropna()
 
@@ -71,9 +81,9 @@ class Localizer(object):
 
     def basicframe(self, events=True, messages=True, save_path=None):
         '''
-        Loads pupil data and optionally events, messages, velocity and acceleration.
+        Loads pupil data and optionally events & messages.
 
-        merges and concatenates to one dataframe (per subject, session & block).
+        Merges and concatenates to one dataframe (per subject, session, block).
         '''
         sa, ev, m = self.load_pupil()
         pupil_frame = self.get_pupil(sa)
@@ -84,15 +94,20 @@ class Localizer(object):
             pupil_frame['blink'] = pupil_frame['time'].isin(blinktime)
         if messages is True:
             messages = self.get_messages(m)
-            pupil_frame = pd.merge(pupil_frame, messages, how='left', on=['time'])
+            pupil_frame = pd.merge(pupil_frame, messages,
+                                   how='left', on=['time'])
 
-        pupil_frame = pupil_frame.drop(pupil_frame[pupil_frame.time == 0].index)
+        pupil_frame = pupil_frame.drop(pupil_frame[pupil_frame.time == 0]
+                                       .index)
 
         self.pupil_frame = pupil_frame
 
-    def gaze_angle(self, screen_distance=600, monitor_width=1920, monitor_height=1200, pixelsize=.252):
+    def gaze_angle(self, screen_distance=600, monitor_width=1920,
+                   monitor_height=1200, pixelsize=.252):
         '''
-        Computes angle of gaze in degrees based on gaze coordniates, screen distance and monitor parameters.
+        Computes angle of gaze in degrees.
+
+        Takes gaze coordniates, screen distance and monitor parameters.
         '''
         self.pupil_frame['gaze_angle'] = ((((self.pupil_frame['gx_{}'.format(self.pupilside)] -
                                              monitor_width / 2)**2 + (self.pupil_frame['gy_{}'.format(self.pupilside)] -

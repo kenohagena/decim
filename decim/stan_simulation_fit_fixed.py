@@ -7,12 +7,9 @@ import pystan
 from decim import statmisc
 from decim import glaze_stan as gs
 from decim import pointsimulation as pt
-from decim import pystan_workflow as pw
 from itertools import zip_longest
 from multiprocessing import Pool
 
-if __name__ == '__name__':
-    submit()
 
 # SIMULATE DATA
 rH = 1 / 70
@@ -94,3 +91,7 @@ def submit():
     for ii, chunk in enumerate(grouper(fix_keys(), 2000)):
         slu.pmap(par_execute, ii, chunk, walltime='11:55:00',
                  memory=60, nodes=1, tasks=16, name='PRECOVERY')
+
+
+# if __name__ == '__main__':
+ #   submit()
