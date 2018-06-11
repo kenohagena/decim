@@ -1,13 +1,14 @@
-
-#!/usr/bin/env python
-'''
-Parallelize functions with simple arguments via SLURM
-'''
+#!/usr/bin/env python3
 
 import subprocess
 import tempfile
 import os
 import errno
+
+
+'''
+Parallelize functions with simple arguments via SLURM
+'''
 
 
 def submit(walltime, memory, tmpdir, logdir, workdir, script, name,
@@ -18,19 +19,19 @@ def submit(walltime, memory, tmpdir, logdir, workdir, script, name,
     '''
     print('script in submit {}'.format(script))
     sbatch_directives = '''#!/bin/bash
-#SBATCH --job-name={name}
-#SBATCH --nodes={nodes}
-#SBATCH --tasks-per-node={tasks}
-#SBATCH --time={walltime}
-#SBATCH --export=NONE
-#SBATCH --mem={memory}GB
-#SBATCH --partition=std
-#SBATCH --mail-user=kenohagena@gmail.com
-#SBATCH --mail-type=ALL
-#SBATCH --error=/work/faty014/cluster/slurm_%j.out
-#SBATCH --output=/work/faty014/cluster/slurm_%j.err
+    #SBATCH --job-name={name}
+    #SBATCH --nodes={nodes}
+    #SBATCH --tasks-per-node={tasks}
+    #SBATCH --time={walltime}
+    #SBATCH --export=NONE
+    #SBATCH --mem={memory}GB
+    #SBATCH --partition=std
+    #SBATCH --mail-user=kenohagena@gmail.com
+    #SBATCH --mail-type=ALL
+    #SBATCH --error=/work/faty014/cluster/slurm_%j.out
+    #SBATCH --output=/work/faty014/cluster/slurm_%j.err
 
-source /sw/modules/rrz-modules.sh
+    source /sw/modules/rrz-modules.sh
 
 
     '''.format(**{'walltime': walltime,
@@ -41,22 +42,25 @@ source /sw/modules/rrz-modules.sh
                   'logdir': logdir})
 
     environment_variables = '''
-module purge
-module load env
-module load site/hummel
-source ~/.bashrc
+    module purge
+    module load env
+    module load site/hummel
+    source ~/.bashrc
 
-python3 {script}
+    python3 {script}
 
-cp -r {workdir} /work/faty014
+    cp -r {workdir} /work/faty014
     '''.format(**{'script': script,
                   'workdir': workdir})
     command = sbatch_directives + environment_variables
     with tempfile.NamedTemporaryFile(mode='w', delete=False, dir='/work/faty014/',
-                                     prefix='sbatch_script') as shellfname:
-        shellfname.write(command)
-        shellfname = shellfname.name
-
+                                     prefix='sbatch_script') as shellname:
+        shellname.write(command)
+        shellfname = shellname.name
+    command = "sbatch %s" % (shellfname)
+    output = subprocess.check_output(command,
+                                     stderr=subprocess.STDOUT, shell=True)
+    return output
 
 
 def to_script(func, tmpdir, *args):
@@ -67,13 +71,13 @@ def to_script(func, tmpdir, *args):
     with tempfile.NamedTemporaryFile(mode='w', delete=False, dir='/work/faty014/',
                                      prefix='py_script') as script:
         code = """
-from {module} import {function}
-{function}{args}
-        """.format(**{'module': func.__module__,
-                      'function': func.__name__,
-                      'args': args})
+        from {module} import {function}
+        {function}{args}
+              """.format(**{'module': func.__module__,
+                            'function': func.__name__,
+                            'args': args})
         script.write(code)
-        return str(script.name)
+    return str(script.name)
 
 
 def pmap(func, *args, walltime=12, memory=10,
@@ -82,7 +86,7 @@ def pmap(func, *args, walltime=12, memory=10,
         name = func.__name__
     if tmp is None:
         from os.path import join
-        tmp = tempfile.TemporaryDirectory().name
+    tmp = tempfile.TemporaryDirectory().name
     workdir = join(tmp, name)
     tmpdir = join(workdir, 'tmp')
     logdir = join(workdir, 'cluster_logs')
