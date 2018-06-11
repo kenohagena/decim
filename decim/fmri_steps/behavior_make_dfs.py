@@ -26,11 +26,11 @@ To execute, make sure to set:
 
 
 # SET OPTIONS
-bids_mr = '/Volumes/flxrl/fmri/bids_mr/'
-outpath = expanduser('~/Flexrule/fmri/analyses/behav_dataframes_310518/new')
-summary = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits_300518/summary_stan_fits.csv')
-subjects = []
-sessions = []
+bids_mr = '/Volumes/flxrl/fmri/bids_mr_v1.1/'
+outpath = expanduser('~/Flexrule/fmri/analyses/behav_dataframes')
+summary = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv')
+subjects = [1, 2]
+sessions = [1, 2, 3]
 
 for sub in subjects:
     subject = 'sub-{}'.format(sub)

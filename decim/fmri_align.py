@@ -69,7 +69,7 @@ def execute(subject, session, run_index):
                 - convolved with hrf
                 - downsampled to EPI-f
     '''
-    b = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/behav_dataframes_310518/sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
+    b = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/behav_dataframes/sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
                     format(subject, session, [4, 5, 6][run_index]),
                     index_col=0).sort_values(by='onset')
     b = b.loc[:, ['onset', 'belief', 'murphy_surprise', 'switch']].dropna(how='any')
@@ -85,13 +85,13 @@ def execute(subject, session, run_index):
     b = b.sort_index()
     return b
 
+'''
 
 ### TO EXECUTE UNCOMMENT AND INSERT SUBJECT ARRAY ###
-'''
-subjects = [1, 2, 3, 4, 5, 6]
+subjects = [1, 2]
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 
-for sub in range(1, 23):
+for sub in subjects:
     for ses in [2, 3]:
         for run in [0, 1, 2]:
             try:
