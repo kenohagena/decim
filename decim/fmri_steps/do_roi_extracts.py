@@ -3,9 +3,14 @@ import pandas as pd
 import numpy as np
 from os.path import join, expanduser
 from glob import glob
+from decim import slurm_submit as slu
+import sys
 
 
-subjects = [1, 2, 3, 4, 5, 7, 8, 9, 10, 12, 13, 14, 19, 20, 21]
+epi_dir = '/home/khagena/FLEXRULE/fmri/completed_preprocessed'
+atlas_dir = '/home/khagena/FLEXRULE/fmri/atlases'
+out_dir = '/home/khagena/FLEXRULE/fmri/roi_extract'
+subjects = [1, 2, 3, 4, 6, 5, 7, 8, 9, 10, 12, 13, 14, 15, 16, 19, 20, 21]
 sessions = ['ses-2', 'ses-3']
 runs = ['inference_run-4',
         'inference_run-5',
@@ -24,19 +29,20 @@ atlases = {
 }
 cit168 = ['nac', 'snc', 'vta']
 
-for sub in subjects:
 
+def execute(sub, epi_dir, atlas_dir, out_dir):
+    slu.mkdir_p(out_dir)
     e = re.EPI(sub, out_dir=('/Volumes/flxrl/fmri/roi_extract_110618'))
-    e.load_epi('/Volumes/flxrl/fmri/completed_preprocessed/sub-{0}/fmriprep/sub-{0}/ses-3/func/'.format(sub),
+    e.load_epi('{1}/sub-{0}/fmriprep/sub-{0}/ses-3/func/'.format(sub, epi_dir),
                identifier='inference*T1w*prepro')
-    e.load_epi('/Volumes/flxrl/fmri/completed_preprocessed/sub-{0}/fmriprep/sub-{0}/ses-3/func/'.format(sub),
+    e.load_epi('{1}/sub-{0}/fmriprep/sub-{0}/ses-3/func/'.format(sub, epi_dir),
                identifier='instructed*T1w*prepro')
-    e.load_epi('/Volumes/flxrl/fmri/completed_preprocessed/sub-{0}/fmriprep/sub-{0}/ses-2/func/'.format(sub),
+    e.load_epi('{1}/sub-{0}/fmriprep/sub-{0}/ses-2/func/'.format(sub, epi_dir),
                identifier='inference*T1w*prepro')
-    e.load_epi('/Volumes/flxrl/fmri/completed_preprocessed/sub-{0}/fmriprep/sub-{0}/ses-2/func/'.format(sub),
+    e.load_epi('{1}/sub-{0}/fmriprep/sub-{0}/ses-2/func/'.format(sub, epi_dir),
                identifier='instructed*T1w*prepro')
     print('{} loaded'.format(sub))
-    e.load_mask(expanduser('~/Flexrule/fmri/atlases/sub-{}'.format(sub)), mult_roi_atlases={'CIT': {2: 'NAc', 6: 'SNc', 10: 'VTA'}})
+    e.load_mask(expanduser('{1}/sub-{0}'.format(sub, atlas_dir)), mult_roi_atlases={'CIT': {2: 'NAc', 6: 'SNc', 10: 'VTA'}})
     e.resample_masks()
     print('{} resampled'.format(sub))
     e.mask()
@@ -45,7 +51,7 @@ for sub in subjects:
 
     roi_dfs = []
     subject = 'sub-{}'.format(sub)
-    home = expanduser('/Volumes/flxrl/fmri/roi_extract_110618/{}/'.format(subject))
+    home = '{1}/{0}/'.format(subject, out_dir)
     for session in sessions:
         for run in runs:
             runwise = []
@@ -91,3 +97,7 @@ for sub in subjects:
     df.index.name = 'frame'
     df = df.set_index(['session', 'run', df.index])
     df.to_csv(join(home, '{}_rois_indexed.csv'.format(subject)), index=True)
+
+
+if __name__ == "__main__":
+    execute(sys.argv[1])
