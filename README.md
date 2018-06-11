@@ -1,20 +1,20 @@
 FLEXRULE CODE
 
-GENERAL STRUCTURE (not very stringent so far...):
-        '''
-        DECIM  
-        │   README.md  
-        │   setup.py  
-        │  
-        └───decim  
-            │   general_functionality  
-            │  
-            └───immuno_scripts  
-            │       Immuno_related_analysis_steps  
-            │  
-            └───fmri_steps  
-                    fMRI_related_analysis_steps  
+GENERAL STRUCTURE (not very stringent so far...):  
         
+DECIM  
+│   README.md  
+│   setup.py  
+│  
+└───decim  
+    │           general_functionality  
+    │  
+    └───immuno_scripts  
+    │       Immuno_related_analysis_steps  
+    │  
+    └───fmri_steps  
+            fMRI_related_analysis_steps  
+
 
 Analysis steps and scripts: 
 
@@ -77,5 +77,4 @@ Analysis steps and scripts:
     SCRIPT: decim/fmri_steps/flexrule_pupil_dfs.py  
 
 
-'''
 
