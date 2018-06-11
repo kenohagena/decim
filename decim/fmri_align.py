@@ -75,7 +75,7 @@ def execute(subject, session, run_index):
     b = b.loc[:, ['onset', 'belief', 'murphy_surprise', 'switch']].dropna(how='any')
     b['abs_belief'] = b.belief.abs()
     b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
-    b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 10000, 1)))  # +10.000 because of 10s EPIs after task is finished
+    b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))  # +10.000 because of 10s EPIs after task is finished
     b.loc[0] = 0
     b = b.fillna(method='ffill').astype(float)
     for column in b.columns:
@@ -86,6 +86,8 @@ def execute(subject, session, run_index):
     return b
 
 
+### TO EXECUTE UNCOMMENT AND INSERT SUBJECT ARRAY ###
+'''
 subjects = [1, 2, 3, 4, 5, 6]
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 
@@ -97,3 +99,5 @@ for sub in range(1, 23):
                 regressor.to_csv('/Users/kenohagena/Flexrule/fmri/analyses/behav_fmri_aligned_060618/beh_regressors_sub-{0}_ses-{1}_{2}'.format(sub, ses, runs[run]))
             except FileNotFoundError:
                 print('file not found for {0} {1} {2}'.format(sub, ses, run))
+
+'''

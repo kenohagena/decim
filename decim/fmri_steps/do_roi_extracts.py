@@ -5,8 +5,7 @@ from os.path import join, expanduser
 from glob import glob
 
 
-subjects = [2, 3, 4, 5, 7, 8, 9, 10, 13, 14, 18, 20, 21]
-subjects2 = [6, 15, 16, 19]
+subjects = [1, 2, 3, 4, 5, 7, 8, 9, 10, 12, 13, 14, 19, 20, 21]
 sessions = ['ses-2', 'ses-3']
 runs = ['inference_run-4',
         'inference_run-5',
@@ -25,16 +24,16 @@ atlases = {
 }
 cit168 = ['nac', 'snc', 'vta']
 
-for sub in subjects2:
+for sub in subjects:
 
-    e = re.EPI(sub, out_dir=('/Volumes/flxrl/fmri/roi_extract_290518'))
-    e.load_epi('/Volumes/flxrl/fmri/preprocessed3/sub-{0}/fmriprep/sub-{0}/ses-3/func/'.format(sub),
+    e = re.EPI(sub, out_dir=('/Volumes/flxrl/fmri/roi_extract_110618'))
+    e.load_epi('/Volumes/flxrl/fmri/completed_preprocessed/sub-{0}/fmriprep/sub-{0}/ses-3/func/'.format(sub),
                identifier='inference*T1w*prepro')
-    e.load_epi('/Volumes/flxrl/fmri/preprocessed3/sub-{0}/fmriprep/sub-{0}/ses-3/func/'.format(sub),
+    e.load_epi('/Volumes/flxrl/fmri/completed_preprocessed/sub-{0}/fmriprep/sub-{0}/ses-3/func/'.format(sub),
                identifier='instructed*T1w*prepro')
-    e.load_epi('/Volumes/flxrl/fmri/preprocessed3/sub-{0}/fmriprep/sub-{0}/ses-2/func/'.format(sub),
+    e.load_epi('/Volumes/flxrl/fmri/completed_preprocessed/sub-{0}/fmriprep/sub-{0}/ses-2/func/'.format(sub),
                identifier='inference*T1w*prepro')
-    e.load_epi('/Volumes/flxrl/fmri/preprocessed3/sub-{0}/fmriprep/sub-{0}/ses-2/func/'.format(sub),
+    e.load_epi('/Volumes/flxrl/fmri/completed_preprocessed/sub-{0}/fmriprep/sub-{0}/ses-2/func/'.format(sub),
                identifier='instructed*T1w*prepro')
     print('{} loaded'.format(sub))
     e.load_mask(expanduser('~/Flexrule/fmri/atlases/sub-{}'.format(sub)), mult_roi_atlases={'CIT': {2: 'NAc', 6: 'SNc', 10: 'VTA'}})
@@ -46,7 +45,7 @@ for sub in subjects2:
 
     roi_dfs = []
     subject = 'sub-{}'.format(sub)
-    home = expanduser('/Volumes/flxrl/fmri/roi_extract_290518/{}/'.format(subject))
+    home = expanduser('/Volumes/flxrl/fmri/roi_extract_110618/{}/'.format(subject))
     for session in sessions:
         for run in runs:
             runwise = []

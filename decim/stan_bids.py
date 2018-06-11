@@ -5,13 +5,17 @@ from decim import glaze_control as gl
 from itertools import zip_longest
 from multiprocessing import Pool
 import pystan
-bids_mr = '/work/faty014/bids_mr/'
+
+# SET OPTIONS
+bids_mr = '/work/faty014/bids_mr_v1.1/'
+subjects = []
+sessions = []
 
 
 def keys():
-    for subject in range(22):
-        for session in range(3):
-            yield(subject + 1, session + 1)
+    for subject in subjects:
+        for session in sessions:
+            yield(subject, session)
 
 
 def fit_session(subject, session):
@@ -40,12 +44,12 @@ def grouper(iterable, n, fillvalue=None):
 def par_execute(chunk):
     # print(ii, len(chunk))
     chunk = [arg for arg in chunk if arg is not None]
-    with Pool(16) as p:
+    with Pool(6) as p:
         p.starmap(fit_session, chunk)
 
 
 def submit():
     from decim import slurm_submit as slu
-    for chunk in grouper(keys(), 16):
+    for chunk in grouper(keys(), 6):
         slu.pmap(par_execute, chunk, walltime='2:00:00',
                  memory=60, nodes=1, tasks=16, name='bids_stan')
