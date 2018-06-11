@@ -8,8 +8,8 @@ import pystan
 
 # SET OPTIONS
 bids_mr = '/work/faty014/bids_mr_v1.1/'
-subjects = []
-sessions = []
+subjects = [1, 2]
+sessions = [1, 2, 3]
 
 
 def keys():
