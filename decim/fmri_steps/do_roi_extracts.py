@@ -32,7 +32,7 @@ cit168 = ['nac', 'snc', 'vta']
 
 def execute(sub, epi_dir, atlas_dir, out_dir):
     slu.mkdir_p(out_dir)
-    e = re.EPI(sub, out_dir=('/Volumes/flxrl/fmri/roi_extract_110618'))
+    e = re.EPI(sub, out_dir=out_dir)
     e.load_epi('{1}/sub-{0}/fmriprep/sub-{0}/ses-3/func/'.format(sub, epi_dir),
                identifier='inference*T1w*prepro')
     e.load_epi('{1}/sub-{0}/fmriprep/sub-{0}/ses-3/func/'.format(sub, epi_dir),
