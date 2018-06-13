@@ -85,13 +85,13 @@ class EPI(object):
         '''
         Apply all masks to all EPIs.
         '''
-        for epi, eimg in self.EPIs.items():
-            for mask, mimg in self.resampled_masks.items():
+        for mask, mimg in self.resampled_masks.items():
+            for epi, eimg in self.EPIs.items():
                 thresh = image.new_img_like(mimg, mimg.get_data() > 0.01)
                 key = '{0}_{1}'.format(epi, mask)
                 key = key[:key.find('_resampled')]
                 self.epi_masked[key] = masking.apply_mask(eimg, thresh)
-                self.weights[key] = masking.apply_mask(mimg, thresh)
+            self.weights['{0}_{1}'.format(self.subject, mask)] = masking.apply_mask(mimg, thresh)
 
     def save(self):
         '''
