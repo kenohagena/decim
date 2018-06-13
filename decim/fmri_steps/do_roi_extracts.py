@@ -87,7 +87,7 @@ def concat_single_rois(sub, out_dir):
     df.to_csv(join(home, '{}_rois_indexed.csv'.format(subject)), index=True)
 
 
-def extract_cortical_roi(sub, session, run, epi_dir, out_dir):
+def extract_cortical_roi(sub, session, run, epi_dir):
     '''
     '''
     for hemisphere, hemi in h.items():
@@ -100,63 +100,54 @@ def extract_cortical_roi(sub, session, run, epi_dir, out_dir):
         labels = [i.astype('str') for i in labels]
         affiliation = annot[0]
         surf = surface.load_surf_data(lh_func_path)
-        surf_df = pd.DataFrame(surf)
+        surf_df = pd.DataFrame(surf).T
+
+        # z-score per vertex
+        surf_df = (surf_df - surf_df.mean()) / surf_df.std()
+        print(surf_df.mean())
+        surf_df = surf_df.T
         surf_df['label_index'] = affiliation
         df = surf_df.groupby('label_index').mean().T
         df.columns = labels
         return df
 
 
-def weighted_average(atlas, sub, ses, run):
+def weighted_average(sub, session, run, atlas, roi_dir):
     '''
     '''
-    results = []
-    binned = []
-    for atlas in atlases:
-        for sub in subjects:
-            for ses in sessions:
-                print(atlas, sub, ses)
-                rois = pd.read_csv('/Volumes/flxrl/fmri/roi_extract_290518/{0}/{0}_rois_indexed.csv'.format(sub), index_col=[0, 1, 2], header=[0, 1])
-                weight = pd.read_csv('/Volumes/flxrl/fmri/roi_extract_290518/{0}/{0}_{1}_weights'.format(sub, atlas), index_col=0)
-                weight = weight.iloc[0, 0:-3].values.astype(float)
+    subject = 'sub-{}'.format(sub)
 
-                roi_zs = []
-                behavs = []
-                for run in runs:
-                    roi = rois.loc[ses, run]
-                    roi = roi[atlas]
-                    if len(roi) > len(behav):
-                        roi = roi.iloc[0: len(behav)]
-                    elif len(roi) < len(behav):
-                        behav = behav.iloc[0:len(roi)]
-                    roi_z = (roi - roi.mean()) / roi.std()
-                    roi_zs.append(roi_z)
-                    behavs.append(behav)
+    roi = pd.read_csv(join(roi_dir, '{0}*{1}*{2}*{3}*'.format(subject, session, run, atlas), index_col=0))
+    weight = pd.read_csv(join(roi_dir, '{0}_{1}_resampled_weights'.format(sub, atlas), index_col=0))
+    weight = weight.iloc[0, 0:-3].values.astype(float)
 
-                behav = pd.concat(behavs, ignore_index=True)
-                roi_z = pd.concat(roi_zs, ignore_index=True)
+    # z-score per voxel
+    roi = (roi - roi.mean()) / roi.std()
 
-                # normalize weights ...
-                weighted = np.dot(roi_z, weight)
-                weighted = pd.DataFrame(weighted, index=behav.index)
+    # normalize weights ...
+    weight = weight / weight.sum()
 
-                slope, intercept, r_value, p_value, std_err = linregress(behav[param].values, weighted.values.flatten())
-                result = {'slope': slope, "rhat": r_value, 'p_value': p_value, 'intercept': intercept,
-                          'std_err': std_err, 'subject': sub, 'session': ses, 'parameter': param, 'atlas': atlas}
-                results.append(result)
-                binn = weighted.groupby(pd.cut(behav[param], np.linspace(limits[0], limits[1], 7))).mean().values
-                binned.append(binn)
-
-    results = pd.DataFrame(results)
-    binned = pd.DataFrame([i.flatten() for i in binned])
-    results = pd.concat([binned, results], axis=1)
-
-    results.to_csv('{}_regression_tois.csv'.format(param))
+    weighted = np.dot(roi, weight)
+    weighted = pd.DataFrame(weighted)
+    return weighted
 
 
 if __name__ == "__main__":
+    for sub in range(1, 23):
+        for session in sessions:
+            for run in runs:
+                df = extract_cortical_roi(sub, session, run, epi_dir)
+                for atlas in atlases:
+                    df[atlas] = weighted_average(sub, session, run, atlas, out_dir)
+                df.to_csv(join(out_dir, '{0}_{1}_{2}_weighted_rois.csv'.format(sub, session, run)))
+
+
+# To run brainstem extractions embedded in a shell script
+    '''
     extract_brainstem_roi(sys.argv[1], epi_dir, atlas_dir, out_dir)  # to embed in shell script
     concat_single_rois(sys.argv[1], out_dir)
+    '''
+# To run brain extraction within the python script
     '''
     for sub in subjects:
         extract_brainstem_roi(sub, epi_dir='/Volumes/flxrl/fmri/completed_preprocessed',
