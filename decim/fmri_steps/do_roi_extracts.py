@@ -155,8 +155,8 @@ def weighted_average(atlas, sub, ses, run):
 
 
 if __name__ == "__main__":
-    extract_brainstem_roi(sys.argv[1])  # to embed in shell script
-    concat_single_rois(sys.argv[1])
+    extract_brainstem_roi(sys.argv[1], epi_dir, atlas_dir, out_dir)  # to embed in shell script
+    concat_single_rois(sys.argv[1], out_dir)
     '''
     for sub in subjects:
         extract_brainstem_roi(sub, epi_dir='/Volumes/flxrl/fmri/completed_preprocessed',
