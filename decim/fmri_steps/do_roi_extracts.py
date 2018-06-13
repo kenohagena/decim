@@ -93,7 +93,7 @@ def extract_cortical_roi(sub, session, run, epi_dir):
     for hemisphere, hemi in h.items():
         subject = 'sub-{}'.format(sub)
         annot_path = join(epi_dir, subject, 'freesurfer', subject, 'label', '{0}.HCPMMP1.annot'.format(hemisphere))
-        lh_func_path = glob(join(epi_dir, subject, 'fmriprep', subject, session, 'func'), '*{0}*fsnative.{1}.func.gii'.format(run, hemi))[0]
+        lh_func_path = glob(join(epi_dir, subject, 'fmriprep', subject, session, 'func', '*{0}*fsnative.{1}.func.gii'.format(run, hemi)))[0]
 
         annot = ni.freesurfer.io.read_annot(annot_path)
         labels = annot[2]
