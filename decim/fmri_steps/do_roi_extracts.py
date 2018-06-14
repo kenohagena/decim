@@ -116,9 +116,8 @@ def weighted_average(sub, session, run, atlas, roi_dir):
     '''
     '''
     subject = 'sub-{}'.format(sub)
-
     roi = pd.read_csv(glob(join(roi_dir, subject, '{0}*{1}*{2}*{3}*'.format(subject, session, run, atlas)))[0], index_col=0)
-    weight = pd.read_csv(glob(join(roi_dir, subject, '{0}_{1}_resampled_weights'.format(sub, atlas)))[0], index_col=0)
+    weight = pd.read_csv(join(roi_dir, subject, '{0}_{1}_resampled_weights'.format(sub, atlas)), index_col=0)
     weight = weight.iloc[0, 0:-3].values.astype(float)
 
     # z-score per voxel
