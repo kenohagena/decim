@@ -5,9 +5,13 @@ from scipy.interpolate import interp1d
 from decim import glaze_control as glc
 from os.path import join
 from glob import glob
+import decim.slurm_submit as slu
+import sys
 
-
+runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 data_dir = '/Volumes/flxrl/fmri/bids_mr'
+out_dir = join('/Users/kenohagena/Flexrule/fmri/analyses/behav_fmri_aligned', 'new')
+slu.mkdir_p(out_dir)
 
 
 def hrf(t):
@@ -61,7 +65,7 @@ def rep_time(subject, session, run_index, data_dir):
     return repTime
 
 
-def execute(subject, session, run_index):
+def execute(sub, ses, run_index):
     '''
     Output: pd.DataFrame with
                 - parameters as columns
@@ -69,15 +73,21 @@ def execute(subject, session, run_index):
                 - convolved with hrf
                 - downsampled to EPI-f
     '''
-    b = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/behav_dataframes/sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
-                    format(subject, session, [4, 5, 6][run_index]),
-                    index_col=0).sort_values(by='onset')
-    b = b.loc[:, ['onset', 'belief', 'murphy_surprise', 'switch']].dropna(how='any')
-    b['abs_belief'] = b.belief.abs()
+    b = pd.read_csv('/home/khagena/FLEXRULE/behavior/behav_dataframes/sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
+                    format(sub, ses, [4, 5, 6][run_index]),
+                    index_col=0)
+    b.onset = b.onset.astype(float)
+    b = b.sort_values(by='onset')
+    b = b.loc[:, ['onset', 'belief', 'murphy_surprise', 'switch', 'point', 'response', 'response_left',
+                  'response_right', 'stimulus_horiz', 'stimulus_vert', 'stimulus',
+                  'rresp_left', 'rresp_right']]
     b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
-    b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))  # +10.000 because of 10s EPIs after task is finished
+    b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
     b.loc[0] = 0
-    b = b.fillna(method='ffill').astype(float)
+    b.belief = b.belief.fillna(method='ffill')
+    b.murphy_surprise = b.murphy_surprise.fillna(method='ffill')
+    b['abs_belief'] = b.belief.abs()
+    b = b.fillna(False).astype(float)
     for column in b.columns:
         b[column] = make_bold(b[column].values, dt=.001)
     b = regular(b, target='1900ms')
@@ -85,19 +95,27 @@ def execute(subject, session, run_index):
     b = b.sort_index()
     return b
 
-'''
 
 ### TO EXECUTE UNCOMMENT AND INSERT SUBJECT ARRAY ###
-subjects = [1, 2]
-runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
+
+if __name__ == "__main__":
+    for ses in [2, 3]:
+        for run in [0, 1, 2]:
+            try:
+                regressor = execute(sys.argv[1], ses, run)
+                regressor.to_csv(join(out_dir, 'beh_regressors_sub-{0}_ses-{1}_{2}'.format(sys.argv[1], ses, runs[run])))
+            except FileNotFoundError:
+                print('file not found for {0} {1} {2}'.format(sys.argv[1], ses, run))
+
+'''
+subjects = range(1, 23)
 
 for sub in subjects:
     for ses in [2, 3]:
         for run in [0, 1, 2]:
             try:
                 regressor = execute(sub, ses, run)
-                regressor.to_csv('/Users/kenohagena/Flexrule/fmri/analyses/behav_fmri_aligned_060618/beh_regressors_sub-{0}_ses-{1}_{2}'.format(sub, ses, runs[run]))
+                regressor.to_csv(join(out_dir, 'beh_regressors_sub-{0}_ses-{1}_{2}'.format(sub, ses, runs[run])))
             except FileNotFoundError:
                 print('file not found for {0} {1} {2}'.format(sub, ses, run))
-
 '''

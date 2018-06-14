@@ -29,12 +29,12 @@ To execute, make sure to set:
 bids_mr = '/Volumes/flxrl/fmri/bids_mr_v1.1/'
 outpath = expanduser('~/Flexrule/fmri/analyses/behav_dataframes')
 summary = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv')
-subjects = [1, 2]
+subjects = range(1, 23)
 sessions = [1, 2, 3]
 
 for sub in subjects:
     subject = 'sub-{}'.format(sub)
-    savepath = join(outpath, subject)
+    savepath = join(outpath, '1406', subject)
     slurm.mkdir_p(savepath)
     for ses in sessions:  # range(1, 4):
         session = 'ses-{}'.format(ses)
@@ -52,12 +52,13 @@ for sub in subjects:
                                            'CHOICE_TRIAL_STIMOFF', 'CHOICE_TRIAL_RESP',
                                            'CHOICE_TRIAL_RULE_RESP'])]
                 df = df.reset_index()
+                df.value = df.value.replace('n/a', np.nan).astype(float)
                 df['gen_side'] = df.loc[df.event == 'GL_TRIAL_GENSIDE'].\
-                    set_index(df.loc[df.event == 'GL_TRIAL_GENSIDE'].index + 1).value
+                    set_index(df.loc[df.event == 'GL_TRIAL_GENSIDE'].index + 1).value.astype('float')
                 df['stim_id'] = df.loc[df.event == 'GL_TRIAL_STIM_ID'].\
-                    set_index(df.loc[df.event == 'GL_TRIAL_STIM_ID'].index + 2).value
+                    set_index(df.loc[df.event == 'GL_TRIAL_STIM_ID'].index + 2).value.astype('float')
                 df['rule_resp'] = df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP'].\
-                    set_index(df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP'].index - 1).value
+                    set_index(df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP'].index - 1).value.astype('float')
                 df = df.loc[df.event.isin(['GL_TRIAL_LOCATION',
                                            'CHOICE_TRIAL_ONSET',
                                            'CHOICE_TRIAL_STIMOFF',
@@ -72,6 +73,7 @@ for sub in subjects:
                 df['test'] = np.convolve(df.belief.values, [1, 1], 'same')
                 df['test2'] = np.convolve(df.belief.abs().values, [1, 1], 'same')
                 df['switch'] = df.test.abs() < df.test2.abs()
+
                 df = df.drop(['test', 'test2'], axis=1)
                 df['prior_belief'] = np.nan
                 df.loc[df.event == 'GL_TRIAL_LOCATION', 'prior_belief'] =\
@@ -82,6 +84,15 @@ for sub in subjects:
                                                'CHOICE_TRIAL_RESP': 'response', 'CHOICE_TRIAL_STIMOFF': 'stimulus_offset'})
                 df.loc[df.event == 'point', 'murphy_surprise'] =\
                     gl.murphy_surprise(df.loc[df.event == 'point'].prior_belief.values, df.loc[df.event == 'point'].belief.values)
-                df.sort_index(by='onset').to_csv(join(savepath, 'behav_{0}_{1}_run-{2}.csv'.format(subject, session, run)))
+                df['point'] = df.event == 'point'
+                df['response'] = df.event == 'response'
+                df['response_left'] = ((df.event == 'response') & (df.value == 0))
+                df['response_right'] = (df.event == 'response') & (df.value == 1)
+                df['stimulus_horiz'] = (df.event == 'choice_onset') & (df.stim_id == 0)
+                df['stimulus_vert'] = (df.event == 'choice_onset') & (df.stim_id == 1)
+                df['stimulus'] = df.event == 'choice_onset'
+                df['rresp_left'] = (df.event == 'response') & (df.rule_resp == 0)
+                df['rresp_right'] = (df.event == 'response') & (df.rule_resp == 1)
+                df = df.sort_index(by='onset').to_csv(join(savepath, 'behav_{0}_{1}_run-{2}.csv'.format(subject, session, run)))
         except RuntimeError:
             pass
