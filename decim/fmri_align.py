@@ -10,7 +10,7 @@ import sys
 
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 data_dir = '/Volumes/flxrl/fmri/bids_mr'
-out_dir = join('/Users/kenohagena/Flexrule/fmri/analyses/behav_fmri_aligned', 'new')
+out_dir = '/home/khagena/FLEXRULE/fmri/behav_fmri_aligned'
 slu.mkdir_p(out_dir)
 
 
