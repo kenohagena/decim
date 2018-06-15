@@ -19,19 +19,19 @@ def submit(walltime, memory, tmpdir, logdir, workdir, script, name,
     '''
     print('script in submit {}'.format(script))
     sbatch_directives = '''#!/bin/bash
-    #SBATCH --job-name={name}
-    #SBATCH --nodes={nodes}
-    #SBATCH --tasks-per-node={tasks}
-    #SBATCH --time={walltime}
-    #SBATCH --export=NONE
-    #SBATCH --mem={memory}GB
-    #SBATCH --partition=std
-    #SBATCH --mail-user=kenohagena@gmail.com
-    #SBATCH --mail-type=ALL
-    #SBATCH --error=/work/faty014/cluster/slurm_%j.out
-    #SBATCH --output=/work/faty014/cluster/slurm_%j.err
+#SBATCH --job-name={name}
+#SBATCH --nodes={nodes}
+#SBATCH --tasks-per-node={tasks}
+#SBATCH --time={walltime}
+#SBATCH --export=NONE
+#SBATCH --mem={memory}GB
+#SBATCH --partition=std
+#SBATCH --mail-user=kenohagena@gmail.com
+#SBATCH --mail-type=ALL
+#SBATCH --error=/work/faty014/cluster/slurm_%j.out
+#SBATCH --output=/work/faty014/cluster/slurm_%j.err
 
-    source /sw/modules/rrz-modules.sh
+source /sw/modules/rrz-modules.sh
 
 
     '''.format(**{'walltime': walltime,
@@ -42,14 +42,14 @@ def submit(walltime, memory, tmpdir, logdir, workdir, script, name,
                   'logdir': logdir})
 
     environment_variables = '''
-    module purge
-    module load env
-    module load site/hummel
-    source ~/.bashrc
+module purge
+module load env
+module load site/hummel
+source ~/.bashrc
 
-    python3 {script}
+python3 {script}
 
-    cp -r {workdir} /work/faty014
+cp -r {workdir} /work/faty014
     '''.format(**{'script': script,
                   'workdir': workdir})
     command = sbatch_directives + environment_variables
