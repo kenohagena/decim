@@ -11,7 +11,11 @@ import sys
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 data_dir = '/Volumes/flxrl/fmri/bids_mr'
 out_dir = '/home/khagena/FLEXRULE/fmri/behav_fmri_aligned'
-slu.mkdir_p(out_dir)
+hummel_out = '/work/faty014/behav_fmri_aligned'
+
+
+
+slu.mkdir_p(hummel_out)
 
 
 def hrf(t):
@@ -73,7 +77,7 @@ def execute(sub, ses, run_index):
                 - convolved with hrf
                 - downsampled to EPI-f
     '''
-    b = pd.read_csv('/home/khagena/FLEXRULE/behavior/behav_dataframes/sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
+    b = pd.read_csv('/work/faty014/behav_dataframes/sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
                     format(sub, ses, [4, 5, 6][run_index]),
                     index_col=0)
     b.onset = b.onset.astype(float)
@@ -93,11 +97,31 @@ def execute(sub, ses, run_index):
     b = regular(b, target='1900ms')
     b.loc[pd.Timedelta(0)] = 0
     b = b.sort_index()
+    b.to_csv(join(out_dir, 'beh_regressors_sub-{0}_ses-{1}_{2}'.format(sub, ses, runs[run_index])))
     return b
 
 
-### TO EXECUTE UNCOMMENT AND INSERT SUBJECT ARRAY ###
 
+def keys():
+    for sub in range(1, 23):
+        for ses in [2, 3]:
+            for run in [0,1,2]:
+                yield(sub, ses, run)
+
+
+def par_execute(keys):
+    #print(ii, len(chunk))
+    with Pool(16) as p:
+        values = p.starmap(execute, keys)
+
+
+if __name__ == '__main__':
+    slu.pmap(par_execute, keys(), walltime='2:55:00',
+                 memory=30, nodes=1, tasks=16, name='fmri_align')
+
+
+### TO EXECUTE UNCOMMENT AND INSERT SUBJECT ARRAY ###
+'''
 if __name__ == "__main__":
     for ses in [2, 3]:
         for run in [0, 1, 2]:
@@ -107,6 +131,7 @@ if __name__ == "__main__":
             except FileNotFoundError:
                 print('file not found for {0} {1} {2}'.format(sys.argv[1], ses, run))
 
+'''
 '''
 subjects = range(1, 23)
 
