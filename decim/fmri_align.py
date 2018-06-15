@@ -70,7 +70,7 @@ def rep_time(subject, session, run_index, data_dir):
     return repTime
 
 
-def execute(sub, ses, run_index):
+def execute(keys):  # (sub, ses, run_index):
     '''
     Output: pd.DataFrame with
                 - parameters as columns
@@ -78,6 +78,9 @@ def execute(sub, ses, run_index):
                 - convolved with hrf
                 - downsampled to EPI-f
     '''
+    sub = keys[0]
+    ses = keys[1]
+    run_index = keys[2]
     b = pd.read_csv('/work/faty014/behav_dataframes/sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
                     format(sub, ses, [4, 5, 6][run_index]),
                     index_col=0)
@@ -103,10 +106,12 @@ def execute(sub, ses, run_index):
 
 
 def keys():
+    keys = []
     for sub in range(1, 23):
         for ses in [2, 3]:
             for run in [0, 1, 2]:
-                yield(sub, ses, run)
+                keys.append([sub, ses, run])
+    return keys
 
 
 def par_execute(keys):
@@ -117,7 +122,6 @@ def par_execute(keys):
 if __name__ == '__main__':
     slu.pmap(par_execute, keys(), walltime='2:55:00',
              memory=30, nodes=1, tasks=16, name='fmri_align')
-
 
 ### TO EXECUTE UNCOMMENT AND INSERT SUBJECT ARRAY ###
 '''
