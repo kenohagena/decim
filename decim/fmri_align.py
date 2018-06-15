@@ -16,7 +16,7 @@ out_dir = '/home/khagena/FLEXRULE/fmri/behav_fmri_aligned'
 hummel_out = '/work/faty014/behav_fmri_aligned'
 
 
-slu.mkdir_p(hummel_out)
+# slu.mkdir_p(hummel_out)
 
 
 def hrf(t):
@@ -70,7 +70,7 @@ def rep_time(subject, session, run_index, data_dir):
     return repTime
 
 
-def execute(keys):  # (sub, ses, run_index):
+def execute(sub, ses, run_index):
     '''
     Output: pd.DataFrame with
                 - parameters as columns
@@ -78,9 +78,7 @@ def execute(keys):  # (sub, ses, run_index):
                 - convolved with hrf
                 - downsampled to EPI-f
     '''
-    sub = keys[0]
-    ses = keys[1]
-    run_index = keys[2]
+
     b = pd.read_csv('/work/faty014/behav_dataframes/sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
                     format(sub, ses, [4, 5, 6][run_index]),
                     index_col=0)
@@ -110,7 +108,7 @@ def keys():
     for sub in range(1, 23):
         for ses in [2, 3]:
             for run in [0, 1, 2]:
-                keys.append([sub, ses, run])
+                keys.append((sub, ses, run))
     return keys
 
 
