@@ -71,8 +71,8 @@ def to_script(func, tmpdir, *args):
     with tempfile.NamedTemporaryFile(mode='w', delete=False, dir='/work/faty014/',
                                      prefix='py_script') as script:
         code = """
-        from {module} import {function}
-        {function}{args}
+from {module} import {function}
+{function}{args}
               """.format(**{'module': func.__module__,
                             'function': func.__name__,
                             'args': args})
