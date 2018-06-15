@@ -7,12 +7,13 @@ from os.path import join
 from glob import glob
 import decim.slurm_submit as slu
 import sys
+from multiprocessing import Pool
+
 
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 data_dir = '/Volumes/flxrl/fmri/bids_mr'
 out_dir = '/home/khagena/FLEXRULE/fmri/behav_fmri_aligned'
 hummel_out = '/work/faty014/behav_fmri_aligned'
-
 
 
 slu.mkdir_p(hummel_out)
@@ -101,23 +102,21 @@ def execute(sub, ses, run_index):
     return b
 
 
-
 def keys():
     for sub in range(1, 23):
         for ses in [2, 3]:
-            for run in [0,1,2]:
+            for run in [0, 1, 2]:
                 yield(sub, ses, run)
 
 
 def par_execute(keys):
-    #print(ii, len(chunk))
     with Pool(16) as p:
-        values = p.starmap(execute, keys)
+        p.starmap(execute, keys)
 
 
 if __name__ == '__main__':
     slu.pmap(par_execute, keys(), walltime='2:55:00',
-                 memory=30, nodes=1, tasks=16, name='fmri_align')
+             memory=30, nodes=1, tasks=16, name='fmri_align')
 
 
 ### TO EXECUTE UNCOMMENT AND INSERT SUBJECT ARRAY ###
