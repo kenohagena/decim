@@ -78,15 +78,13 @@ def execute(sub):
                     results.append(result)
                     print('success')
                 except FileNotFoundError:
-                    print('file not found for %s %s %s' % sub % ses % run)
+                    print('file not found')
     df = pd.DataFrame(results)
-    df.to_csv(path)
+    df.to_csv(join(roi_path, 'linreg_sub-{}.csv'.format(sub)))
 
 
 if __name__ == '__main__':
     execute(sys.argv[1])
-
-
 
 
 '''
