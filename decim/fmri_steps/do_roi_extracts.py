@@ -179,7 +179,7 @@ def execute(sub):
     for session in sessions:
         for run in runs:
             try:
-                df = extract_cortical_roi(sub, session, run, epi_dir)
+                df = extract_cortical_roi(sub, session, run, epi_dir, combined=False)
                 for atlas in atlases:
                     print(sub, session, run, atlas)
                     df[atlas] = weighted_average(sub, session, run, atlas, out_dir)
