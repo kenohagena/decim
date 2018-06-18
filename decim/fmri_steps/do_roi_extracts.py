@@ -9,9 +9,9 @@ from nilearn import surface
 import nibabel as ni
 
 
-epi_dir = '/Volumes/flxrl/fmri/completed_preprocessed'  # '/home/khagena/FLEXRULE/fmri/completed_preprocessed'
+epi_dir = '/home/khagena/FLEXRULE/fmri/completed_preprocessed'
 atlas_dir = '/home/khagena/FLEXRULE/fmri/atlases'
-out_dir = '/Volumes/flxrl/fmri/roi_extract'  # '/home/khagena/FLEXRULE/fmri/roi_extract'
+out_dir = '/home/khagena/FLEXRULE/fmri/roi_extract'
 subjects = [12, 13, 14, 19, 20, 21]
 sessions = ['ses-2', 'ses-3']
 runs = ['inference_run-4',
@@ -93,7 +93,7 @@ def concat_single_rois(sub, out_dir):
     df.to_csv(join(home, '{}_rois_indexed.csv'.format(subject)), index=True)
 
 
-def extract_cortical_roi(sub, session, run, epi_dir):
+def extract_cortical_roi(sub, session, run, epi_dir, combined=True):
     '''
     INPUT: surface annotaions & functional file per run in subject space (fsnative)
     --> Z-score per vertex and average across vertices per annotation label.
@@ -102,16 +102,45 @@ def extract_cortical_roi(sub, session, run, epi_dir):
     hemispheres = []
     for hemisphere, hemi in h.items():
         subject = 'sub-{}'.format(sub)
-        annot_path = join(epi_dir, subject, 'freesurfer', subject, 'label', '{0}.HCPMMP1.annot'.format(hemisphere))
+        if combined is True:
+            annot_path = join(epi_dir, subject, 'freesurfer', subject, 'label', '{0}.HCPMMP1_combined.annot'.format(hemisphere))
+        else:
+            annot_path = join(epi_dir, subject, 'freesurfer', subject, 'label', '{0}.HCPMMP1.annot'.format(hemisphere))
         lh_func_path = glob(join(epi_dir, subject, 'fmriprep', subject, session, 'func', '*{0}*fsnative.{1}.func.gii'.format(run, hemi)))[0]
-
         annot = ni.freesurfer.io.read_annot(annot_path)
-        labels = annot[2]
-        labels = [i.astype('str') for i in labels]
+        if combined is True:
+            labels = [
+                '23_inside',
+                '19_cingulate_anterior_prefrontal_medial',
+                '11_auditory_association',
+                '03_visual_dors',
+                '22_prefrontal_dorsolateral',
+                '10_auditory_primary',
+                '02_visual_early',
+                '21_frontal_inferior',
+                '17_parietal_inferior',
+                '12_insular_frontal_opercular',
+                '14_lateral_temporal',
+                '05_visual_lateral',
+                '13_temporal_medial',
+                '20_frontal_orbital_polar',
+                '07_paracentral_lob_mid_cingulate',
+                '18_cingulate_posterior',
+                '09_opercular_posterior',
+                '08_premotor',
+                '01_visual_primary',
+                '06_somatosensory_motor',
+                '16_parietal_superior',
+                '15_temporal_parietal_occipital_junction',
+                '04_visual_ventral'
+            ]
+            labels = [i + '_{}'.format(hemisphere) for i in labels]
+        else:
+            labels = annot[2]
+            labels = [i.astype('str') for i in labels]
         affiliation = annot[0]
         surf = surface.load_surf_data(lh_func_path)
         surf_df = pd.DataFrame(surf).T
-
         # z-score per vertex
         surf_df = (surf_df - surf_df.mean()) / surf_df.std()
         surf_df = surf_df.T
@@ -146,19 +175,23 @@ def weighted_average(sub, session, run, atlas, roi_dir):
     return weighted
 
 
+def execute(sub):
+    for session in sessions:
+        for run in runs:
+            try:
+                df = extract_cortical_roi(sub, session, run, epi_dir)
+                for atlas in atlases:
+                    print(sub, session, run, atlas)
+                    df[atlas] = weighted_average(sub, session, run, atlas, out_dir)
+                df.to_csv(join(out_dir, 'weighted', '{0}_{1}_{2}_weighted_rois.csv'.format(sub, session, run)))
+            except IndexError:
+                print('error {}'.format(sub))
+
+
 if __name__ == "__main__":
-    for sub in range(14, 23):
-        for session in sessions:
-            for run in runs:
-                try:
-                    df = extract_cortical_roi(sub, session, run, epi_dir)
-                    for atlas in atlases:
-                        print(sub, session, run, atlas)
-                        df[atlas] = weighted_average(sub, session, run, atlas, out_dir)
-                    df.to_csv(join(out_dir, 'weighted', '{0}_{1}_{2}_weighted_rois.csv'.format(sub, session, run)))
-                except IndexError:
-                    print('error {}'.format(sub))
-# To run brainstem extractions embedded in a shell script
+    execute(sys.argv[1])
+
+    # To run brainstem extractions embedded in a shell script
 '''
     extract_brainstem_roi(sys.argv[1], epi_dir, atlas_dir, out_dir)  # to embed in shell script
     concat_single_rois(sys.argv[1], out_dir)
