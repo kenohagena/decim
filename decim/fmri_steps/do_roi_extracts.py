@@ -177,7 +177,7 @@ def weighted_average(sub, session, run, atlas, roi_dir):
 
 def execute(sub):
     extract_brainstem_roi(sub, epi_dir, atlas_dir, out_dir)
-    concat_single_rois(subm out_dir)
+    concat_single_rois(sub, out_dir)
     for session in sessions:
         for run in runs:
             try:
