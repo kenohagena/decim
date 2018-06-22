@@ -6,6 +6,7 @@ import nibabel as nib
 from sklearn.linear_model import LinearRegression
 import itertools
 from decim import slurm_submit as slu
+from nilearn.surface import vol_to_surf
 import sys
 
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
@@ -22,7 +23,7 @@ def linreg_voxel(sub, session, epi_dir, behav_dir, out_dir):
     Return one Nifti per session, subject & parameter with four frames:
         coef_, intercept_, r2_score, mean_squared_error
     '''
-    subject = 'sub-{}'.format(sub)
+    subject = 'sub-{0}'.format(sub)
     session_nifti = []
     session_behav = []
     for run in runs:
@@ -49,15 +50,38 @@ def linreg_voxel(sub, session, epi_dir, behav_dir, out_dir):
                    session_nifti)
         predict = linreg.predict(session_behav[param].values.reshape(-1, 1))
         reg_result = np.concatenate(([linreg.coef_.flatten()], [linreg.intercept_],
-                        [r2_score(session_nifti, predict, multioutput='raw_values')],
-                       [mean_squared_error(session_nifti, predict, multioutput='raw_values')]), axis=0)
+                                     [r2_score(session_nifti, predict, multioutput='raw_values')],
+                                     [mean_squared_error(session_nifti, predict, multioutput='raw_values')]), axis=0)
         new_shape = np.stack([reg_result[i, :].reshape(shape[0:3]) for i in range(reg_result.shape[0])], -1)
         new_image = nib.Nifti1Image(new_shape, affine=nifti.affine)
         new_image.to_filename(join(out_dir,
-                                  '{0}_{1}_{2}.nii.gz'.format(subject, session, param)))
+                                   '{0}_{1}_{2}.nii.gz'.format(subject, session, param)))
+
+
+def keys(sub, behav_dir):
+    behav = pd.load(join(behav_dir, 'behav_fmri_aligned/beh_regressors_sub-10_ses-2_inference_run-4'), index_col=0)
+    parameters = behav.columns
+    subject = 'sub-{}'.format(sub)
+    for param, session, hemisphere in itertools.product(parameters,
+                                                        ['ses-2', 'ses-3'],
+                                                        ['L', 'R']):
+        yield(subject, session, param, hemisphere)
+
+
+def vol_2surf(subject, session, param, hemisphere, out_dir, fmri_dir, radius=.3):
+    reg = nib.load(join(fmri_dir, 'voxel_regressions', '/{0}_{1}_{2}.nii.gz'.
+                        format(subject, session, param)))
+    pial = join(fmri_dir, 'completed_preprocessed', subject,
+                'fmriprep', subject, 'anat', '{0}_T1w_pial.{1}.surf.gii'.format(subject, hemisphere))
+    surface = vol_to_surf(reg, pial, radius=radius, kind='line')
+    pd.DataFrame(surface, columns=['coef_', 'intercept_', 'r2_score', 'mean_squared_error']).\
+        to_csv(join(out_dir, '{0}_{1}_{2}_{3}.csv'.format(subject, session, param, hemisphere)))
 
 
 if __name__ == '__main__':
+    fmri_dir = '/home/khagena/FLEXRULE/fmri'
+    out_dir = join(fmri_dir, 'surface_textures')
     slu.mkdir_p(out_dir)
-    for ses in ['ses-2', 'ses-3']:
-        linreg_voxel(sys.argv[0], ses, epi_dir, behav_dir, out_dir)
+    for subject, session, param, hemisphere in keys(sys.argv[1], '/home/khagena/FLEXRULE/behavior'):
+        vol_2surf(subject, session, param, hemisphere,
+                  out_dir, fmri_dir)
