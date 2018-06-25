@@ -12,7 +12,7 @@ import sys
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 epi_dir = '/home/khagena/FLEXRULE/fmri/completed_preprocessed'
 behav_dir = '/home/khagena/FLEXRULE/behavior/behav_fmri_aligned'
-out_dir = '/home/khagena/FLEXRULE/fmri/voxel_regressions'
+out_dir = '/home/khagena/FLEXRULE/fmri/voxel_regressions_new'
 
 
 def linreg_voxel(sub, session, epi_dir, behav_dir, out_dir):
@@ -82,9 +82,16 @@ def vol_2surf(subject, session, param, hemisphere, out_dir, fmri_dir, radius=.3)
 
 
 if __name__ == '__main__':
+    slu.mkdir_p(out_dir)
+    for session in ['ses-2', 'ses-3']:
+        linreg_voxel(sys.argv[1], session, epi_dir, behav_dir, out_dir)
+
+
+'''
     fmri_dir = '/home/khagena/FLEXRULE/fmri'
     out_dir = join(fmri_dir, 'surface_textures_new')
     slu.mkdir_p(out_dir)
     for subject, session, param, hemisphere in keys(sys.argv[1], '/home/khagena/FLEXRULE/behavior'):
         vol_2surf(subject, session, param, hemisphere,
                   out_dir, fmri_dir)
+'''
