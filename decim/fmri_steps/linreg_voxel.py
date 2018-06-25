@@ -34,6 +34,8 @@ def linreg_voxel(sub, session, epi_dir, behav_dir, out_dir):
         shape = nifti.get_data().shape
         data = nifti.get_data()
         d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.shape[-1])])
+        #z-score per voxel
+        d2 = (d2 - d2.mean()) / d2.std()
         if len(d2) > len(behav):
             d2 = d2[0: len(behav)]
         elif len(d2) < len(behav):
@@ -59,7 +61,7 @@ def linreg_voxel(sub, session, epi_dir, behav_dir, out_dir):
 
 
 def keys(sub, behav_dir):
-    behav = pd.load(join(behav_dir, 'behav_fmri_aligned/beh_regressors_sub-10_ses-2_inference_run-4'), index_col=0)
+    behav = pd.read_csv(join(behav_dir, 'behav_fmri_aligned/beh_regressors_sub-10_ses-2_inference_run-4'), index_col=0)
     parameters = behav.columns
     subject = 'sub-{}'.format(sub)
     for param, session, hemisphere in itertools.product(parameters,
@@ -69,7 +71,7 @@ def keys(sub, behav_dir):
 
 
 def vol_2surf(subject, session, param, hemisphere, out_dir, fmri_dir, radius=.3):
-    reg = nib.load(join(fmri_dir, 'voxel_regressions', '/{0}_{1}_{2}.nii.gz'.
+    reg = nib.load(join(fmri_dir, 'voxel_regressions', '{0}_{1}_{2}.nii.gz'.
                         format(subject, session, param)))
     pial = join(fmri_dir, 'completed_preprocessed', subject,
                 'fmriprep', subject, 'anat', '{0}_T1w_pial.{1}.surf.gii'.format(subject, hemisphere))
@@ -80,7 +82,7 @@ def vol_2surf(subject, session, param, hemisphere, out_dir, fmri_dir, radius=.3)
 
 if __name__ == '__main__':
     fmri_dir = '/home/khagena/FLEXRULE/fmri'
-    out_dir = join(fmri_dir, 'surface_textures')
+    out_dir = join(fmri_dir, 'surface_textures_new')
     slu.mkdir_p(out_dir)
     for subject, session, param, hemisphere in keys(sys.argv[1], '/home/khagena/FLEXRULE/behavior'):
         vol_2surf(subject, session, param, hemisphere,
