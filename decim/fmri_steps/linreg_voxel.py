@@ -82,16 +82,19 @@ def vol_2surf(subject, session, param, hemisphere, out_dir, fmri_dir, radius=.3)
 
 
 if __name__ == '__main__':
-    slu.mkdir_p(out_dir)
-    for session in ['ses-2', 'ses-3']:
-        linreg_voxel(sys.argv[1], session, epi_dir, behav_dir, out_dir)
-
-
-'''
     fmri_dir = '/home/khagena/FLEXRULE/fmri'
     out_dir = join(fmri_dir, 'surface_textures_new')
     slu.mkdir_p(out_dir)
     for subject, session, param, hemisphere in keys(sys.argv[1], '/home/khagena/FLEXRULE/behavior'):
         vol_2surf(subject, session, param, hemisphere,
                   out_dir, fmri_dir)
+
+
+'''
+
+
+    slu.mkdir_p(out_dir)
+    for session in ['ses-2', 'ses-3']:
+        linreg_voxel(sys.argv[1], session, epi_dir, behav_dir, out_dir)
+
 '''
