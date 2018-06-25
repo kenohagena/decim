@@ -34,8 +34,6 @@ def linreg_voxel(sub, session, epi_dir, behav_dir, out_dir):
         shape = nifti.get_data().shape
         data = nifti.get_data()
         d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.shape[-1])])
-        #z-score per voxel
-        d2 = (d2 - d2.mean()) / d2.std()
         if len(d2) > len(behav):
             d2 = d2[0: len(behav)]
         elif len(d2) < len(behav):
@@ -44,6 +42,9 @@ def linreg_voxel(sub, session, epi_dir, behav_dir, out_dir):
         session_nifti.append(pd.DataFrame(d2))
     session_nifti = pd.concat(session_nifti, ignore_index=True)
     session_behav = pd.concat(session_behav, ignore_index=True)
+    # Z-Score behavior and voxels
+    session_nifti = (session_nifti - session_nifti.mean()) / session_nifti.std()
+    session_behav = (session_behav - session_behav.mean()) / session_behav.std()
     assert session_behav.shape[0] == session_nifti.shape[0]
 
     for param in behav.columns:
