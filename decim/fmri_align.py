@@ -82,11 +82,12 @@ def execute(sub, ses, run_index):
     b = pd.read_csv('/work/faty014/behav_dataframes/sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
                     format(sub, ses, [4, 5, 6][run_index]),
                     index_col=0)
+    b['belief_left'] = -b.belief #if not existent
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
     b = b.loc[:, ['onset', 'belief', 'murphy_surprise', 'switch', 'point', 'response', 'response_left',
                   'response_right', 'stimulus_horiz', 'stimulus_vert', 'stimulus',
-                  'rresp_left', 'rresp_right']]
+                  'rresp_left', 'rresp_right', 'LLR', 'belief_left']]
     b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
     b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
     b.loc[0] = 0
@@ -99,7 +100,7 @@ def execute(sub, ses, run_index):
     b = regular(b, target='1900ms')
     b.loc[pd.Timedelta(0)] = 0
     b = b.sort_index()
-    b.to_csv(join(out_dir, 'beh_regressors_sub-{0}_ses-{1}_{2}'.format(sub, ses, runs[run_index])))
+    b.to_csv(join(hummel_out, 'beh_regressors_sub-{0}_ses-{1}_{2}'.format(sub, ses, runs[run_index])))
     return b
 
 
