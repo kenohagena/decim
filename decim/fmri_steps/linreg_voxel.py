@@ -10,7 +10,7 @@ from nilearn.surface import vol_to_surf
 import sys
 
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
-epi_dir = '/home/khagena/FLEXRULE/fmri/completed_preprocessed'
+epi_dir = '/home/khagena/FLEXRULE/fmri'
 behav_dir = '/home/khagena/FLEXRULE/behavior/behav_fmri_aligned'
 out_dir = '/home/khagena/FLEXRULE/fmri/voxel2'
 hemis = {'L': 'lh', 'R': 'rh'}
