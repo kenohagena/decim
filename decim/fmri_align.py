@@ -82,7 +82,6 @@ def execute(sub, ses, run_index):
     b = pd.read_csv('/work/faty014/behav_dataframes/sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
                     format(sub, ses, [4, 5, 6][run_index]),
                     index_col=0)
-    b['belief_left'] = -b.belief #if not existent
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
     b = b.loc[:, ['onset', 'belief', 'murphy_surprise', 'switch', 'point', 'response', 'response_left',
@@ -94,6 +93,7 @@ def execute(sub, ses, run_index):
     b.belief = b.belief.fillna(method='ffill')
     b.murphy_surprise = b.murphy_surprise.fillna(method='ffill')
     b['abs_belief'] = b.belief.abs()
+    b['belief_left'] = -b.belief
     b = b.fillna(False).astype(float)
     for column in b.columns:
         b[column] = make_bold(b[column].values, dt=.001)
