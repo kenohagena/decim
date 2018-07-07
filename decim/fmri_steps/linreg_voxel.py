@@ -87,7 +87,7 @@ class VoxelSubject(object):
     def vol_2surf(self, radius=.3):
         for param, img in self.voxel_regressions.items():
             for hemisphere in ['L', 'R']:
-                pial = join(self.epi_dir, self.subject,
+                pial = join(self.epi_dir, 'completed_preprocessed', self.subject,
                             'fmriprep', self.subject, 'anat', '{0}_T1w_pial.{1}.surf.gii'.format(self.subject, hemisphere))
                 surface = vol_to_surf(img, pial, radius=radius, kind='line')
                 self.surface_textures.append(surface)
