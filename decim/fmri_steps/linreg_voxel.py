@@ -4,10 +4,10 @@ import pandas as pd
 from os.path import join
 import nibabel as nib
 from sklearn.linear_model import LinearRegression
-import itertools
 from decim import slurm_submit as slu
 from nilearn.surface import vol_to_surf
 import sys
+from glob import glob
 
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 epi_dir = '/home/khagena/FLEXRULE/fmri'
@@ -35,7 +35,7 @@ class VoxelSubject(object):
         self.epi_dir = epi_dir
         self.out_dir = out_dir
         self.behav_dir = behav_dir
-        self.voxel_regressions = []
+        self.voxel_regressions = {}
         self.surface_textures = []
 
     def linreg_voxel(self):
@@ -79,21 +79,21 @@ class VoxelSubject(object):
                                          [mean_squared_error(session_nifti, predict, multioutput='raw_values')]), axis=0)
             new_shape = np.stack([reg_result[i, :].reshape(shape[0:3]) for i in range(reg_result.shape[0])], -1)
             new_image = nib.Nifti1Image(new_shape, affine=nifti.affine)
-            self.voxel_regressions.append(new_image)
+            self.voxel_regressions[param] = new_image
+            slu.mkdir_p(join(self.out_dir, 'voxel_regressions'))
             new_image.to_filename(join(self.out_dir, 'voxel_regressions',
                                        '{0}_{1}_{2}.nii.gz'.format(self.subject, self.session, param)))
 
-
     def vol_2surf(self, radius=.3):
-        for img in self.voxel_regressions:
+        for param, img in self.voxel_regressions.iteritems():
             for hemisphere in ['L', 'R']:
                 pial = join(self.epi_dir, self.subject,
                             'fmriprep', self.subject, 'anat', '{0}_T1w_pial.{1}.surf.gii'.format(self.subject, hemisphere))
                 surface = vol_to_surf(img, pial, radius=radius, kind='line')
                 self.surface_textures.append(surface)
+                slu.mkdir_p(join(self.out_dir, 'surface_textures'))
                 pd.DataFrame(surface, columns=['coef_', 'intercept_', 'r2_score', 'mean_squared_error']).\
-                    to_csv(join(self.out_dir, 'surface_textures', '{0}_{1}_{2}_{3}.csv'.format(subject, session, param, hemisphere)))
-
+                    to_csv(join(self.out_dir, 'surface_textures', '{0}_{1}_{2}_{3}.csv'.format(self.subject, self.session, param, hemisphere)))
 
 
 def lateralize(x):
@@ -105,25 +105,26 @@ def lateralize(x):
     left.set_index(['subject', 'parameter', 'names', 'labs'], inplace=True)
     right.set_index(['subject', 'parameter', 'names', 'labs'], inplace=True)
     if all(x.parameter == 'response_left'):
-        x = right-left
+        x = right - left
     elif all(x.parameter == 'response_right'):
-        x = left-right
+        x = left - right
     else:
         raise RuntimeError()
     return x
+
 
 def concat(input_dir):
     files = glob(input_dir)
     dfs = []
     for file in (files):
         subject = file[file.find('sub-'):file.find('_ses-')]
-        parameter = file[file.find('ses-')+6:file.find('.csv')-2]
-        session = file[file.find('ses-'):file.find(parameter)-1]
+        parameter = file[file.find('ses-') + 6:file.find('.csv') - 2]
+        session = file[file.find('ses-'):file.find(parameter) - 1]
         hemisphere = file[file.find(parameter) + len(parameter) + 1:file.find('.csv')]
         df = pd.read_csv(file, index_col=0)
-        df['belief_right'] = df.belief #if not existent
+        df['belief_right'] = df.belief  # if not existent
         aparc_file = '/Volumes/flxrl/FLEXRULE/fmri/completed_preprocessed/{0}/freesurfer/{0}/label/{1}.HCPMMP1.annot'.\
-        format(subject, hemis[hemisphere])
+            format(subject, hemis[hemisphere])
         labels, ctab, names = nib.freesurfer.read_annot(aparc_file)
         df['labs'] = labels
         str_names = [str(i) for i in names]
@@ -165,11 +166,11 @@ def surface_plot_data(grouped_df, lateral_params, marker='coef_'):
         mag['{}_lat'.format(lateral_param)] = lat[marker].values
     return mag
 
+
 def surface_data(input_dir, lateral_params):
     grouped = concat(input_dir)
     mag_lat = surface_plot_data(grouped, lateral_params)
-    mag.to_csv(join(input_dir, 'surface_textures_average.csv'))
-
+    mag_lat.to_csv(join(input_dir, 'surface_textures_average.csv'))
 
 
 if __name__ == '__main__':
@@ -179,8 +180,6 @@ if __name__ == '__main__':
         v = VoxelSubject(sys.argv[1], 'ses-2', epi_dir, out_dir, behav_dir)
         v.linreg_voxel()
         v.vol_2surf()
-
-
 
 
 '''
