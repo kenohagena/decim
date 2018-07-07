@@ -85,7 +85,7 @@ class VoxelSubject(object):
                                        '{0}_{1}_{2}.nii.gz'.format(self.subject, self.session, param)))
 
     def vol_2surf(self, radius=.3):
-        for param, img in self.voxel_regressions.iteritems():
+        for param, img in self.voxel_regressions.items():
             for hemisphere in ['L', 'R']:
                 pial = join(self.epi_dir, self.subject,
                             'fmriprep', self.subject, 'anat', '{0}_T1w_pial.{1}.surf.gii'.format(self.subject, hemisphere))
