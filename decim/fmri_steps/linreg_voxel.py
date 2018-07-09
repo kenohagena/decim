@@ -195,7 +195,7 @@ def keys():
     keys = []
     for sub in range(1, 23):
         for ses in [2, 3]:
-            keys.append((sub, ses))
+            keys.append((sub, 'ses-{}'.format(ses)))
     return keys
 
 
