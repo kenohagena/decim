@@ -98,8 +98,6 @@ def execute(sub, ses, run_index, hrf):
     if hrf is True:
         for column in b.columns:
             b[column] = make_bold(b[column].values, dt=.001)
-    else:
-        continue
     b = regular(b, target='1900ms')
     b.loc[pd.Timedelta(0)] = 0
     b = b.sort_index()
