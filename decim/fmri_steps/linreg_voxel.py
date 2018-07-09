@@ -8,6 +8,8 @@ from decim import slurm_submit as slu
 from nilearn.surface import vol_to_surf
 import sys
 from glob import glob
+from multiprocessing import Pool
+
 
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 epi_dir = '/home/khagena/FLEXRULE/fmri'
