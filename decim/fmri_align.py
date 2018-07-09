@@ -13,7 +13,7 @@ from multiprocessing import Pool
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 data_dir = '/Volumes/flxrl/fmri/bids_mr'
 out_dir = '/home/khagena/FLEXRULE/fmri/behav_fmri_aligned'
-hummel_out = '/work/faty014/behav_fmri_aligned'
+hummel_out = '/work/faty014/behav_fmri_aligned_no_hrf'
 
 
 # slu.mkdir_p(hummel_out)
@@ -70,7 +70,7 @@ def rep_time(subject, session, run_index, data_dir):
     return repTime
 
 
-def execute(sub, ses, run_index):
+def execute(sub, ses, run_index, hrf):
     '''
     Output: pd.DataFrame with
                 - parameters as columns
@@ -86,7 +86,7 @@ def execute(sub, ses, run_index):
     b = b.sort_values(by='onset')
     b = b.loc[:, ['onset', 'belief', 'murphy_surprise', 'switch', 'point', 'response', 'response_left',
                   'response_right', 'stimulus_horiz', 'stimulus_vert', 'stimulus',
-                  'rresp_left', 'rresp_right', 'LLR', 'belief_left']]
+                  'rresp_left', 'rresp_right', 'LLR']]
     b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
     b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
     b.loc[0] = 0
@@ -95,8 +95,11 @@ def execute(sub, ses, run_index):
     b['abs_belief'] = b.belief.abs()
     b['belief_left'] = -b.belief
     b = b.fillna(False).astype(float)
-    for column in b.columns:
-        b[column] = make_bold(b[column].values, dt=.001)
+    if hrf is True:
+        for column in b.columns:
+            b[column] = make_bold(b[column].values, dt=.001)
+    else:
+        continue
     b = regular(b, target='1900ms')
     b.loc[pd.Timedelta(0)] = 0
     b = b.sort_index()
@@ -109,7 +112,7 @@ def keys():
     for sub in range(1, 23):
         for ses in [2, 3]:
             for run in [0, 1, 2]:
-                keys.append((sub, ses, run))
+                keys.append((sub, ses, run, 'False'))
     return keys
 
 
