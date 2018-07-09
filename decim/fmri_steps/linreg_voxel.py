@@ -87,7 +87,8 @@ class VoxelSubject(object):
     def vol_2surf(self, radius=.3):
         for param, img in self.voxel_regressions.items():
             for hemisphere in ['L', 'R']:
-                pial = join(self.epi_dir, 'completed_preprocessed', self.subject,
+                pial = join(self.epi_dir, 'completed_preprocessed',
+                            self.subject,
                             'fmriprep', self.subject, 'anat', '{0}_T1w_pial.{1}.surf.gii'.format(self.subject, hemisphere))
                 surface = vol_to_surf(img, pial, radius=radius, kind='line')
                 self.surface_textures.append(surface)
@@ -173,20 +174,34 @@ def surface_data(input_dir, lateral_params):
     mag_lat.to_csv(join(input_dir, 'surface_textures_average.csv'))
 
 
-if __name__ == '__main__':
-    slu.mkdir_p(out_dir)
-    for ses in ['ses-2', 'ses-3']:
-        slu.mkdir_p(out_dir)
-        v = VoxelSubject(sys.argv[1], 'ses-2', epi_dir, out_dir, behav_dir)
-        v.linreg_voxel()
-        v.vol_2surf()
-
-
+'''
+FUnctions to parallelize on Hummel Cluster
 '''
 
+
+def hummel_ex(sub, ses):
+    out_dir = '/work/faty014/FLEXRULE/fmri/voxel2'
+    epi_dir = '/work/faty014/FLEXRULE/fmri'
+    behav_dir = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned'
     slu.mkdir_p(out_dir)
-    for session in ['ses-2', 'ses-3']:
-        linreg_voxel(sys.argv[1], session, epi_dir, behav_dir, out_dir)
+    v = VoxelSubject(sub, ses, epi_dir, out_dir, behav_dir)
+    v.linreg_voxel()
+    v.vol_2surf()
 
 
-'''
+def keys():
+    keys = []
+    for sub in range(1, 23):
+        for ses in [2, 3]:
+            keys.append((sub, ses))
+    return keys
+
+
+def par_execute(keys):
+    with Pool(16) as p:
+        p.starmap(hummel_ex, keys)
+
+
+def submit():
+    slu.pmap(par_execute, keys(), walltime='2:55:00',
+             memory=30, nodes=1, tasks=16, name='fmri_align')
