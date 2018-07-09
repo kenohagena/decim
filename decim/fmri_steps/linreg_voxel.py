@@ -206,4 +206,4 @@ def par_execute(keys):
 
 def submit():
     slu.pmap(par_execute, keys(), walltime='2:55:00',
-             memory=30, nodes=1, tasks=16, name='fmri_align')
+             memory=60, nodes=1, tasks=16, name='fmri_align')
