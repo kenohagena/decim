@@ -13,7 +13,7 @@ from multiprocessing import Pool
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 data_dir = '/Volumes/flxrl/fmri/bids_mr'
 out_dir = '/home/khagena/FLEXRULE/fmri/behav_fmri_aligned'
-hummel_out = '/work/faty014/behav_fmri_aligned_no_hrf'
+hummel_out = '/work/faty014/behav_fmri_aligned_delay'
 
 
 slu.mkdir_p(hummel_out)
@@ -70,7 +70,7 @@ def rep_time(subject, session, run_index, data_dir):
     return repTime
 
 
-def execute(sub, ses, run_index, hrf):
+def execute(sub, ses, run_index):
     '''
     Output: pd.DataFrame with
                 - parameters as columns
@@ -95,13 +95,45 @@ def execute(sub, ses, run_index, hrf):
     b['abs_belief'] = b.belief.abs()
     b['belief_left'] = -b.belief
     b = b.fillna(False).astype(float)
-    if hrf is True:
-        for column in b.columns:
-            b[column] = make_bold(b[column].values, dt=.001)
+    for column in b.columns:
+        b[column] = make_bold(b[column].values, dt=.001)
     b = regular(b, target='1900ms')
     b.loc[pd.Timedelta(0)] = 0
     b = b.sort_index()
     b.to_csv(join(hummel_out, 'beh_regressors_sub-{0}_ses-{1}_{2}'.format(sub, ses, runs[run_index])))
+    return b
+
+
+def execute_delay(sub, ses, run_index, delay, behav_dir='/work/faty014'):
+    '''
+    Output: pd.DataFrame with
+                - delays as columns
+                - timedelta as index
+                - no convolution, just shifted
+                - downsampled to EPI-f
+    '''
+    b = pd.read_csv(join(behav_dir, 'behav_dataframes', 'sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
+                         format(sub, ses, [4, 5, 6][run_index])),
+                    index_col=0)
+    b.onset = b.onset.astype(float)
+    b = b.sort_values(by='onset')
+    b = b.loc[:, ['onset', 'belief', 'murphy_surprise', 'switch', 'point', 'response', 'response_left',
+                  'response_right', 'stimulus_horiz', 'stimulus_vert', 'stimulus',
+                  'rresp_left', 'rresp_right', 'LLR']]
+    b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
+    b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
+    b.loc[0] = 0
+    b.belief = b.belief.fillna(method='ffill')
+    b.murphy_surprise = b.murphy_surprise.fillna(method='ffill')
+    b['abs_belief'] = b.belief.abs()
+    b['belief_left'] = -b.belief
+    b = b.fillna(False).astype(float)
+    b = b.shift(delay)
+    b.iloc[0:delay] = 0
+    b = regular(b, target='1900ms')
+    b.loc[pd.Timedelta(0)] = 0
+    b = b.sort_index()
+    b.to_csv(join(hummel_out, 'beh_regressors_sub-{0}_ses-{1}_{2}_delay={3}'.format(sub, ses, runs[run_index], delay)))
     return b
 
 
@@ -110,7 +142,8 @@ def keys():
     for sub in range(1, 23):
         for ses in [2, 3]:
             for run in [0, 1, 2]:
-                keys.append((sub, ses, run, 'False'))
+                for delay in np.arange(0, 5000, 100):
+                    keys.append((sub, ses, run, delay))
     return keys
 
 
