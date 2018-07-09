@@ -149,7 +149,7 @@ def keys():
 
 def par_execute(keys):
     with Pool(16) as p:
-        p.starmap(execute, keys)
+        p.starmap(execute_delay, keys)
 
 
 def submit():
