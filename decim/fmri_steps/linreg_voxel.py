@@ -205,7 +205,7 @@ def par_execute(keys):
 
 def submit(sub):
     slu.pmap(par_execute, keys(sub), walltime='2:55:00',
-             memory=40, nodes=1, tasks=2, name='fmri_align')
+             memory=64, nodes=1, tasks=2, name='fmri_align')
 
 '''
 surface_data('/Volumes/flxrl/FLEXRULE/fmri/voxel2/surface_textures', ['belief', 'rresp', 'response'])
