@@ -9,6 +9,7 @@ from nilearn.surface import vol_to_surf
 import sys
 from glob import glob
 from multiprocessing import Pool
+from scipy.stats import ttest_1samp as ttest
 
 
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
@@ -107,9 +108,9 @@ def lateralize(x):
     del right['hemisphere']
     left.set_index(['subject', 'parameter', 'names', 'labs'], inplace=True)
     right.set_index(['subject', 'parameter', 'names', 'labs'], inplace=True)
-    if all(x.parameter == 'response_left'):
+    if all(x.parameter.str.endswith('left')):
         x = right - left
-    elif all(x.parameter == 'response_right'):
+    elif all(x.parameter.str.endswith('right')):
         x = left - right
     else:
         raise RuntimeError()
@@ -117,7 +118,7 @@ def lateralize(x):
 
 
 def concat(input_dir):
-    files = glob(input_dir)
+    files = glob(join(input_dir, '*_*'))
     dfs = []
     for file in (files):
         subject = file[file.find('sub-'):file.find('_ses-')]
@@ -125,7 +126,6 @@ def concat(input_dir):
         session = file[file.find('ses-'):file.find(parameter) - 1]
         hemisphere = file[file.find(parameter) + len(parameter) + 1:file.find('.csv')]
         df = pd.read_csv(file, index_col=0)
-        df['belief_right'] = df.belief  # if not existent
         aparc_file = '/Volumes/flxrl/FLEXRULE/fmri/completed_preprocessed/{0}/freesurfer/{0}/label/{1}.HCPMMP1.annot'.\
             format(subject, hemis[hemisphere])
         labels, ctab, names = nib.freesurfer.read_annot(aparc_file)
@@ -182,9 +182,9 @@ FUnctions to parallelize on Hummel Cluster
 
 
 def hummel_ex(sub, ses):
-    out_dir = '/work/faty014/FLEXRULE/fmri/voxel2'
+    out_dir = '/work/faty014/FLEXRULE/fmri/voxel3'
     epi_dir = '/work/faty014/FLEXRULE/fmri'
-    behav_dir = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned'
+    behav_dir = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned_2'
     slu.mkdir_p(out_dir)
     v = VoxelSubject(sub, ses, epi_dir, out_dir, behav_dir)
     v.linreg_voxel()
@@ -206,3 +206,7 @@ def par_execute(keys):
 def submit(sub):
     slu.pmap(par_execute, keys(sub), walltime='2:55:00',
              memory=40, nodes=1, tasks=2, name='fmri_align')
+
+'''
+surface_data('/Volumes/flxrl/FLEXRULE/fmri/voxel2/surface_textures', ['belief', 'rresp', 'response'])
+'''
