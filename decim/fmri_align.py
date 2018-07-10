@@ -145,8 +145,7 @@ def keys():
     for sub in range(1, 23):
         for ses in [2, 3]:
             for run in [0, 1, 2]:
-                for delay in np.arange(0, 5000, 100):
-                    keys.append((sub, ses, run, delay))
+                keys.append((sub, ses, run))
     return keys
 
 
@@ -158,4 +157,3 @@ def par_execute(keys):
 def submit():
     slu.pmap(par_execute, keys(), walltime='2:55:00',
              memory=30, nodes=1, tasks=16, name='fmri_align')
-
