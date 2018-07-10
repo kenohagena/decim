@@ -13,7 +13,7 @@ from multiprocessing import Pool
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 data_dir = '/Volumes/flxrl/fmri/bids_mr'
 out_dir = '/home/khagena/FLEXRULE/fmri/behav_fmri_aligned'
-hummel_out = '/work/faty014/behav_fmri_aligned_2'
+hummel_out = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned_2'
 
 
 slu.mkdir_p(hummel_out)
@@ -79,7 +79,7 @@ def execute(sub, ses, run_index):
                 - downsampled to EPI-f
     '''
 
-    b = pd.read_csv('/work/faty014/behav_dataframes/sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
+    b = pd.read_csv('/work/faty014/FLEXRULE/behavior/behav_dataframes/sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
                     format(sub, ses, [4, 5, 6][run_index]),
                     index_col=0)
     b.onset = b.onset.astype(float)
