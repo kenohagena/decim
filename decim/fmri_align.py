@@ -13,7 +13,7 @@ from multiprocessing import Pool
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 data_dir = '/Volumes/flxrl/fmri/bids_mr'
 out_dir = '/home/khagena/FLEXRULE/fmri/behav_fmri_aligned'
-hummel_out = '/work/faty014/behav_fmri_aligned_delay'
+hummel_out = '/work/faty014/behav_fmri_aligned_2'
 
 
 slu.mkdir_p(hummel_out)
@@ -94,6 +94,9 @@ def execute(sub, ses, run_index):
     b.murphy_surprise = b.murphy_surprise.fillna(method='ffill')
     b['abs_belief'] = b.belief.abs()
     b['belief_left'] = -b.belief
+    b['LLR_right'] = b.LLR
+    b['LLR_left'] = -b.LLR
+    b['abs_LLR'] = b.LLR.abs()
     b = b.fillna(False).astype(float)
     for column in b.columns:
         b[column] = make_bold(b[column].values, dt=.001)
@@ -149,35 +152,10 @@ def keys():
 
 def par_execute(keys):
     with Pool(16) as p:
-        p.starmap(execute_delay, keys)
+        p.starmap(execute, keys)
 
 
 def submit():
     slu.pmap(par_execute, keys(), walltime='2:55:00',
              memory=30, nodes=1, tasks=16, name='fmri_align')
 
-
-### TO EXECUTE UNCOMMENT AND INSERT SUBJECT ARRAY ###
-'''
-if __name__ == "__main__":
-    for ses in [2, 3]:
-        for run in [0, 1, 2]:
-            try:
-                regressor = execute(sys.argv[1], ses, run)
-                regressor.to_csv(join(out_dir, 'beh_regressors_sub-{0}_ses-{1}_{2}'.format(sys.argv[1], ses, runs[run])))
-            except FileNotFoundError:
-                print('file not found for {0} {1} {2}'.format(sys.argv[1], ses, run))
-
-'''
-'''
-subjects = range(1, 23)
-
-for sub in subjects:
-    for ses in [2, 3]:
-        for run in [0, 1, 2]:
-            try:
-                regressor = execute(sub, ses, run)
-                regressor.to_csv(join(out_dir, 'beh_regressors_sub-{0}_ses-{1}_{2}'.format(sub, ses, runs[run])))
-            except FileNotFoundError:
-                print('file not found for {0} {1} {2}'.format(sub, ses, run))
-'''
