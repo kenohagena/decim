@@ -5,22 +5,23 @@ import pandas as pd
 from glob import glob
 from os.path import join
 from pyedfread import edf
-from pyedfread import edfread
 from scipy import signal
+from decim import slurm_submit as slu
 
 
 class Pupilframe(object):
 
-    def __init__(self, subject, session, block, base_path, pupil_frame=None, bids=False):
-        if bids is True:
-            self.subject = subject
-            self.session = session
-        else:
-            self.subject = 'VPIM0{}'.format(subject)
-            sesdict = {1: 'A', 2: 'B', 3: 'C'}
-            self.session = sesdict[session]
-            self.block = block
-        self.base_path = base_path
+    def __init__(self, sub, ses, run_index, flex_dir, pupil_frame=None):
+        self.sub = sub
+        self.ses = ses
+        self.subject = 'sub-{}'.format(sub)
+        self.session = 'ses-{}'.format(ses)
+        inf_runs = ['inference_run-4',
+                    'inference_run-5',
+                    'inference_run-6']
+        self.run_index = run_index
+        self.run = inf_runs[run_index]
+        self.flex_dir = flex_dir
         self.pupil_frame = pupil_frame
         if pupil_frame is None:
             self.pupilside = []
@@ -36,14 +37,9 @@ class Pupilframe(object):
         if directory is not None:
             files = directory
         else:
-            sessions = {'A': 1, 'B': 3, 'C': 5}
-            phase = sessions[self.session]
-            directory = join(self.base_path,
-                             "{}".format(self.subject),
-                             "{}".format(self.session),
-                             'PH_' + "{}".format(phase) +
-                             'PH_' + "{}".format(self.block))
-            files = glob(join(directory, '*.edf'))
+            directory = join(self.flex_dir, 'raw', 'bids_mr_v1.1',
+                             self.subject, self.session, 'func')
+            files = glob(join(directory, '*{}*.edf'.format(self.run)))
         if len(files) > 1:
             raise RuntimeError(
                 'More than one log file found for this block: %s' % files)
@@ -189,11 +185,11 @@ class Pupilframe(object):
         '''
         self.pupil_frame['all_artifacts'] = bool(0)
         if blink is True:
-            self.pupil_frame.all_artifacts = self.pupil_frame.blink == True
+            self.pupil_frame.all_artifacts = self.pupil_frame.blink is True
         if saccade is True:
-            self.pupil_frame.all_artifacts = (self.pupil_frame.all_artifacts == True) | (self.pupil_frame.saccade == True)
+            self.pupil_frame.all_artifacts = (self.pupil_frame.all_artifacts is True) | (self.pupil_frame.saccade is True)
         if gaze_angle is True:
-            self.pupil_frame.all_artifacts = (self.pupil_frame.all_artifacts == True) | (self.pupil_frame.gaze_angle > gaze_thresh)
+            self.pupil_frame.all_artifacts = (self.pupil_frame.all_artifacts is True) | (self.pupil_frame.gaze_angle > gaze_thresh)
 
     def small_fragments(self, crit_frag_length=100):
         '''
@@ -220,7 +216,7 @@ class Pupilframe(object):
         smallfrag_ends = fragment_ends[wh]
         smallfrag_starts = fragment_starts[wh]
         for i in range(len(smallfrag_starts)):
-            self.pupil_frame.all_artifacts = (self.pupil_frame.all_artifacts == True) | (self.pupil_frame.index.isin(range(smallfrag_starts[i], smallfrag_ends[i] + 1)))
+            self.pupil_frame.all_artifacts = (self.pupil_frame.all_artifacts is True) | (self.pupil_frame.index.isin(range(smallfrag_starts[i], smallfrag_ends[i] + 1)))
 
     def interpol(self, margin=100):
         convolved = np.convolve(self.pupil_frame.all_artifacts, [0.5, 1], 'same')
@@ -283,6 +279,22 @@ class Pupilframe(object):
         self.pupil_frame['biz'] = (self.pupil_frame.bp_interpol - self.pupil_frame.bp_interpol.mean()) / self.pupil_frame.bp_interpol.std()
 
 
-#p = Pupilframe(1, 3, 4, '/Users/kenohagena/Documents/immuno/data/vaccine/')
-# p.basicframe()
-# print(p.pupil_frame.loc[~p.pupil_frame.message.isnull()])
+if __name__ == '__main__':
+    for sub in range(1, 23):
+        for ses in [2, 3]:
+            for ri in [0, 1, 2]:
+                try:
+                    flex_dir = '/Volumes/flxrl/FLEXRULE/'
+                    out_dir = join(flex_dir, 'pupil', 'linear_pupilframes')
+                    slu.mkdir_p(out_dir)
+                    p = Pupilframe(1, 2, 0, '/Volumes/flxrl/FLEXRULE/')
+                    p.basicframe()
+                    p.gaze_angle()
+                    p.all_artifacts()
+                    p.small_fragments()
+                    p.interpol()
+                    p.filter()
+                    p.z_score()
+                    p.pupil_frame.to_csv(join(out_dir, 'pupilframe_{}_{}_{}.csv'.format(p.subject, p.session, p.run)))
+                except RuntimeError:
+                    continue
