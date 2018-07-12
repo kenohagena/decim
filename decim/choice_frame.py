@@ -1,205 +1,174 @@
 import pandas as pd
 import numpy as np
-import glaze2 as gl
-import pupil_frame as pop
+from decim import glaze2 as gl
+from decim import glaze_control as gc
+from os.path import join
+from decim import slurm_submit as slu
 
 
-sessions = {1: 'A', 2: 'B', 3: 'C'}
-phases = {'A': 1, 'B': 3, 'C': 5}
+summary = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv')
+
+
+def baseline(grating, choice, length=1000):
+    baseline = np.matrix((grating.loc[:, 0:length].mean(axis=1))).T
+    return pd.DataFrame(np.matrix(grating) - baseline), pd.DataFrame(np.matrix(choice) - baseline), baseline
 
 
 class Choiceframe(object):
 
-    def __init__(self, subject, session, path, blocks=[1, 2, 3, 4, 5, 6, 7]):
+    def __init__(self, sub, ses, flex_dir, run_indices=[0, 1, 2]):
         '''
         Initialize
         '''
-        self.subject = 'VPIM0{}'.format(subject)
-        self.sub = subject
-        self.session = sessions[session]
-        self.ses = session
-        self.blocks = blocks
-        self.path = path
+        self.sub = sub
+        self.ses = ses
+        self.subject = 'sub-{}'.format(sub)
+        self.session = 'ses-{}'.format(ses)
+        self.flex_dir = flex_dir
+        inf_runs = np.array(['inference_run-4',
+                             'inference_run-5',
+                             'inference_run-6'])
+        self.runs = inf_runs[run_indices]
+        self.hazard = summary.loc[(summary.subject == self.subject) & (summary.session == self.session)].hmode.values
 
-    def choicetrials(self):
-        blockdfs = []
-        for block in self.blocks:
-            df = gl.log2pd(gl.load_log(self.subject, self.session, phases[self.session], block, self.path), block)
-            df = df.loc[df.message != 'BUTTON_PRESS']  # Because sometimes duplicated and not of importance
-            df['block'] = float(block)
-            blockdfs.append(df)
-        self.rawbehavior = pd.concat(blockdfs, ignore_index=True)
-        self.rawbehavior = self.rawbehavior.reset_index()
+    def choice_behavior(self):
+        logs = gc.load_logs_bids(self.sub, self.ses, join(self.flex_dir, 'raw', 'bids_mr_v1.1'))
+        logs = pd.concat(logs[1], ignore_index=True)
+
+        self.rawbehavior = logs.loc[logs.event.isin(['START_GLAZE', 'GL_TRIAL_START',
+                                                     'GL_TRIAL_GENSIDE', 'GL_TRIAL_LOCATION', 'GL_TRIAL_TYPE',
+                                                     'SAMPLE_ONSET', 'GL_TRIAL_STIM_ID', 'CHOICE_TRIAL_ONSET',
+                                                     'CHOICE_TRIAL_STIMOFF', 'CHOICE_TRIAL_RESP',
+                                                     'CHOICE_TRIAL_RT', 'CHOICE_TRIAL_RULE_RESP', 'GL_TRIAL_REWARD'])].reset_index()
+
         df = self.rawbehavior
-        rule_response = (df.loc[df.message == "CHOICE_TRIAL_RULE_RESP", 'value'].astype(float))
-        rt = df.loc[df.message == 'CHOICE_TRIAL_RT']['value']
-        stimulus = df.loc[df.message == 'GL_TRIAL_STIM_ID']['value']
-        reward = df.loc[df.message == 'GL_TRIAL_REWARD']['value']
-        response = df.loc[df.message == 'CHOICE_TRIAL_RESP']['value']
-        onset_time = df.loc[df.message == 'CHOICE_TRIAL_ONSET']['time']
-        block = df.loc[df.message == 'CHOICE_TRIAL_ONSET']['block']
-        trial_inds = df.loc[df.message == 'CHOICE_TRIAL_RESP'].index
+        rule_response = df.loc[df.event == "CHOICE_TRIAL_RULE_RESP", 'value']
+        rt = df.loc[df.event == 'CHOICE_TRIAL_RT']['value'].astype('float').values
+        stimulus = df.loc[df.event == 'GL_TRIAL_STIM_ID']['value'].astype('float').values
+        reward = df.loc[df.event == 'GL_TRIAL_REWARD']['value'].astype('float').values
+        response = df.loc[df.event == 'CHOICE_TRIAL_RESP']['value'].astype('float').values
+        onset = df.loc[df.event == 'CHOICE_TRIAL_ONSET']['onset'].astype('float').values
+        block = df.loc[df.event == 'CHOICE_TRIAL_ONSET']['block'].astype('float').values
+        trial_inds = df.loc[df.event == 'CHOICE_TRIAL_RESP'].index
         trial_inds = sum([list(range(i - 8, i))for i in trial_inds], [])
-        trial_id = df.loc[(df.message == 'GL_TRIAL_START') & (df.index.isin(trial_inds))].value
-
-        assert len(rule_response) == len(stimulus) == len(reward) == len(response) == len(rt)
-        tuples = [('behavior', 'parameter', 'rule_response'),
-                  ('behavior', 'parameter', 'reaction_time'),
-                  ('behavior', 'parameter', 'stimulus'),
-                  ('behavior', 'parameter', 'response'),
-                  ('behavior', 'parameter', 'reward'),
-                  ('behavior', 'parameter', 'onset')]
-        columns = pd.MultiIndex.from_tuples(tuples, names=('source', 'type', 'name'))
-        self.choices = pd.DataFrame(np.full((len(rt), len(tuples)), np.nan), columns=columns)
-        self.choices.loc[:, ('behavior', 'parameter', 'rule_response')] = rule_response.values
-        self.choices.loc[:, ('behavior', 'parameter', 'reaction_time')] = rt.values
-        self.choices.loc[:, ('behavior', 'parameter', 'stimulus')] = stimulus.values
-        self.choices.loc[:, ('behavior', 'parameter', 'response')] = reward.values
-        self.choices.loc[:, ('behavior', 'parameter', 'reward')] = rule_response.values
-        self.choices.loc[:, ('behavior', 'parameter', 'onset')] = onset_time.values
-        self.choices['block'] = block.values
-        self.choices['trial_id'] = trial_id.values.astype(float)
+        trial_id = df.loc[(df.event == 'GL_TRIAL_START') & (df.index.isin(trial_inds))].value.astype('float').values
+        belief_indices = df.loc[rule_response.index - 11].index.values
+        belief = gl.belief(df, self.hazard, ident='event').loc[belief_indices].values
+        choices = pd.DataFrame({'rule_response': rule_response.astype('float').values,
+                                'rt': rt,
+                                'stimulus': stimulus,
+                                'response': response,
+                                'reward': reward,
+                                'onset': onset,
+                                'run': block,
+                                'trial_id': trial_id,
+                                'accumulated_belief': belief})
+        self.choice_behavior = choices
 
     def points(self, n=20):
         '''
         Add last n points before choice onset.
         '''
-        columns = pd.MultiIndex.from_product([['behavior'], ['points'], range(n)], names=('source', 'type', 'name'))
-        df = pd.DataFrame(np.full((len(self.choices), n), np.nan), columns=columns)
-
-        for i, row in self.choices.iterrows():
-            points = self.rawbehavior
-            points = points.loc[(points.message == 'GL_TRIAL_LOCATION') & (points.time < row.behavior.parameter.onset)]
-            if len(points) < n:
-                points = np.full(n, np.nan)
+        p = []
+        points = self.rawbehavior.loc[(self.rawbehavior.event == 'GL_TRIAL_LOCATION')]
+        for i, row in self.choice_behavior.iterrows():
+            trial_points = points.loc[points.onset.astype('float') < row.onset]
+            if len(trial_points) < 20:
+                trial_points = np.full(20, np.nan)
             else:
-                points = points.value.values[len(points) - n:len(points)]
-            df.iloc[i] = points
+                trial_points = trial_points.value.values[len(trial_points) - 20:len(trial_points)]
+            p.append(trial_points)
+        points = pd.DataFrame(p)
+        points['trial_id'] = self.choice_behavior.trial_id.values
+        points['run'] = self.choice_behavior.run.values
+        self.points = points
 
-        df['trial_id'] = self.choices.trial_id.values
-        df['block'] = self.choices.block.values
-        self.points = df
-        self.choices = self.choices.merge(df, how='left', on=['block', 'trial_id'])
-
-    def glaze_belief(self, subjective_h, true_h=1 / 70):
-        '''
-        Computes models accumulated evidence at choice trials.
-        '''
-        df = self.rawbehavior
-        choices = (df.loc[df.message == "CHOICE_TRIAL_RULE_RESP", 'value']
-                   .astype(float))
-        belief_indices = df.iloc[choices.index - 11].index
-        glaze_belief_subjective = gl.belief(df, subjective_h).loc[belief_indices].values
-        glaze_belief_true = gl.belief(df, true_h).loc[belief_indices].values
-        self.choices.loc[:, ('behavior', 'parameter', 'subjective_evidence')] = glaze_belief_subjective
-        self.choices.loc[:, ('behavior', 'parameter', 'true_evidence')] = glaze_belief_true
-
-    def choice_pupil(self, pupilframe=None, artifact_threshhold=.2, choicelock=True, tw=4500):
+    def choice_pupil(self, artifact_threshhold=.2, choicelock=True, tw=4500):
         '''
         Takes existing pupilframe and makes choicepupil frame.
         If there is no existing pupilframe, a new one is created.
         '''
         frames = []
-        if pupilframe != None:
-            pass
-        else:
-            for block in self.blocks:
-                p = pop.Pupilframe(self.sub, self.ses, block, self.path)
-                p.basicframe()
-                p.gaze_angle()
-                p.all_artifacts()
-                p.small_fragments()
-                p.interpol()
-                p.filter()
-                p.z_score()
-                p.pupil_frame['block'] = block
-                frames.append(p.pupil_frame)
-            pupilframe = pd.concat(frames, ignore_index=True)
+        for run in self.runs:
+            pupil_frame = pd.read_csv(join(self.flex_dir, 'pupil', 'linear_pupilframes',
+                                           'pupilframe_{0}_{1}_{2}.csv'.format(self.subject, self.session, run)))
+            pupil_frame['run'] = run
+            frames.append(pupil_frame)
+        pupil_frame = pd.concat(frames, ignore_index=True)
+        df = pupil_frame.loc[:, ['message', 'biz', 'message_value', 'blink', 'all_artifacts', 'run', 'trial_id', 'gaze_angle']]
 
-        df = pupilframe.loc[:, ['message', 'biz', 'message_value', 'blink', 'all_artifacts', 'block', 'trial_id', 'gaze_angle']]
+        gratingpupil = []
         choicepupil = []
-        #print(len(df.loc[df.message == "CHOICE_TRIAL_ONSET"]))
-        #print(len(df.loc[df.message == "RT"]))
-        for onset in df.loc[df.message == "CHOICE_TRIAL_ONSET"].index:
+        parameters = []
+        for choice_trial in df.loc[df.message == "CHOICE_TRIAL_ONSET"].index:
+            '''
+            Extract gratinglocked pupilresponse, choicelocked pupil response & choice parameters
+            '''
+            onset = choice_trial
             if len(df.iloc[onset: onset + 3500, :].loc[df.message == 'RT', 'message_value']) == 0:
                 continue
             else:
                 resp = df.iloc[onset - 1000: onset + 3500, :].loc[df.message == 'RT', 'message_value']
-                trial = df.loc[np.arange(onset - 1000, onset + tw - 1000).astype(int), 'biz'].values
-                trial = np.append(trial, df.loc[np.arange(onset, onset + resp + 1500), 'all_artifacts'].mean())
-                trial = np.append(trial, df.loc[np.arange(onset, onset + resp + 1500), 'blink'].mean())
-                trial = np.append(trial, df.loc[onset, 'block'])
-                trial = np.append(trial, df.loc[onset + resp, 'gaze_angle'])
-                trial = np.append(trial, onset)
-                trial = np.append(trial, df.loc[onset, 'gaze_angle'])
-                trial = np.append(trial, resp)
-                trial = np.append(trial, df.loc[onset, 'trial_id'])
-
-                choicepupil.append(trial)
-        choicedf = pd.DataFrame(choicepupil)
-
-        # subtract baseline per trial
-        for i, row in choicedf.iterrows():
-            choicedf.iloc[i, 0:tw] = (choicedf.iloc[i, 0:tw] - choicedf.iloc[i, 0:1000].mean())
-
-        c1 = pd.MultiIndex.from_product([['pupil'], ['triallock'], range(tw)], names=['source', 'type', 'name'])
-        c1 = pd.DataFrame(np.full((len(choicedf), tw), np.nan), columns=c1)
-        c3 = pd.MultiIndex.from_product([['pupil'], ['parameter'], ['rt', 'onset', 'blink', 'all_artifacts', 'trial_id', 'block', 'onset_gaze', 'choice_gaze']], names=['source', 'type', 'name'])
-        c3 = pd.DataFrame(np.full((len(choicedf), 8), np.nan), columns=c3)
-
-        if choicelock == False:
-            design = pd.concat([c1, c3], ignore_index=True)
-            design = design.iloc[0:len(choicedf)]
-            design.loc[:, ('pupil', 'triallock')] = choicedf.iloc[:, :tw].values
-            design.loc[:, ('pupil', 'parameter')] = choicedf.iloc[:, tw:].values
-            self.pupil = design
-
-        else:
-            c2 = pd.MultiIndex.from_product([['pupil'], ['choicelock'], range(2500)], names=['source', 'type', 'name'])
-            c2 = pd.DataFrame(np.full((len(choicedf), 2500), np.nan), columns=c2)
-            design = pd.concat([c1, c2, c3], ignore_index=True)
-            design = design.iloc[0:len(choicedf)]
-
-            design.loc[:, ('pupil', 'triallock')] = choicedf.iloc[:, :tw].values
-            design.loc[:, ('pupil', 'parameter')] = choicedf.iloc[:, tw:].values
-
-            design.pupil.parameter.tpr = np.nan
-
-            for i, row in design.iterrows():
-                reaction = int(row.pupil.parameter.rt) + 1000
-                if reaction > 3000:
-                    choicelock = np.full(2500, np.nan)
-                else:
-                    choicelock = row.pupil.triallock.iloc[reaction - 1000:reaction + 1500].values
-                row.loc[('pupil', 'choicelock')] = choicelock
-
-            design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'parameter', 'tpr')] =\
-                np.dot(design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'choicelock')],
-                       design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'choicelock')].mean()) /\
-                np.dot(design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'choicelock')].mean(),
-                       design.loc[(design.pupil.parameter.blink == 0) & (design.pupil.parameter.all_artifacts < artifact_threshhold), ('pupil', 'choicelock')].mean())
-
-            self.pupil = design
+                gratinglock = df.loc[np.arange(onset - 1000, onset + tw - 1000).astype(int), 'biz'].values
+                choice_parameters = [df.iloc[onset - 1000: onset + 3500, :].loc[df.message == 'RT', 'message_value'].values,
+                                     df.loc[np.arange(onset, onset + resp + 1500), 'all_artifacts'].mean(),
+                                     df.loc[np.arange(onset, onset + resp + 1500), 'blink'].mean(),
+                                     df.loc[onset, 'run'],
+                                     onset, df.loc[onset, 'trial_id']]
+                choicelock = df.loc[np.arange(onset + resp - 1000, onset + resp + 1500).astype(int), 'biz'].values
+                gratingpupil.append(gratinglock)
+                choicepupil.append(choicelock)
+                parameters.append(choice_parameters)
+        gratingpupil = pd.DataFrame(choicepupil)
+        choicepupil = pd.DataFrame(choicepupil)
+        baseline_correct = baseline(gratingpupil, choicepupil)
+        self.gratingpupil = baseline_correct[0]
+        self.choicepupil = baseline_correct[1]
+        self.parameters = pd.DataFrame(parameters)
+        self.parameters.columns = (['response', 'all_artifacts', 'blink', 'run', 'onset', 'trial_id'])
+        self.parameters['TPR'] = self.choicepupil.mean(axis=1)
 
     def merge(self):
         '''
-        merge self.pupil and self.choices
+        Merge everything. And Save.
         '''
-        pupil = self.pupil.reset_index(drop=True)
-        behavior = self.choices.reset_index(drop=True)
-        self.choices = behavior.merge(right=pupil, how='left',
-                                      left_on=['trial_id', 'block'],
-                                      right_on=[('pupil', 'parameter', 'trial_id'), ('pupil', 'parameter', 'block')])
+        grating = self.gratingpupil
+        choice = self.choicepupil
+        paras = self.parameters
+        points = self.points
+        choices = self.choices
+        grating.columns = pd.MultiIndex.from_product([['pupil'], ['gratinglock'], range(grating.shape[1])], names=['source', 'type', 'name'])
+        choice.columns = pd.MultiIndex.from_product([['pupil'], ['choicelock'], range(choice.shape[1])], names=['source', 'type', 'name'])
+        paras.columns = pd.MultiIndex.from_product([['pupil'], ['parameters'], paras.columns], names=['source', 'type', 'name'])
+        choices.columns = pd.MultiIndex.from_product([['behavior'], ['parameters'], choices.columns], names=['source', 'type', 'name'])
+        points.columns = pd.MultiIndex.from_product([['behavior'], ['points'], range(points.shape[1])], names=['source', 'type', 'name'])
+        master = pd.concat([grating, choice, choices, points, paras], axis=1)
+        self.master = master.set_index([master.pupil.parameters.trial_id, master.pupil.parameters.run])
+        out_dir = join(self.flex_dir, 'pupil', 'choice_epochs')
+        slu.mkdir_p(out_dir)
+        self.master.to_csv(join(out_dir, 'choice_epochs_{0}_{1}.csv'.format(self.subject, self.session)))
 
 
-__version__ = '1.2'
+if __name__ == '__main__':
+    for sub in range(1, 23):
+        for ses in [2, 3]:
+            try:
+                flex_dir = '/Volumes/flxrl/FLEXRULE/'
+                c = Choiceframe(sub, ses, flex_dir)
+                c.choice_behavior()
+                c.points()
+                c.choice_pupil()
+                c.merge()
+            except RuntimeError:
+                continue
+
+
+__version__ = '2.0'
 '''
+2.0
+-Input linear pupilframes
+-recquires BIDS
 1.2
 -triallocked period now 1000ms before offset and total of 4500ms
 -if rt > 2000ms choicelocked is set to np.nan
 '''
-#c = Choiceframe(1, 2, '/Users/kenohagena/Documents/immuno/data/vaccine', blocks=[1])
-# c.choicetrials()
-#c.choice_pupil(choicelock=False, tw=4500)
-#print(c.choicedf.iloc[:, 4500:])
-# print(c.pupil.pupil.parameter)
