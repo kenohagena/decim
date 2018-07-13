@@ -4,7 +4,9 @@ from decim import glaze2 as gl
 from decim import glaze_control as gc
 from os.path import join
 from decim import slurm_submit as slu
-
+from decim import fmri_align as fa
+from collections import defaultdict
+from tqdm import tqdm
 
 summary = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv')
 
@@ -16,7 +18,7 @@ def baseline(grating, choice, length=1000):
 
 class Choiceframe(object):
 
-    def __init__(self, sub, ses, flex_dir, run_indices=[0, 1, 2]):
+    def __init__(self, sub, ses, flex_dir, run_indices=[0, 1, 2], master=None):
         '''
         Initialize
         '''
@@ -30,6 +32,13 @@ class Choiceframe(object):
                              'inference_run-6'])
         self.runs = inf_runs[run_indices]
         self.hazard = summary.loc[(summary.subject == self.subject) & (summary.session == self.session)].hmode.values
+        self.master = master
+        if self.master is not None:
+            self.choice_behavior = self.master.behavior.parameters.drop('run', axis=1).reset_index('run')
+            self.points = self.master.behavior.points
+            self.gratingpupil = self.master.pupil.gratinglock
+            self.choicepupil = self.master.pupil.choicelock
+            self.parameters = self.master.pupil.parameters
 
     def choice_behavior(self):
         logs = gc.load_logs_bids(self.sub, self.ses, join(self.flex_dir, 'raw', 'bids_mr_v1.1'))
@@ -42,6 +51,7 @@ class Choiceframe(object):
                                                      'CHOICE_TRIAL_RT', 'CHOICE_TRIAL_RULE_RESP', 'GL_TRIAL_REWARD'])].reset_index()
 
         df = self.rawbehavior
+        df = df.replace('n/a', np.nan)
         rule_response = df.loc[df.event == "CHOICE_TRIAL_RULE_RESP", 'value']
         rt = df.loc[df.event == 'CHOICE_TRIAL_RT']['value'].astype('float').values
         stimulus = df.loc[df.event == 'GL_TRIAL_STIM_ID']['value'].astype('float').values
@@ -127,6 +137,41 @@ class Choiceframe(object):
         self.parameters = pd.DataFrame(parameters)
         self.parameters.columns = (['response', 'all_artifacts', 'blink', 'run', 'onset', 'trial_id'])
         self.parameters['TPR'] = self.choicepupil.mean(axis=1)
+          
+        
+    def fmri_epochs(self, basel=2000, te=6):
+        evoked_session = defaultdict(list)
+        for run in self.runs:
+            roi = pd.read_csv(join(flex_dir, 'fmri', 'roi_extract', 'weighted', '{0}_{1}_{2}_weighted_rois.csv'.format(self.sub, self.session, run)), index_col=0)
+            roi = roi.loc[:, ['AAN_DR', 'basal_forebrain_4',
+               'basal_forebrain_123', 'LC_standard', 'NAc', 'SNc',
+               'VTA']]
+            dt = pd.to_timedelta(roi.index.values * 1900, unit='ms')
+            roi = roi.set_index(dt)
+            target = roi.resample('1ms').mean().index
+            roi = pd.concat([fa.interp(dt, roi[c], target) for c in roi.columns], axis=1)
+            behav = self.choice_behavior.loc[self.choice_behavior.run == float(run[-1])]
+            onsets = behav.onset.values
+            trial_ids = behav.trial_id.values
+            evoked_run = defaultdict(list)
+            for onset in onsets:
+                cue = pd.Timedelta(onset, unit='s').round('ms')
+                bl = pd.Timedelta(basel, unit='ms')
+                baseline = roi.loc[cue - bl: cue + bl].mean()
+                task_evoked = roi.loc[cue - bl: cue + bl*te] - baseline
+                for col in task_evoked.columns:
+                    evoked_run[col].append(task_evoked[col].values)
+            for key, values in evoked_run.items():
+                df = pd.DataFrame(values)
+                df['trial_id'] = trial_ids
+                df['onset'] = onsets
+                df['run'] = run
+                if run != 'inference_run-6':
+                    evoked_session[key].append(df)
+                else:
+                    evoked_session[key].append(df)
+                    evoked_session[key] = pd.concat(evoked_session[key], ignore_index=True)
+            self.roi_task_evoked = evoked_session
 
     def merge(self):
         '''
@@ -136,31 +181,47 @@ class Choiceframe(object):
         choice = self.choicepupil
         paras = self.parameters
         points = self.points
-        choices = self.choices
+        choices = self.choice_behavior
         grating.columns = pd.MultiIndex.from_product([['pupil'], ['gratinglock'], range(grating.shape[1])], names=['source', 'type', 'name'])
         choice.columns = pd.MultiIndex.from_product([['pupil'], ['choicelock'], range(choice.shape[1])], names=['source', 'type', 'name'])
         paras.columns = pd.MultiIndex.from_product([['pupil'], ['parameters'], paras.columns], names=['source', 'type', 'name'])
         choices.columns = pd.MultiIndex.from_product([['behavior'], ['parameters'], choices.columns], names=['source', 'type', 'name'])
         points.columns = pd.MultiIndex.from_product([['behavior'], ['points'], range(points.shape[1])], names=['source', 'type', 'name'])
-        master = pd.concat([grating, choice, choices, points, paras], axis=1)
-        self.master = master.set_index([master.pupil.parameters.trial_id, master.pupil.parameters.run])
+        singles = [grating, choice, choices, points, paras]
+        master = pd.concat(singles, axis=1)
+        master = master.set_index([master.pupil.parameters.trial_id, master.pupil.parameters.run])
+        singles = []
+        for key, frame in self.roi_task_evoked.items():
+            frame.columns = pd.MultiIndex.from_product([['fmri'], [key], frame.columns], names=['source', 'type', 'name'])
+            singles.append(frame)
+        fmri = pd.concat(singles, axis=1)
+        fmri = fmri.set_index([fmri.fmri.AAN_DR.trial_id, fmri.fmri.AAN_DR.run])
+        merge = pd.merge(fmri.reset_index(), master.reset_index()).set_index(['trial_id', 'run'])
+        self.master = merge
         out_dir = join(self.flex_dir, 'pupil', 'choice_epochs')
         slu.mkdir_p(out_dir)
         self.master.to_csv(join(out_dir, 'choice_epochs_{0}_{1}.csv'.format(self.subject, self.session)))
 
-
 if __name__ == '__main__':
-    for sub in range(1, 23):
-        for ses in [2, 3]:
+    for sub in tqdm(range(1, 23)):
+        for ses in [2,3]:
             try:
                 flex_dir = '/Volumes/flxrl/FLEXRULE/'
                 c = Choiceframe(sub, ses, flex_dir)
                 c.choice_behavior()
+                print(c.choice_behavior)
+                print('behavior')
                 c.points()
+                print('points')
                 c.choice_pupil()
+                print('pupil')
+                c.fmri_epochs()
+                print('fmri. ready for the big merge')
                 c.merge()
-            except RuntimeError:
-                continue
+
+            except FileNotFoundError:
+                pass
+
 
 
 __version__ = '2.0'
@@ -171,4 +232,24 @@ __version__ = '2.0'
 1.2
 -triallocked period now 1000ms before offset and total of 4500ms
 -if rt > 2000ms choicelocked is set to np.nan
+
+
+
+
+
+    import subprocess
+    subprocess.call(['osascript', '-e',
+   'tell app "System Events" to shut down'])
+   
+   
+   
+   
+                   singles=[]
+                for key, frame in c.roi_task_evoked.items():
+                    frame.columns = pd.MultiIndex.from_product([['fmri'], [key], frame.columns], names=['source', 'type', 'name'])
+                    singles.append(frame)
+                fmri = pd.concat(singles, axis=1)
+                fmri = fmri.set_index([fmri.fmri.AAN_DR.trial_id, fmri.fmri.AAN_DR.run])
+                merge = pd.merge(fmri.reset_index(), master.reset_index()).set_index(['trial_id', 'run'])
+                merge.to_csv('/Volumes/flxrl/FLEXRULE/pupil/choice_epochs/choice_epochs_sub-{0}_ses-{1}.csv'.format(sub, ses))    
 '''
