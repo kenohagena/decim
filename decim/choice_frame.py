@@ -129,7 +129,7 @@ class Choiceframe(object):
                 gratingpupil.append(gratinglock)
                 choicepupil.append(choicelock)
                 parameters.append(choice_parameters)
-        gratingpupil = pd.DataFrame(choicepupil)
+        gratingpupil = pd.DataFrame(gratingpupil)
         choicepupil = pd.DataFrame(choicepupil)
         baseline_correct = baseline(gratingpupil, choicepupil)
         self.gratingpupil = baseline_correct[0]
@@ -137,15 +137,16 @@ class Choiceframe(object):
         self.parameters = pd.DataFrame(parameters)
         self.parameters.columns = (['response', 'all_artifacts', 'blink', 'run', 'onset', 'trial_id'])
         self.parameters['TPR'] = self.choicepupil.mean(axis=1)
-          
-        
+        clean_mean = self.parameters.loc[(self.parameters.blink == 0) & (self.parameters.all_artifacts < 0.5)].TPR.mean()
+        self.parameters['TPR_JW'] = self.parameters.TPR * clean_mean / np.square(clean_mean)
+
     def fmri_epochs(self, basel=2000, te=6):
         evoked_session = defaultdict(list)
         for run in self.runs:
             roi = pd.read_csv(join(flex_dir, 'fmri', 'roi_extract', 'weighted', '{0}_{1}_{2}_weighted_rois.csv'.format(self.sub, self.session, run)), index_col=0)
             roi = roi.loc[:, ['AAN_DR', 'basal_forebrain_4',
-               'basal_forebrain_123', 'LC_standard', 'NAc', 'SNc',
-               'VTA']]
+                              'basal_forebrain_123', 'LC_standard', 'NAc', 'SNc',
+                              'VTA']]
             dt = pd.to_timedelta(roi.index.values * 1900, unit='ms')
             roi = roi.set_index(dt)
             target = roi.resample('1ms').mean().index
@@ -158,7 +159,7 @@ class Choiceframe(object):
                 cue = pd.Timedelta(onset, unit='s').round('ms')
                 bl = pd.Timedelta(basel, unit='ms')
                 baseline = roi.loc[cue - bl: cue + bl].mean()
-                task_evoked = roi.loc[cue - bl: cue + bl*te] - baseline
+                task_evoked = roi.loc[cue - bl: cue + bl * te] - baseline
                 for col in task_evoked.columns:
                     evoked_run[col].append(task_evoked[col].values)
             for key, values in evoked_run.items():
@@ -202,14 +203,16 @@ class Choiceframe(object):
         slu.mkdir_p(out_dir)
         self.master.to_csv(join(out_dir, 'choice_epochs_{0}_{1}.csv'.format(self.subject, self.session)))
 
+
 if __name__ == '__main__':
+    print('jessa')
+    dfs = []
     for sub in tqdm(range(1, 23)):
-        for ses in [2,3]:
+        for ses in [2, 3]:
             try:
                 flex_dir = '/Volumes/flxrl/FLEXRULE/'
                 c = Choiceframe(sub, ses, flex_dir)
                 c.choice_behavior()
-                print(c.choice_behavior)
                 print('behavior')
                 c.points()
                 print('points')
@@ -218,11 +221,19 @@ if __name__ == '__main__':
                 c.fmri_epochs()
                 print('fmri. ready for the big merge')
                 c.merge()
+                c.master['subject'] = c.subject
+                c.master['session'] = c.session
+                sd = c.master.set_index(['subject', 'session'], append=True)
+                dfs.append(sd)
+                
 
+            except RuntimeError:
+                pass
             except FileNotFoundError:
                 pass
-
-
+    df = pd.concat(dfs)
+    df = df[dfs[0].columns] # https://github.com/pandas-dev/pandas/issues/4588
+    df.to_csv('/Volumes/flxrl/FLEXRULE/pupil/choice_epochs/choice_epochs_concatenated.csv')
 
 __version__ = '2.0'
 '''
@@ -240,10 +251,10 @@ __version__ = '2.0'
     import subprocess
     subprocess.call(['osascript', '-e',
    'tell app "System Events" to shut down'])
-   
-   
-   
-   
+
+
+
+
                    singles=[]
                 for key, frame in c.roi_task_evoked.items():
                     frame.columns = pd.MultiIndex.from_product([['fmri'], [key], frame.columns], names=['source', 'type', 'name'])
@@ -251,5 +262,5 @@ __version__ = '2.0'
                 fmri = pd.concat(singles, axis=1)
                 fmri = fmri.set_index([fmri.fmri.AAN_DR.trial_id, fmri.fmri.AAN_DR.run])
                 merge = pd.merge(fmri.reset_index(), master.reset_index()).set_index(['trial_id', 'run'])
-                merge.to_csv('/Volumes/flxrl/FLEXRULE/pupil/choice_epochs/choice_epochs_sub-{0}_ses-{1}.csv'.format(sub, ses))    
+                merge.to_csv('/Volumes/flxrl/FLEXRULE/pupil/choice_epochs/choice_epochs_sub-{0}_ses-{1}.csv'.format(sub, ses))
 '''
