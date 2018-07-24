@@ -93,6 +93,7 @@ for sub in subjects:
                 df['stimulus'] = df.event == 'choice_onset'
                 df['rresp_left'] = (df.event == 'response') & (df.rule_resp == 0)
                 df['rresp_right'] = (df.event == 'response') & (df.rule_resp == 1)
+                df['belief_left'] = - df.belief
                 df = df.sort_index(by='onset').to_csv(join(savepath, 'behav_{0}_{1}_run-{2}.csv'.format(subject, session, run)))
         except RuntimeError:
             pass
