@@ -7,6 +7,7 @@ from os.path import join
 from pyedfread import edf
 from scipy import signal
 from decim import slurm_submit as slu
+from tqdm import tqdm
 
 
 class Pupilframe(object):
@@ -185,11 +186,11 @@ class Pupilframe(object):
         '''
         self.pupil_frame['all_artifacts'] = bool(0)
         if blink is True:
-            self.pupil_frame.all_artifacts = self.pupil_frame.blink is True
+            self.pupil_frame.all_artifacts = self.pupil_frame.blink == True
         if saccade is True:
-            self.pupil_frame.all_artifacts = (self.pupil_frame.all_artifacts is True) | (self.pupil_frame.saccade is True)
+            self.pupil_frame.all_artifacts = (self.pupil_frame.all_artifacts == True) | (self.pupil_frame.saccade == True)
         if gaze_angle is True:
-            self.pupil_frame.all_artifacts = (self.pupil_frame.all_artifacts is True) | (self.pupil_frame.gaze_angle > gaze_thresh)
+            self.pupil_frame.all_artifacts = (self.pupil_frame.all_artifacts == True) | (self.pupil_frame.gaze_angle > gaze_thresh)
 
     def small_fragments(self, crit_frag_length=100):
         '''
@@ -198,25 +199,27 @@ class Pupilframe(object):
         Sets those detected fragments to NaN in order to make linear interpolation cleaner.
         '''
         convolved = np.convolve(self.pupil_frame.all_artifacts, [0.5, 1], 'same')
+
         ev_start = np.where(convolved == .5)[0]
         fragment_ends = ev_start
         if convolved[0] != 0:
             fragment_ends = fragment_ends[1:len(fragment_ends)]
         if convolved[len(convolved) - 1] == 0:
             fragment_ends = np.append(fragment_ends, len(self.pupil_frame))
-
         ev_end = np.where(convolved == 1)[0]
         if convolved[0] == 0:
             fragment_starts = np.append(0, ev_end)
         else:
             fragment_starts = ev_end
+        if (convolved[-2] == 1.5) & (convolved[-1] == 1):
+            fragment_starts = fragment_starts[0:-1]
         assert len(fragment_ends) == len(fragment_starts)
         fragment_length = fragment_ends - fragment_starts
         wh = np.where(fragment_length < crit_frag_length)
         smallfrag_ends = fragment_ends[wh]
         smallfrag_starts = fragment_starts[wh]
         for i in range(len(smallfrag_starts)):
-            self.pupil_frame.all_artifacts = (self.pupil_frame.all_artifacts is True) | (self.pupil_frame.index.isin(range(smallfrag_starts[i], smallfrag_ends[i] + 1)))
+            self.pupil_frame.all_artifacts = (self.pupil_frame.all_artifacts == True) | (self.pupil_frame.index.isin(range(smallfrag_starts[i], smallfrag_ends[i] + 1)))
 
     def interpol(self, margin=100):
         convolved = np.convolve(self.pupil_frame.all_artifacts, [0.5, 1], 'same')
@@ -280,14 +283,14 @@ class Pupilframe(object):
 
 
 if __name__ == '__main__':
-    for sub in range(1, 23):
+    for sub in [22]:
         for ses in [2, 3]:
             for ri in [0, 1, 2]:
                 try:
                     flex_dir = '/Volumes/flxrl/FLEXRULE/'
                     out_dir = join(flex_dir, 'pupil', 'linear_pupilframes')
                     slu.mkdir_p(out_dir)
-                    p = Pupilframe(1, 2, 0, '/Volumes/flxrl/FLEXRULE/')
+                    p = Pupilframe(sub, ses, ri, flex_dir)
                     p.basicframe()
                     p.gaze_angle()
                     p.all_artifacts()
