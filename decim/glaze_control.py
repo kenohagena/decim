@@ -116,7 +116,7 @@ def accev(subject, session, base_path, H):
     choices = (df.loc[df.event == "CHOICE_TRIAL_RULE_RESP", 'value']
                .astype(float))
     belief_indices = df.loc[choices.index - 11].index.values
-    rt = df.loc[df.message == 'CHOICE_TRIAL_RT']['value']
+    rt = df.loc[df.event == 'CHOICE_TRIAL_RT']['value']
     accum_ev = gl.belief(df, H).loc[belief_indices].values
     return pd.DataFrame({'reaction time': rt,
                          'accumulated evidence': accum_ev})
