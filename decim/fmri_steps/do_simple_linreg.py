@@ -4,9 +4,9 @@ from glob import glob
 from os.path import join
 from scipy.stats import linregress
 import sys
+from itertools import product
 
-subjects = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-            12, 14, 15, 16, 19, 20, 21]
+
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 comb_ROIS = ['23_inside_lh', '19_cingulate_anterior_prefrontal_medial_lh',
              '11_auditory_association_lh', '03_visual_dors_lh',
@@ -32,59 +32,116 @@ comb_ROIS = ['23_inside_lh', '19_cingulate_anterior_prefrontal_medial_lh',
              '15_temporal_parietal_occipital_junction_rh', '04_visual_ventral_rh',
              'AAN_DR', 'basal_forebrain_4', 'basal_forebrain_123', 'LC_Keren_2std',
              'LC_standard', 'NAc', 'SNc', 'VTA']
-
 parameters = ['belief', 'murphy_surprise', 'switch', 'point', 'response',
               'response_left', 'response_right', 'stimulus_horiz', 'stimulus_vert',
               'stimulus', 'rresp_left', 'rresp_right', 'abs_belief']
-
-
-results = []
-
 roi_path = '/home/khagena/FLEXRULE/fmri/roi_extract/weighted/'
 behav_path = '/home/khagena/FLEXRULE/behavior/behav_fmri_aligned/'
-
 example = pd.read_csv(join(roi_path, '1_ses-2_inference_run-4_weighted_rois.csv'), index_col=0)
 columns = example.columns
 
 
-def execute(sub):
-    for ses in ['ses-2', 'ses-3']:
-        for ROI in columns:
-            for param in parameters:
-                try:
-                    subject = 'sub-{}'.format(sub)
-                    roi_zs = []
-                    behavs = []
-                    for run in runs:
-                        roi = pd.read_csv(join(roi_path, '{0}_{1}_{2}_weighted_rois.csv'.format(sub, ses, run)),
-                                          index_col=0)
-                        behav = pd.read_csv(join(behav_path, 'beh_regressors_{0}_{1}_{2}'.format(subject, ses, run)),
-                                            index_col=0)
-                        behav = behav[param].values
-                        roi = roi[ROI].values
-                        if len(roi) > len(behav):
-                            roi = roi[0: len(behav)]
-                        elif len(roi) < len(behav):
-                            behav = behav[0:len(roi)]
-                        roi_zs.append(pd.Series(roi))
-                        behavs.append(pd.Series(behav))
-                    behav = pd.concat(behavs, ignore_index=True)
-                    roi_z = pd.concat(roi_zs, ignore_index=True)
+def linreg(subs, sessions, ROIs, params, roi_path, behav_path):
+    '''
+    Sub, ses, ROI and param have to be lists.
+    Perform simple linear regression per session, subject, beh. param. & ROI.
+    Return pd.DataFrame if multiple regressions are performed.
+    '''
+    results = []
+    for sub, ses, ROI, param in product(subs, sessions, ROIs, params):
+        subject = 'sub-{}'.format(sub)
+        roi_zs = []
+        behavs = []
+        for run in runs:
+            roi = pd.read_csv(join(roi_path, '{0}_{1}_{2}_weighted_rois.csv'.format(sub, ses, run)),
+                              index_col=0)
+            behav = pd.read_csv(join(behav_path, 'beh_regressors_{0}_{1}_{2}'.format(subject, ses, run)),
+                                index_col=0)
+            behav = behav[param].values
+            roi = roi[ROI].values
+            if len(roi) > len(behav):
+                roi = roi[0: len(behav)]
+            elif len(roi) < len(behav):
+                behav = behav[0:len(roi)]
+            roi_zs.append(pd.Series(roi))
+            behavs.append(pd.Series(behav))
+        behav = pd.concat(behavs, ignore_index=True)
+        roi_z = pd.concat(roi_zs, ignore_index=True)
+        slope, intercept, r_value, p_value, std_err = linregress(behav, roi_z)
+        result = {'slope': slope, "rhat": r_value, 'p_value': p_value, 'intercept': intercept,
+                  'std_err': std_err, 'subject': sub, 'session': ses, 'parameter': param, 'roi': ROI}
+        results.apend(result)
+    if len(results) < 2:
+        return results[0]
+    else:
+        df = pd.DataFrame(results)
+        return df
 
-                    slope, intercept, r_value, p_value, std_err = linregress(behav,
-                                                                             roi_z)
-                    result = {'slope': slope, "rhat": r_value, 'p_value': p_value, 'intercept': intercept,
-                              'std_err': std_err, 'subject': sub, 'session': ses, 'parameter': param, 'roi': ROI}
-                    results.append(result)
-                    print('success')
-                except FileNotFoundError:
-                    print('file not found')
-    df = pd.DataFrame(results)
-    df.to_csv(join(roi_path, 'linreg_sub-{}.csv'.format(sub)))
+
+def import_regressions(path, identifier):
+    '''
+    Load regression results and apply fisher transform to rhat.
+    '''
+    dfs = []
+    files = glob(join(path, identifier))
+    for file in files:
+        df = pd.read_csv(file, index_col=[0])
+        dfs.append(df)
+    df = pd.concat(dfs, ignore_index=True)
+    df['rhat_fisher'] = np.arctanh(df.rhat)
+    df = df.loc[df.subject != 13]
+    df.loc[df.roi.isin(['???', '???.1']), 'roi'] =\
+        df.loc[df.roi.isin(['???', '???.1']), 'roi'].map({'???': 'L_???', '???.1': 'R_???'})
+    return df
+
+
+def lat_mag(df, parameters):
+    '''
+    Average per subject across sessions, inclusde only cortical ROIs.
+    '''
+    response = df.loc[df.parameter.isin(parameter)]
+    resp_ses = response.groupby(['subject', 'parameter', 'roi']).mean().reset_index()
+    resp_ses_cort = resp_ses.loc[~resp_ses.roi.isin(brainstem)]
+    resp_ses_cort['roi_'] = [i[2:] for i in resp_ses_cort.roi]
+    '''
+    1. One sample T-test against 0 of rhat magnitudes across subjects.
+    2. Average per ROI across 'conditions' (i.e. response left and reponse right)
+    '''
+    resp_mag = {}
+    for reg in resp_ses_cort.roi.unique():
+        resp_mag[reg] = ttest(resp_ses_cort.loc[resp_ses_cort.roi == reg].rhat_fisher, 0)[0]
+
+    resp_mag = pd.DataFrame.from_dict(resp_mag, orient='index').reset_index()
+    resp_mag.columns = ['roi', 't_statistic']
+    resp_mag['roi_'] = [i[2:] for i in resp_mag.roi]
+    resp_mag = resp_mag.groupby('roi_').mean().reset_index()
+    '''
+    1. Replace NaNs with zeros.
+    2. Difference between lh and rh per subject, ROI and subject.
+    3. Difference / 2 of these between conditions
+    4. T-test againsgt 0 of difference across subjects.
+    5. Abs() of T-statistic
+    '''
+    resp_ses_cort = resp_ses_cort.fillna(0)
+    resp_cort_lat = resp_ses_cort.groupby(['subject', 'roi_', 'parameter']).agg(lambda x: np.diff(x)).reset_index()
+    resp_cort_lat = resp_cort_lat.groupby(['subject', 'roi_']).agg(lambda x: np.diff(x) / 2).reset_index()
+
+    resp_lat = {}
+    for reg in resp_cort_lat.roi_.unique():
+        tt = ttest(resp_cort_lat.loc[resp_cort_lat.roi_ == reg].rhat_fisher, 0)
+        resp_lat[reg] = tt[0]
+    resp_lat = pd.DataFrame.from_dict(resp_lat, orient='index').reset_index()
+    resp_lat.columns = ['roi_', 't_statistic']
+    resp_lat.t_statistic = resp_lat.t_statistic.abs()
+    '''
+    Save.
+    '''
+    resp_lat.to_csv('resp_lat.csv')
+    resp_mag.to_csv('resp_mag.csv')
 
 
 if __name__ == '__main__':
-    execute(sys.argv[1])
+    pass
 
 
 '''
