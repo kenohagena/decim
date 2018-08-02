@@ -40,16 +40,20 @@ def extract_brainstem_roi(sub, epi_dir, atlas_dir, out_dir):
 
     Output: Masked EPIs and weight file per atlas
     '''
+    instruct = 'instructed*T1w*prepro*denoise'
+    infer = 'infer*T1w*prepro*denoise'
     slu.mkdir_p(out_dir)
     e = re.EPI(sub, out_dir=out_dir)
     e.load_epi('{1}/sub-{0}/fmriprep/sub-{0}/ses-3/func/'.format(sub, epi_dir),
-               identifier='inference*T1w*prepro')
+               identifier=infer)
+    e.load_epi('{1}/sub-{0}/fmriprep/sub-{0}/ses-2/func/'.format(sub, epi_dir),
+               identifier=infer)
+    '''
+    e.load_epi('{1}/sub-{0}/fmriprep/sub-{0}/ses-2/func/'.format(sub, epi_dir),
+               identifier=instruct)
     e.load_epi('{1}/sub-{0}/fmriprep/sub-{0}/ses-3/func/'.format(sub, epi_dir),
-               identifier='instructed*T1w*prepro')
-    e.load_epi('{1}/sub-{0}/fmriprep/sub-{0}/ses-2/func/'.format(sub, epi_dir),
-               identifier='inference*T1w*prepro')
-    e.load_epi('{1}/sub-{0}/fmriprep/sub-{0}/ses-2/func/'.format(sub, epi_dir),
-               identifier='instructed*T1w*prepro')
+               identifier=instruct)
+    '''
     print('{} loaded'.format(sub))
     e.load_mask(expanduser('{1}/sub-{0}'.format(sub, atlas_dir)), mult_roi_atlases={'CIT': {2: 'NAc', 6: 'SNc', 10: 'VTA'}})
     e.resample_masks()
@@ -192,16 +196,3 @@ def execute(sub):
 
 if __name__ == "__main__":
     execute(sys.argv[1])
-
-    # To run brainstem extractions embedded in a shell script
-'''
-    extract_brainstem_roi(sys.argv[1], epi_dir, atlas_dir, out_dir)  # to embed in shell script
-    concat_single_rois(sys.argv[1], out_dir)
-'''
-# To run brain extraction within the python script
-'''
-    for sub in subjects:
-        extract_brainstem_roi(sub, epi_dir='/Volumes/flxrl/fmri/completed_preprocessed',
-                atlas_dir='/Users/kenohagena/Flexrule/fmri/atlases', out_dir='/Volumes/flxrl/fmri/roi_extract-120618')
-
-'''
