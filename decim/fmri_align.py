@@ -10,7 +10,7 @@ import sys
 from multiprocessing import Pool
 
 
-runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
+runs = ['inference_run-4', 'inference_run-5', 'inference_run-6', 'instructed_run-7', 'instructed_run-8']
 data_dir = '/Volumes/flxrl/fmri/bids_mr'
 out_dir = '/home/khagena/FLEXRULE/fmri/behav_fmri_aligned'
 hummel_out = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned'
@@ -80,7 +80,7 @@ def execute(sub, ses, run_index):
     '''
 
     b = pd.read_hdf('/work/faty014/FLEXRULE/behavior/behav_dataframes/behav_sub-{0}_ses-{1}.hdf'.
-                    format(sub, ses), key='{}'.format([4, 5, 6][run_index]))
+                    format(sub, ses), key='{}'.format([4, 5, 6, 7, 8][run_index]))
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
     b = b.loc[:, ['onset', 'belief', 'murphy_surprise', 'switch', 'point', 'response', 'response_left',
@@ -143,7 +143,7 @@ def keys():
     keys = []
     for sub in range(1, 23):
         for ses in [2, 3]:
-            for run in [0, 1, 2]:
+            for run in [0,1,2,3,4]:
                 keys.append((sub, ses, run))
     return keys
 
