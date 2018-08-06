@@ -54,7 +54,7 @@ class VoxelSubject(object):
         for run in runs:
             nifti = nib.load(join(self.epi_dir, 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
                                   '{0}_{1}_task-{2}_bold_space-T1w_preproc_denoise.nii.gz'.format(self.subject, self.session, run)))
-            behav = pd.read_hdf(join(self.behav_dir, 'beh_regressors_{0}_{1}'.format(self.subject, self.session)),
+            behav = pd.read_hdf(join(self.behav_dir, 'beh_regressors_{0}_{1}.hdf'.format(self.subject, self.session)),
                                 key=run)
             shape = nifti.get_data().shape
             data = nifti.get_data()
