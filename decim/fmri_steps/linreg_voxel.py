@@ -54,8 +54,8 @@ class VoxelSubject(object):
         for run in runs:
             nifti = nib.load(join(self.epi_dir, 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
                                   '{0}_{1}_task-{2}_bold_space-T1w_preproc_denoise.nii.gz'.format(self.subject, self.session, run)))
-            behav = pd.read_csv(join(self.behav_dir, 'beh_regressors_{0}_{1}_{2}'.format(self.subject, self.session, run)),
-                                index_col=0)
+            behav = pd.read_hdf(join(self.behav_dir, 'beh_regressors_{0}_{1}'.format(self.subject, self.session)),
+                                key=run)
             shape = nifti.get_data().shape
             data = nifti.get_data()
             d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.shape[-1])])
@@ -118,7 +118,7 @@ def lateralize(x):
 
 
 def concat(input_dir):
-    files = glob(join(input_dir, '*_*'))
+    files = glob(join(input_dir, 'sub*'))
     dfs = []
     for file in (files):
         subject = file[file.find('sub-'):file.find('_ses-')]
@@ -156,7 +156,7 @@ def surface_plot_data(grouped_df, lateral_params, marker='coef_'):
     '''
     df = grouped_df
     ses_mean = df.groupby(['subject', 'parameter', 'names', 'hemisphere']).mean().reset_index()
-    mag = ses_mean.groupby(['parameter', 'names', 'hemisphere']).agg(lambda x: ttest(x, 0)[0]).reset_index()
+    mag = ses_mean.groupby(['parameter', 'names', 'hemisphere']).agg(lambda x: ttest(x, 0)[1]).reset_index()
     mag = mag.groupby(['parameter', 'names']).mean().reset_index()
     mag = mag.pivot(columns='parameter', index='names', values=marker)
 
@@ -165,7 +165,7 @@ def surface_plot_data(grouped_df, lateral_params, marker='coef_'):
         lat.set_index(['subject', 'parameter', 'names', 'hemisphere', 'labs'], inplace=True)
         lat = lat.groupby(['parameter'], group_keys=False).apply(lateralize).reset_index()
         lat = lat.groupby(['names', 'subject']).mean().reset_index()
-        lat = lat.groupby(['names']).agg(lambda x: ttest(x, 0)[0]).reset_index()
+        lat = lat.groupby(['names']).agg(lambda x: ttest(x, 0)[1]).reset_index()
         mag['{}_lat'.format(lateral_param)] = lat[marker].values
     return mag
 
@@ -173,7 +173,7 @@ def surface_plot_data(grouped_df, lateral_params, marker='coef_'):
 def surface_data(input_dir, lateral_params):
     grouped = concat(input_dir)
     mag_lat = surface_plot_data(grouped, lateral_params)
-    mag_lat.to_csv(join(input_dir, 'surface_textures_average.csv'))
+    mag_lat.to_csv(join(input_dir, 'surface_textures_average_p.csv'))
 
 
 '''
@@ -182,9 +182,9 @@ FUnctions to parallelize on Hummel Cluster
 
 
 def hummel_ex(sub, ses):
-    out_dir = '/work/faty014/FLEXRULE/fmri/voxel3'
+    out_dir = '/work/faty014/FLEXRULE/fmri/voxel_denoise_debug'
     epi_dir = '/work/faty014/FLEXRULE/fmri'
-    behav_dir = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned_2'
+    behav_dir = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned'
     slu.mkdir_p(out_dir)
     v = VoxelSubject(sub, ses, epi_dir, out_dir, behav_dir)
     v.linreg_voxel()
@@ -207,6 +207,5 @@ def submit(sub):
     slu.pmap(par_execute, keys(sub), walltime='2:55:00',
              memory=60, nodes=1, tasks=2, name='fmri_align')
 
-'''
-surface_data('/Volumes/flxrl/FLEXRULE/fmri/voxel2/surface_textures', ['belief', 'rresp', 'response'])
-'''
+
+#surface_data('/Volumes/flxrl/FLEXRULE/fmri/surface_textures', ['belief', 'rresp', 'response', 'LLR'])
