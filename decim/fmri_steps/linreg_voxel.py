@@ -183,7 +183,7 @@ FUnctions to parallelize on Hummel Cluster
 
 
 def hummel_ex(sub, ses):
-    out_dir = '/work/faty014/FLEXRULE/fmri/voxel_denoise_debug'
+    out_dir = '/work/faty014/FLEXRULE/fmri/voxel_denoise_debug2'
     epi_dir = '/work/faty014/FLEXRULE/fmri'
     behav_dir = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned'
     slu.mkdir_p(out_dir)
