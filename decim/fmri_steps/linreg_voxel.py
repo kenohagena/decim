@@ -191,21 +191,22 @@ def hummel_ex(sub, ses):
     v.vol_2surf()
 
 
-def keys(sub):
+def keys():
     keys = []
-    for ses in [2, 3]:
-        keys.append((sub, 'ses-{}'.format(ses)))
+    for sub in range(1, 23):
+        for ses in [2, 3]:
+            keys.append((sub, 'ses-{}'.format(ses)))
     return keys
 
 
 def par_execute(keys):
-    with Pool(2) as p:
+    with Pool(16) as p:
         p.starmap(hummel_ex, keys)
 
 
 def submit(sub):
     slu.pmap(par_execute, keys(sub), walltime='2:55:00',
-             memory=60, nodes=1, tasks=2, name='fmri_align')
+             memory=60, nodes=1, tasks=16, name='fmri_align')
 
 
 #surface_data('/Volumes/flxrl/FLEXRULE/fmri/surface_textures', ['belief', 'rresp', 'response', 'LLR'])
