@@ -13,6 +13,7 @@ from scipy.stats import ttest_1samp as ttest
 
 
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
+instructed = ['instructed_run-7', 'instructed_run-8']
 epi_dir = '/home/khagena/FLEXRULE/fmri'
 behav_dir = '/home/khagena/FLEXRULE/behavior/behav_fmri_aligned'
 out_dir = '/home/khagena/FLEXRULE/fmri/voxel2'
@@ -200,13 +201,13 @@ def keys():
 
 
 def par_execute(keys):
-    with Pool(16) as p:
+    with Pool(12) as p:
         p.starmap(hummel_ex, keys)
 
 
 def submit():
     slu.pmap(par_execute, keys(), walltime='2:55:00',
-             memory=60, nodes=1, tasks=16, name='fmri_align')
+             memory=60, nodes=1, tasks=12, name='fmri_align')
 
 
 #surface_data('/Volumes/flxrl/FLEXRULE/fmri/surface_textures', ['belief', 'rresp', 'response', 'LLR'])
