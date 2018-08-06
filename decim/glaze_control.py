@@ -5,7 +5,7 @@ from decim import glaze2 as gl
 import pandas as pd
 
 
-def load_logs_bids(subject, session, base_path):
+def load_logs_bids(subject, session, base_path, run='inference'):
     '''
     Returns filenames and pandas frame.
     '''
@@ -17,7 +17,7 @@ def load_logs_bids(subject, session, base_path):
                      'sub-{}'.format(subject),
                      'ses-{}'.format(session),
                      modality)
-    files = sorted(glob(join(directory, '*inference*.tsv')))
+    files = sorted(glob(join(directory, '*{}*.tsv'.format(run))))
     if len(files) == 0:
         raise RuntimeError(
             'No log file found for this block: %s, %s' %
