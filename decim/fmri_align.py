@@ -13,10 +13,10 @@ from multiprocessing import Pool
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 data_dir = '/Volumes/flxrl/fmri/bids_mr'
 out_dir = '/home/khagena/FLEXRULE/fmri/behav_fmri_aligned'
-hummel_out = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned_2'
+hummel_out = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned'
 
 
-slu.mkdir_p(hummel_out)
+# slu.mkdir_p(hummel_out)
 
 
 def hrf(t):
@@ -79,9 +79,8 @@ def execute(sub, ses, run_index):
                 - downsampled to EPI-f
     '''
 
-    b = pd.read_csv('/work/faty014/FLEXRULE/behavior/behav_dataframes/sub-{0}/behav_sub-{0}_ses-{1}_run-{2}.csv'.
-                    format(sub, ses, [4, 5, 6][run_index]),
-                    index_col=0)
+    b = pd.read_hdf('/work/faty014/FLEXRULE/behavior/behav_dataframes/behav_sub-{0}_ses-{1}.hdf'.
+                    format(sub, ses), key='{}'.format([4, 5, 6][run_index]))
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
     b = b.loc[:, ['onset', 'belief', 'murphy_surprise', 'switch', 'point', 'response', 'response_left',
@@ -103,7 +102,7 @@ def execute(sub, ses, run_index):
     b = regular(b, target='1900ms')
     b.loc[pd.Timedelta(0)] = 0
     b = b.sort_index()
-    b.to_csv(join(hummel_out, 'beh_regressors_sub-{0}_ses-{1}_{2}'.format(sub, ses, runs[run_index])))
+    b.to_hdf(join(hummel_out, 'beh_regressors_sub-{0}_ses-{1}.hdf'.format(sub, ses)), key=runs[run_index])
     return b
 
 
