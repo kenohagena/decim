@@ -204,8 +204,8 @@ def par_execute(keys):
         p.starmap(hummel_ex, keys)
 
 
-def submit(sub):
-    slu.pmap(par_execute, keys(sub), walltime='2:55:00',
+def submit():
+    slu.pmap(par_execute, keys(), walltime='2:55:00',
              memory=60, nodes=1, tasks=16, name='fmri_align')
 
 
