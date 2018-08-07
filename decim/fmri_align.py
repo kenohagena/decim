@@ -15,7 +15,7 @@ data_dir = '/Volumes/flxrl/fmri/bids_mr'
 out_dir = '/Users/kenohagena/Desktop/behav_fmri_aligned3'
 hummel_out = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned13'
 
-#slu.mkdir_p(out_dir)
+# slu.mkdir_p(out_dir)
 slu.mkdir_p(hummel_out)
 
 
@@ -156,10 +156,9 @@ def par_execute(keys):
         p.starmap(execute, keys)
 
 
-def submit():
-    for sub in range(1, 23):
-        slu.pmap(par_execute, keys(sub), walltime='2:55:00',
-                 memory=30, nodes=1, tasks=6, name='fmri_align')
+def submit(sub):
+    slu.pmap(par_execute, keys(sub), walltime='2:55:00',
+             memory=30, nodes=1, tasks=6, name='fmri_align')
 
 
 if __name__ == '__main__':
