@@ -15,7 +15,7 @@ data_dir = '/Volumes/flxrl/fmri/bids_mr'
 out_dir = '/Users/kenohagena/Desktop/behav_fmri_aligned3'
 hummel_out = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned3'
 
-#slu.mkdir_p(out_dir)
+# slu.mkdir_p(out_dir)
 slu.mkdir_p(hummel_out)
 
 
@@ -80,7 +80,7 @@ def execute(sub, ses, run_index):
     '''
 
     b = pd.read_hdf('/work/faty014/FLEXRULE/behavior/behav_dataframes/behav_sub-{0}_ses-{1}.hdf'.
-                    format(sub, ses), key='{}'.format([4, 5, 6, 7, 8][run_index]))
+                    format(sub, ses), key=runs[run_index])
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
     b = b.loc[:, ['onset', 'belief', 'murphy_surprise', 'switch', 'point', 'response', 'response_left',
