@@ -104,6 +104,7 @@ def execute(sub, ses, run_index):
     b = b.sort_index()
     print(sub, ses, run_index, b.shape)
     b.to_hdf(join(hummel_out, 'beh_regressors_sub-{0}_ses-{1}.hdf'.format(sub, ses)), key=runs[run_index])
+    b.to_csv(join(hummel_out, 'beh_regressors_sub-{0}_ses-{1}_{2}.csv'.format(sub, ses, runs[run_index])))
     return b
 
 
@@ -160,8 +161,8 @@ def submit():
 
 
 if __name__ == '__main__':
-    for sub in range(1, 23):
-        for ses in [2, 3]:
+    for sub in [22]:
+        for ses in [2]:
             for run in [0, 1, 2, 3, 4]:
                 try:
                     execute(sub, ses, run)
