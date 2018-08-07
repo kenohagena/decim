@@ -4,6 +4,7 @@ import nibabel as nib
 from nilearn.image import resample_img
 from os.path import join
 import decim.slurm_submit as slu
+from multiprocessing import Pool
 
 
 vox = '/work/faty014/FLEXRULE/fmri/voxel_denoise_debug2/voxel_regressions'
