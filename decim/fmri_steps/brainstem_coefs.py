@@ -68,6 +68,6 @@ def par_execute(keys):
         p.starmap(execute, keys)
 
 
-def submit(sub):
+def submit():
     slu.pmap(par_execute, keys(), walltime='2:55:00',
              memory=30, nodes=1, tasks=16, name='brainstem_coefs')
