@@ -1,12 +1,11 @@
 import pandas as pd
 import numpy as np
-import sys
 import nibabel as nib
 from nilearn.image import resample_img
 from os.path import join
 
 vox = '/work/faty014/FLEXRULE/fmri/voxel_denoise_debug2/voxel_regressions'
-atlases = '/work/faty014/FLEXRULE/fmri/atlases/'
+atlas_dir = '/work/faty014/FLEXRULE/fmri/atlases'
 parameters = ['belief', 'murphy_surprise', 'switch', 'point', 'response',
               'response_left', 'response_right', 'stimulus_horiz', 'stimulus_vert',
               'stimulus', 'rresp_left', 'rresp_right', 'abs_belief']
@@ -19,13 +18,13 @@ atlases = [
     'LC_standard_1'
 ]
 
-cit = pd.read_table(join(atlases, 'CIT168_RL_Subcortical_Nuclei/CIT168_Reinf_Learn_v1/labels.txt'), sep='  ', header=None)
+cit = pd.read_table(join(atlas_dir, 'CIT168_RL_Subcortical_Nuclei/CIT168_Reinf_Learn_v1/labels.txt'), sep='  ', header=None)
 
 
 def weighted_coef(subject, session, parameter):
     nifti = nib.load(join(vox, '{0}_{1}_{2}.nii.gz'.format(subject, session, parameter)))
     for a in atlases:
-        atlas = nib.load(join(atlases, '{0}/{1}_T1w_{0}.nii.gz'.format(subject, a)))
+        atlas = nib.load(join(atlas_dir, '{0}/{1}_T1w_{0}.nii.gz'.format(subject, a)))
         atlas = resample_img(atlas, nifti.affine, target_shape=nifti.shape[0:3])
         if a == 'CIT168_MNI':
             for i in range(16):
