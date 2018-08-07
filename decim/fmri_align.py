@@ -13,9 +13,9 @@ from multiprocessing import Pool
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6', 'instructed_run-7', 'instructed_run-8']
 data_dir = '/Volumes/flxrl/fmri/bids_mr'
 out_dir = '/Users/kenohagena/Desktop/behav_fmri_aligned3'
-hummel_out = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned3'
+hummel_out = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned13'
 
-# slu.mkdir_p(out_dir)
+#slu.mkdir_p(out_dir)
 slu.mkdir_p(hummel_out)
 
 
@@ -77,6 +77,8 @@ def execute(sub, ses, run_index):
                 - timedelta as index
                 - convolved with hrf
                 - downsampled to EPI-f
+
+    /Volumes/flxrl/FLEXRULE/
     '''
 
     b = pd.read_hdf('/work/faty014/FLEXRULE/behavior/behav_dataframes/behav_sub-{0}_ses-{1}.hdf'.
@@ -141,23 +143,23 @@ def execute_delay(sub, ses, run_index, delay, behav_dir='/work/faty014'):
     return b
 
 
-def keys():
+def keys(sub):
     keys = []
-    for sub in range(1, 23):
-        for ses in [2, 3]:
-            for run in [0, 1, 2, 3, 4]:
-                keys.append((sub, ses, run))
+    for ses in [2, 3]:
+        for run in [0, 1, 2]:
+            keys.append((sub, ses, run))
     return keys
 
 
 def par_execute(keys):
-    with Pool(16) as p:
+    with Pool(6) as p:
         p.starmap(execute, keys)
 
 
 def submit():
-    slu.pmap(par_execute, keys(), walltime='2:55:00',
-             memory=30, nodes=1, tasks=16, name='fmri_align')
+    for sub in range(1, 23):
+        slu.pmap(par_execute, keys(sub), walltime='2:55:00',
+                 memory=30, nodes=1, tasks=6, name='fmri_align')
 
 
 if __name__ == '__main__':
