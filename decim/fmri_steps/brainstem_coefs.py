@@ -61,11 +61,18 @@ def execute(sub):
     pd.DataFrame(l_coef_).to_hdf(join(vox, 'brainstem_coefs.hdf'), key=subject)
 
 
+def keys():
+    keys = []
+    for key in range(1, 23):
+        keys.append((key))
+    return keys
+
+
 def par_execute(keys):
     with Pool(16) as p:
         p.starmap(execute, keys)
 
 
 def submit():
-    slu.pmap(par_execute, [s for s in range(1, 23)], walltime='2:55:00',
+    slu.pmap(par_execute, keys(), walltime='2:55:00',
              memory=30, nodes=1, tasks=16, name='brainstem_coefs')
