@@ -16,7 +16,7 @@ runs = ['inference_run-4', 'inference_run-5', 'inference_run-6']
 instructed = ['instructed_run-7', 'instructed_run-8']
 epi_dir = '/home/khagena/FLEXRULE/fmri'
 behav_dir = '/home/khagena/FLEXRULE/behavior/behav_fmri_aligned'
-out_dir = '/home/khagena/FLEXRULE/fmri/voxel2'
+out_dir = '/home/khagena/FLEXRULE/fmri/voxel_regressions'
 hemis = {'L': 'lh', 'R': 'rh'}
 
 
