@@ -15,8 +15,8 @@ data_dir = '/Volumes/flxrl/fmri/bids_mr'
 out_dir = '/Users/kenohagena/Desktop/behav_fmri_aligned3'
 hummel_out = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned3'
 
-slu.mkdir_p(out_dir)
-# slu.mkdir_p(hummel_out)
+#slu.mkdir_p(out_dir)
+slu.mkdir_p(hummel_out)
 
 
 def hrf(t):
