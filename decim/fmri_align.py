@@ -12,11 +12,11 @@ from multiprocessing import Pool
 
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6', 'instructed_run-7', 'instructed_run-8']
 data_dir = '/Volumes/flxrl/fmri/bids_mr'
-out_dir = '/home/khagena/FLEXRULE/fmri/behav_fmri_aligned'
+out_dir = '/Users/kenohagena/Desktop/behav_fmri_aligned3'
 hummel_out = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned3'
 
-
-slu.mkdir_p(hummel_out)
+slu.mkdir_p(out_dir)
+# slu.mkdir_p(hummel_out)
 
 
 def hrf(t):
@@ -157,3 +157,20 @@ def par_execute(keys):
 def submit():
     slu.pmap(par_execute, keys(), walltime='2:55:00',
              memory=30, nodes=1, tasks=16, name='fmri_align')
+
+
+if __name__ == '__main__':
+    for sub in range(1, 23):
+        for ses in [2, 3]:
+            for run in [0, 1, 2, 3, 4]:
+                try:
+                    execute(sub, ses, run)
+                except RuntimeError:
+                    print('runtime')
+                    continue
+                except KeyError:
+                    print('keyerror')
+                    continue
+                except FileNotFoundError:
+                    print('file not found')
+                    continue
