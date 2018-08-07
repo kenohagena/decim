@@ -48,23 +48,23 @@ def weighted_coef(subject, session, parameter):
                             'coef_': coef_})
 
 
-def execute(sub):
+def execute(sub, session):
     subject = 'sub-{}'.format(sub)
     l_coef_ = []
-    for session in ['ses-2', 'ses-3']:
-        for parameter in parameters:
-            try:
-                weighted_coef(subject, session, parameter)
-                print(subject, session, parameter, 'done')
-            except FileNotFoundError:
-                print(subject, session, parameter)
-    pd.DataFrame(l_coef_).to_hdf(join(vox, 'brainstem_coefs.hdf'), key=subject)
+    for parameter in parameters:
+        try:
+            weighted_coef(subject, session, parameter)
+            print(subject, session, parameter, 'done')
+        except FileNotFoundError:
+            print(subject, session, parameter)
+    pd.DataFrame(l_coef_).to_hdf(join(vox, 'brainstem_coefs.hdf'), key='{0}_{1}'.format(subject, session))
 
 
 def keys():
     keys = []
-    for key in range(1, 23):
-        keys.append((key))
+    for sub in range(1, 23):
+        for ses in ['ses-2', 'ses-3']:
+            keys.append((sub, ses))
     return keys
 
 
