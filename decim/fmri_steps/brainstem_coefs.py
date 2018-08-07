@@ -3,6 +3,8 @@ import numpy as np
 import nibabel as nib
 from nilearn.image import resample_img
 from os.path import join
+import decim.slurm_submit as slu
+
 
 vox = '/work/faty014/FLEXRULE/fmri/voxel_denoise_debug2/voxel_regressions'
 atlas_dir = '/work/faty014/FLEXRULE/fmri/atlases'
