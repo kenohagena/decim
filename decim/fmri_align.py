@@ -13,7 +13,7 @@ from multiprocessing import Pool
 runs = ['inference_run-4', 'inference_run-5', 'inference_run-6', 'instructed_run-7', 'instructed_run-8']
 data_dir = '/Volumes/flxrl/fmri/bids_mr'
 out_dir = '/Users/kenohagena/Desktop/behav_fmri_aligned3'
-hummel_out = '/work/faty014/FLEXRULE/behavior/behav_fmri_aligned13'
+hummel_out = '/work/faty014/FLEXRULE/behavior/test'
 
 # slu.mkdir_p(out_dir)
 slu.mkdir_p(hummel_out)
