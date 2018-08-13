@@ -159,7 +159,7 @@ class SubjectLevel(object):
 def execute(sub):
     sl = SubjectLevel(sub, environment='Climag')
     sl.PupilFrame = defaultdict(dict)
-    files = glob(join('/home/khagena/FLEXRULE/pupil/linear_pupilframes', '*{}*'.format(sl.subject)))
+    files = glob(join('/home/khagena/FLEXRULE/pupil/linear_pupilframes', '*{}_*'.format(sl.subject)))
     for file in files:
         ses = file[file.find('ses-'):file.find('.hdf')]
         with pd.HDFStore(file) as hdf:
