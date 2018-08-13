@@ -37,7 +37,7 @@ class BehavDataframe(object):
         self.run = run
         self.bids_path = join(flex_dir, 'raw', 'bids_mr_v1.2')
 
-    def inference(self, summary=summary):
+    def inference(self, summary):
 
         logs = gc.load_logs_bids(self.subject, self.session, self.bids_path)
         df = logs[self.run]
@@ -146,7 +146,7 @@ def execute(subject, session, run, type, flex_dir, summary):
     summary = summary
     bd = BehavDataframe(subject, session, run, flex_dir)
     if type == 'inference':
-        bd.inference()
+        bd.inference(summary=summary)
     elif type == 'instructed':
         bd.instructed()
     return bd.BehavDataframe
