@@ -9,23 +9,26 @@ def load_logs_bids(subject, session, base_path, run='inference'):
     '''
     Returns filenames and pandas frame.
     '''
-    if session == 1:
+    if session == 'ses-1':
         modality = 'beh'
     else:
         modality = 'func'
     directory = join(base_path,
-                     'sub-{}'.format(subject),
-                     'ses-{}'.format(session),
+                     subject,
+                     session,
                      modality)
-    files = sorted(glob(join(directory, '*{}*.tsv'.format(run))))
+    if run == 'instructed':
+        files = sorted(glob(join(directory, '*{}*.csv'.format(run))))
+    else:
+        files = sorted(glob(join(directory, '*{}*.tsv'.format(run))))
     if len(files) == 0:
         raise RuntimeError(
             'No log file found for this block: %s, %s' %
             (subject, session))
-    logs = []
-    for i in range(len(files)):
-        logs.append(pd.read_table(files[i]))
-    return files, logs
+    if run == 'inference':
+        return {file[-26:-11]: pd.read_table(file) for file in files}
+    elif run == 'instructed':
+        return {file[-27:-11]: pd.read_csv(file) for file in files}
 
 
 def stan_data_control(subject, session, path, swap=False):
