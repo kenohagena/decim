@@ -29,9 +29,6 @@ To execute, make sure to set:
 '''
 
 
-summary = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv')
-
-
 class BehavDataframe(object):
 
     def __init__(self, subject, session, run, flex_dir):
@@ -145,7 +142,8 @@ class BehavDataframe(object):
 
 
 #@memory.cache
-def execute(subject, session, run, type, flex_dir):
+def execute(subject, session, run, type, flex_dir, summary):
+    summary = summary
     bd = BehavDataframe(subject, session, run, flex_dir)
     if type == 'inference':
         bd.inference()
