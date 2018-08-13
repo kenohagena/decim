@@ -10,8 +10,6 @@ from os.path import join
 from glob import glob
 import sys
 
-summary = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv')
-
 
 class SubjectLevel(object):
 
@@ -30,8 +28,10 @@ class SubjectLevel(object):
         self.runs = {i: i[:-6] for i in np.array(run_names)[np.array(runs) - 4]}
         if environment == 'Volume':
             self.flex_dir = '/Volumes/flxrl/FLEXRULE'
+            self.summary = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv')
         elif environment == 'Climag':
             self.flex_dir = '/home/khagena/FLEXRULE'
+            self.summary = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
         elif environment == 'Hummel':
             self.flex_dir = '/work/faty014/FLEXRULE'
         else:
@@ -74,7 +74,7 @@ class SubjectLevel(object):
         for session in self.sessions:
             for run, task in self.runs.items():
                 behavior_frame = bd.execute(self.subject, session,
-                                            run, task, self.flex_dir)
+                                            run, task, self.flex_dir, self.summary)
                 self.BehavFrame[session][run] = behavior_frame
 
     def BehavAlign(self):
