@@ -11,7 +11,7 @@ vox = '/work/faty014/FLEXRULE/fmri/voxel_denoise_debug2/voxel_regressions'
 atlas_dir = '/work/faty014/FLEXRULE/fmri/atlases'
 parameters = ['belief', 'murphy_surprise', 'switch', 'point', 'response',
               'response_left', 'response_right', 'stimulus_horiz', 'stimulus_vert',
-              'stimulus', 'rresp_left', 'rresp_right', 'abs_belief']
+              'stimulus', 'rresp_left', 'rresp_right', 'abs_belief', 'LLR', 'abs_LLR']
 atlases = [
     'AAN_DR',
     'basal_forebrain_123_Zaborszky',
