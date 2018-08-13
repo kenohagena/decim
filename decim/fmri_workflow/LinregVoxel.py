@@ -6,10 +6,11 @@ import nibabel as nib
 from sklearn.linear_model import LinearRegression
 from nilearn.surface import vol_to_surf
 from collections import defaultdict
+'''
 from joblib import Memory
 cachedir = '/Users/kenohagena/Flexrule/cachedir'
 memory = Memory(cachedir=cachedir, verbose=0)
-
+'''
 
 '''
 Use script in two steps:
@@ -89,7 +90,7 @@ class VoxelSubject(object):
                 self.surface_textures[param][hemisphere] = pd.DataFrame(surface, columns=['coef_', 'intercept_', 'r2_score', 'mean_squared_error'])
 
 
-@memory.cache
+#@memory.cache
 def execute(subject, session, flex_dir, BehavAligned):
     v = VoxelSubject(subject, session, flex_dir, BehavAligned)
     v.linreg_voxel()

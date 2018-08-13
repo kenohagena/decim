@@ -8,11 +8,12 @@ import nibabel as ni
 import subprocess
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.linear_model import LinearRegression
-from joblib import Memory
 import nibabel as nib
+'''
+from joblib import Memory
 cachedir = '/Users/kenohagena/Flexrule/cachedir'
 memory = Memory(cachedir=cachedir, verbose=0)
-
+'''
 
 class EPI(object):
 
@@ -167,7 +168,7 @@ class EPI(object):
         self.cortical = cortical_rois
 
 
-@memory.cache
+#@memory.cache
 def execute(subject, session, run, flex_dir, atlas_warp=False):
     RE = EPI(subject, session, run, flex_dir)
     RE.load_epi()

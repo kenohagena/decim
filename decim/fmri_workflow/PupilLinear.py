@@ -6,9 +6,11 @@ from os.path import join
 from pyedfread import edf
 from scipy import signal
 import matplotlib.pyplot as plt
+'''
 from joblib import Memory
 cachedir = '/Users/kenohagena/Flexrule/cachedir'
 memory = Memory(cachedir=cachedir, verbose=0)
+'''
 
 
 def small_fragments(array, crit_frags=200):

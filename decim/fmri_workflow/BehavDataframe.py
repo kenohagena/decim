@@ -4,9 +4,11 @@ from decim import glaze_control as gc
 from decim import glaze2 as gl
 from os.path import join
 from scipy.interpolate import interp1d
+'''
 from joblib import Memory
 cachedir = '/Users/kenohagena/Flexrule/cachedir'
 memory = Memory(cachedir=cachedir, verbose=0)
+'''
 '''
 INPUT: Behavioral data from .tsv files in BIDS-Format
 OUTPUT: Pandas data frame with the following columns
@@ -142,7 +144,7 @@ class BehavDataframe(object):
         self.BehavDataframe = df
 
 
-@memory.cache
+#@memory.cache
 def execute(subject, session, run, type, flex_dir):
     bd = BehavDataframe(subject, session, run, flex_dir)
     if type == 'inference':
@@ -188,7 +190,7 @@ def regular(df, target='16ms'):
     return pd.concat([interp(dt, df[c], target) for c in df.columns], axis=1)
 
 
-@memory.cache
+#@memory.cache
 def fmri_align(BehavDf, task):
     '''
     Output: pd.DataFrame with
