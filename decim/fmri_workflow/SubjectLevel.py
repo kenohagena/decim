@@ -52,7 +52,7 @@ class SubjectLevel(object):
         OUTPUT: PupilFrames
         '''
         if hasattr(self, 'PupilFrame'):
-            continue
+            pass
         else:
             self.PupilFrame = defaultdict(dict)
         for session in self.sessions:
