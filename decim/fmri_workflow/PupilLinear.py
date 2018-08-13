@@ -66,8 +66,8 @@ class PupilFrame(object):
                 'More than one log file found for this block: %s' % files)
         elif len(files) == 0:
             raise RuntimeError(
-                'No log file found for this block: %s, %s' %
-                (self.subject, self.session))
+                'No log file found for this block: %s, %s, %s' %
+                (self.subject, self.session, self.run))
         if self.type == 'inference':
             return edf.pread(files[0], trial_marker=b'trial_id')
         elif self.type == 'instructed':

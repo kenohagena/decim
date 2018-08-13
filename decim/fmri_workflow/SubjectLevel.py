@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from decim.fmri_workflow import PupilLinear as pf
 from decim.fmri_workflow import BehavDataframe as bd
 from decim.fmri_workflow import RoiExtract as re
 from decim.fmri_workflow import ChoiceEpochs as ce
@@ -37,9 +36,11 @@ class SubjectLevel(object):
             self.flex_dir = '/work/faty014/FLEXRULE'
         else:
             self.flex_dir = environment
+        if environment != 'Climag':
+            from decim.fmri_workflow import PupilLinear as pf
 
     def __iter__(self):
-        for attr, value in self.__dict__.iteritems():
+        for attr, value in self.__dict__.items():
             yield attr, value
 
     def Input(self, **kwargs):
@@ -57,7 +58,9 @@ class SubjectLevel(object):
             self.PupilFrame = defaultdict(dict)
         for session in self.sessions:
             for run in self.runs.keys():
-                if self.PupilFrame[session][run] is not None:
+                if run in self.PupilFrame[session].keys():
+                    pass
+                else:
                     pupil_frame = pf.execute(self.subject, session, run,
                                              self.flex_dir, manual)
                     self.PupilFrame[session][run] = pupil_frame
@@ -137,32 +140,33 @@ class SubjectLevel(object):
 
     def Output(self):
         output_dir = join(self.flex_dir, 'SubjectLevel', self.subject)
-        slu.mkdir(output_dir)
+        slu.mkdir_p(output_dir)
         for name, attribute in self.__iter__():
             if name in ['BehavFrame', 'BehavAligned', 'PupilFrame', 'CortRois', 'BrainstemRois', 'ChoiceEpochs']:
                 for session in self.sessions:
-                    for run in self.runs.keys():
-                        attribute[session][run].to_hdf('{0}_{1}_{2}.hdf'.format(name, self.subject, session), key=run)
+                    for run in attribute[session].keys():
+                        attribute[session][run].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session), key=run))
 
             elif name == 'CleanEpochs':
                 for session in self.sessions:
-                    attribute[session].to_hdf('{0}_{1}.hdf'.format(name, self.subject), key=session)
+                    attribute[session].to_hdf(join(output_dir, '{0}_{1}.hdf'.format(name, self.subject), key=session))
             elif name in ['VoxelReg', 'SurfaceTxt']:
                 for session in self.sessions:
                     for task in set(self.runs.values()):
-                        attribute[session][task].to_hdf('{0}_{1}_{2}.hdf'.format(name, self.subject, session), key=task)
+                        attribute[session][task].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session), key=task))
 
 
 def execute(sub):
     sl = SubjectLevel(sub, environment='Climag')
     sl.PupilFrame = defaultdict(dict)
-    files = glob(join('/home/khagena/FLEXRULE/pupil/linear_pupilframes_manual', '*{}*'.format(sl.subject)))
+    files = glob(join('/home/khagena/FLEXRULE/pupil/linear_pupilframes', '*{}*'.format(sl.subject)))
     for file in files:
-        run = file[file.find('_in') + 1:file.find('.hdf')]
-        ses = file[file.find('ses-'):file.find('_in')]
-        sl.PupilFrame[ses][run] = pd.read_hdf(file)
+        ses = file[file.find('ses-'):file.find('.hdf')]
+        with pd.HDFStore(file) as hdf:
+            k = hdf.keys()
+        for run in k:
+            sl.PupilFrame[ses][run] = pd.read_hdf(file, key=run)
     sl.BehavFrames()
-    sl.PupilFrames()
     sl.RoiExtract()
     sl.BehavAlign()
     sl.ChoiceEpochs()
