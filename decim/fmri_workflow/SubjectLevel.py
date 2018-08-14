@@ -190,9 +190,9 @@ def par_execute(keys):
 
 
 def submit(sub):
-    for batch_start in np.arange(1, 23, 4):
-        slu.pmap(par_execute, keys(batch_start), walltime='2:00:00',
-                 memory=15, nodes=1, tasks=1, name='SubjectLevel')
+    slu.pmap(par_execute, keys(sub), walltime='2:00:00',
+             memory=15, nodes=1, tasks=1, name='SubjectLevel')
+
 
 '''
 if __name__ == '__main__':
