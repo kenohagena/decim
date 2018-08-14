@@ -168,6 +168,7 @@ def execute(sub, environment):
             k = hdf.keys()
         for run in k:
             sl.PupilFrame[ses][run] = pd.read_hdf(file, key=run)
+    print(sl.PupilFrame.keys(), sl.PupilFrame.values())
     sl.BehavFrames()
     sl.RoiExtract()
     sl.BehavAlign()
