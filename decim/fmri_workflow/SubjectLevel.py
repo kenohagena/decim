@@ -8,7 +8,7 @@ from decim import slurm_submit as slu
 from collections import defaultdict
 from os.path import join
 from glob import glob
-import sys
+from pymeg import parallel as pbs
 from multiprocessing import Pool
 
 
@@ -189,9 +189,13 @@ def par_execute(keys):
         p.starmap(execute, keys)
 
 
-def submit(sub):
-    slu.pmap(par_execute, keys(sub), walltime='2:00:00',
-             memory=15, nodes=1, tasks=1, name='SubjectLevel')
+def submit(sub, env='Hummel'):
+    if env == 'Hummel':
+        slu.pmap(par_execute, keys(sub), walltime='2:00:00',
+                 memory=15, nodes=1, tasks=1, name='SubjectLevel')
+    elif env == 'Climag':
+        pbs.pmap(par_execute, keys(sub), walltime='2:00:00',
+                 memory=15, nodes=1, tasks=1, name='SubjectLevel')
 
 
 '''
