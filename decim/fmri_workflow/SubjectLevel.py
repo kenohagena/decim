@@ -177,22 +177,22 @@ def execute(sub, environment):
     sl.Output()
 
 
-def keys(batch_start):
+def keys(sub):
     keys = []
-    for sub in range(batch_start, batch_start + 4):
+    for sub in [sub]:
         keys.append((sub, 'Hummel'))
     return keys
 
 
 def par_execute(keys):
-    with Pool(4) as p:
+    with Pool(1) as p:
         p.starmap(execute, keys)
 
 
-def submit():
+def submit(sub):
     for batch_start in np.arange(1, 23, 4):
-        slu.pmap(par_execute, keys(batch_start), walltime='12:00:00',
-                 memory=60, nodes=1, tasks=4, name='SubjectLevel')
+        slu.pmap(par_execute, keys(batch_start), walltime='2:00:00',
+                 memory=15, nodes=1, tasks=1, name='SubjectLevel')
 
 '''
 if __name__ == '__main__':
