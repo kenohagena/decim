@@ -9,6 +9,7 @@ from collections import defaultdict
 from os.path import join
 from glob import glob
 import sys
+from multiprocessing import Pool
 
 
 class SubjectLevel(object):
@@ -34,9 +35,10 @@ class SubjectLevel(object):
             self.summary = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
         elif environment == 'Hummel':
             self.flex_dir = '/work/faty014/FLEXRULE'
+            self.summary = pd.read_csv('/work/faty014/FLEXRULE/behavior/summary_stan_fits.csv')
         else:
             self.flex_dir = environment
-        if environment != 'Climag':
+        if environment == 'Volume':
             from decim.fmri_workflow import PupilLinear as pf
 
     def __iter__(self):
@@ -156,10 +158,10 @@ class SubjectLevel(object):
                         attribute[session][task].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session), key=task))
 
 
-def execute(sub):
-    sl = SubjectLevel(sub, environment='Climag')
+def execute(sub, environment):
+    sl = SubjectLevel(sub, environment=environment)
     sl.PupilFrame = defaultdict(dict)
-    files = glob(join('/home/khagena/FLEXRULE/pupil/linear_pupilframes', '*{}_*'.format(sl.subject)))
+    files = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*{}_*'.format(sl.subject)))
     for file in files:
         ses = file[file.find('ses-'):file.find('.hdf')]
         with pd.HDFStore(file) as hdf:
@@ -175,5 +177,24 @@ def execute(sub):
     sl.Output()
 
 
+def keys(batch_start):
+    keys = []
+    for sub in range(batch_start, batch_start + 4):
+        keys.append((sub, 'Hummel'))
+    return keys
+
+
+def par_execute(keys):
+    with Pool(4) as p:
+        p.starmap(execute, keys)
+
+
+def submit():
+    for batch_start in np.arange(1, 23, 4):
+        slu.pmap(par_execute, keys(batch_start), walltime='12:00:00',
+                 memory=60, nodes=1, tasks=4, name='SubjectLevel')
+
+'''
 if __name__ == '__main__':
     execute(sys.argv[1])
+'''
