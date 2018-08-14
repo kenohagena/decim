@@ -198,7 +198,6 @@ def submit(sub, env='Hummel'):
                  memory=15, nodes=1, tasks=1, name='SubjectLevel')
 
 
-execute(2, 'Volume')
 '''
 if __name__ == '__main__':
     execute(sys.argv[1])
