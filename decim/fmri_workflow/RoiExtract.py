@@ -15,6 +15,7 @@ cachedir = '/Users/kenohagena/Flexrule/cachedir'
 memory = Memory(cachedir=cachedir, verbose=0)
 '''
 
+
 class EPI(object):
 
     def __init__(self, subject, session, run, flex_dir):

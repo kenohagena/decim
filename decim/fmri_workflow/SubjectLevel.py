@@ -10,6 +10,7 @@ from os.path import join
 from glob import glob
 from pymeg import parallel as pbs
 from multiprocessing import Pool
+#from decim.fmri_workflow import PupilLinear as pf
 
 
 class SubjectLevel(object):
@@ -38,8 +39,6 @@ class SubjectLevel(object):
             self.summary = pd.read_csv('/work/faty014/FLEXRULE/behavior/summary_stan_fits.csv')
         else:
             self.flex_dir = environment
-        if environment == 'Volume':
-            from decim.fmri_workflow import PupilLinear as pf
 
     def __iter__(self):
         for attr, value in self.__dict__.items():
@@ -107,6 +106,7 @@ class SubjectLevel(object):
         self.ChoiceEpochs = defaultdict(dict)
         for session in self.sessions:
             for run, task in self.runs.items():
+                print(session, run)
                 self.ChoiceEpochs[session][run] =\
                     ce.execute(self.subject, session,
                                run, task, self.flex_dir,
@@ -161,7 +161,7 @@ class SubjectLevel(object):
 def execute(sub, environment):
     sl = SubjectLevel(sub, environment=environment)
     sl.PupilFrame = defaultdict(dict)
-    files = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*{}_*'.format(sl.subject)))
+    files = glob(join(sl.flex_dir, 'pupil/NEW_PUPILFRAMES', '*Frame_{}_*'.format(sl.sub)))
     for file in files:
         ses = file[file.find('ses-'):file.find('.hdf')]
         with pd.HDFStore(file) as hdf:
@@ -177,10 +177,10 @@ def execute(sub, environment):
     sl.Output()
 
 
-def keys(sub):
+def keys(sub, env):
     keys = []
     for sub in [sub]:
-        keys.append((sub, 'Hummel'))
+        keys.append((sub, env))
     return keys
 
 
@@ -191,13 +191,14 @@ def par_execute(keys):
 
 def submit(sub, env='Hummel'):
     if env == 'Hummel':
-        slu.pmap(par_execute, keys(sub), walltime='2:00:00',
+        slu.pmap(par_execute, keys(sub, 'Hummel'), walltime='4:00:00',
                  memory=15, nodes=1, tasks=1, name='SubjectLevel')
     elif env == 'Climag':
-        pbs.pmap(par_execute, keys(sub), walltime='2:00:00',
+        pbs.pmap(par_execute, keys(sub, 'Climag'), walltime='4:00:00',
                  memory=15, nodes=1, tasks=1, name='SubjectLevel')
 
 
+execute(2, 'Volume')
 '''
 if __name__ == '__main__':
     execute(sys.argv[1])
