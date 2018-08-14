@@ -213,13 +213,14 @@ def fmri_align(BehavDf, task):
     b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
     b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
     b.loc[0] = 0
-    b.belief = b.belief.fillna(method='ffill')
-    b.murphy_surprise = b.murphy_surprise.fillna(method='ffill')
-    b['abs_belief'] = b.belief.abs()
-    b['belief_left'] = -b.belief
-    b['LLR_right'] = b.LLR
-    b['LLR_left'] = -b.LLR
-    b['abs_LLR'] = b.LLR.abs()
+    if task == 'inference':
+        b.belief = b.belief.fillna(method='ffill')
+        b.murphy_surprise = b.murphy_surprise.fillna(method='ffill')
+        b['abs_belief'] = b.belief.abs()
+        b['belief_left'] = -b.belief
+        b['LLR_right'] = b.LLR
+        b['LLR_left'] = -b.LLR
+        b['abs_LLR'] = b.LLR.abs()
     b = b.fillna(False).astype(float)
     for column in b.columns:
         b[column] = make_bold(b[column].values, dt=.001)
