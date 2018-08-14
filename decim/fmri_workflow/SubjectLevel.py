@@ -167,8 +167,7 @@ def execute(sub, environment):
         with pd.HDFStore(file) as hdf:
             k = hdf.keys()
         for run in k:
-            sl.PupilFrame[ses][run] = pd.read_hdf(file, key=run)
-    print(sl.PupilFrame.keys(), sl.PupilFrame.values())
+            sl.PupilFrame[ses][run[run.find('in'):]] = pd.read_hdf(file, key=run)
     sl.BehavFrames()
     sl.RoiExtract()
     sl.BehavAlign()
