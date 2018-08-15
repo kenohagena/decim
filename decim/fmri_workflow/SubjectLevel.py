@@ -10,7 +10,7 @@ from os.path import join
 from glob import glob
 from pymeg import parallel as pbs
 from multiprocessing import Pool
-#from decim.fmri_workflow import PupilLinear as pf
+# from decim.fmri_workflow import PupilLinear as pf
 
 
 class SubjectLevel(object):
@@ -158,7 +158,9 @@ class SubjectLevel(object):
                         attribute[session][task].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session), key=task))
 
 
-def execute(sub, environment):
+def execute(keys):
+    sub = keys[0]
+    environment = keys[1]
     sl = SubjectLevel(sub, environment=environment)
     sl.PupilFrame = defaultdict(dict)
     files = glob(join(sl.flex_dir, 'pupil/NEW_PUPILFRAMES', '*Frame_{}_*'.format(sl.sub)))
@@ -179,7 +181,7 @@ def execute(sub, environment):
 
 def keys(sub, env):
     keys = []
-    for s in range(sub, sub + 3):
+    for s in range(sub, sub + 2):
         keys.append((s, env))
     return keys
 
@@ -202,4 +204,3 @@ def submit(sub, env='Hummel'):
 if __name__ == '__main__':
     execute(sys.argv[1])
 '''
-#print(keys(1, 'hum'))
