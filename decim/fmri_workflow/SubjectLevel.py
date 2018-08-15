@@ -182,13 +182,8 @@ def execute(keys):
 def keys(sub, env):
     keys = []
     for s in range(sub, sub + 2):
-        keys.append(([(s, env)]))
+        keys.append(((s, env)))
     return keys
-
-
-def par_execute(keys):
-    with Pool(2) as p:
-        p.starmap(execute, keys)
 
 
 def submit(sub, env='Hummel'):
@@ -196,13 +191,11 @@ def submit(sub, env='Hummel'):
         slu.pmap(par_execute, keys(sub, 'Hummel'), walltime='4:00:00',
                  memory=15, nodes=1, tasks=1, name='SubjectLevel')
     elif env == 'Climag':
-        pbs.pmap(par_execute, keys(sub, env), walltime='4:00:00',
-                 memory=15, nodes=1, tasks=2, name='SubjectLevel')
+        pbs.pmap(execute, (sub, env), walltime='4:00:00',
+                 memory=15, nodes=1, tasks=1, name='SubjectLevel')
 
 
 '''
 if __name__ == '__main__':
     execute(sys.argv[1])
 '''
-
-print(keys(1, 'Hub'))
