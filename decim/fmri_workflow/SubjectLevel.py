@@ -158,8 +158,7 @@ class SubjectLevel(object):
                         attribute[session][task].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session), key=task))
 
 
-def execute(sub):
-    environment = 'Climag'
+def execute(sub, environment):
     sl = SubjectLevel(sub, environment=environment)
     sl.PupilFrame = defaultdict(dict)
     files = glob(join(sl.flex_dir, 'pupil/NEW_PUPILFRAMES', '*Frame_{}_*'.format(sl.sub)))
@@ -180,13 +179,13 @@ def execute(sub):
 
 def keys(sub, env):
     keys = []
-    for sub in [sub]:
-        keys.append((sub, env))
+    for s in range(sub, sub + 3):
+        keys.append((s, env))
     return keys
 
 
 def par_execute(keys):
-    with Pool(1) as p:
+    with Pool(2) as p:
         p.starmap(execute, keys)
 
 
@@ -195,8 +194,8 @@ def submit(sub, env='Hummel'):
         slu.pmap(par_execute, keys(sub, 'Hummel'), walltime='4:00:00',
                  memory=15, nodes=1, tasks=1, name='SubjectLevel')
     elif env == 'Climag':
-        pbs.pmap(par_execute, [sub], walltime='4:00:00',
-                 memory=15, nodes=1, tasks=1, name='SubjectLevel')
+        pbs.pmap(par_execute, keys(sub, env), walltime='4:00:00',
+                 memory=15, nodes=1, tasks=2, name='SubjectLevel')
 
 
 '''
