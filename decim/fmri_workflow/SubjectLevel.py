@@ -180,7 +180,7 @@ def execute(sub, environment):
 def keys(sub, env):
     keys = []
     for sub in [sub]:
-        keys.append(((sub, env)))
+        keys.append((sub, env))
     return keys
 
 
@@ -202,3 +202,4 @@ def submit(sub, env='Hummel'):
 if __name__ == '__main__':
     execute(sys.argv[1])
 '''
+print(keys(1, 'hum'))
