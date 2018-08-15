@@ -180,7 +180,7 @@ def execute(sub, environment):
 def keys(sub, env):
     keys = []
     for sub in [sub]:
-        keys.append((sub, env))
+        keys.append(((sub, env)))
     return keys
 
 
