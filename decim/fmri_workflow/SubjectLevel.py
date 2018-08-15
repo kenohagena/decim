@@ -182,7 +182,7 @@ def execute(keys):
 def keys(sub, env):
     keys = []
     for s in range(sub, sub + 2):
-        keys.append(([s, env]))
+        keys.append(([(s, env)]))
     return keys
 
 
@@ -204,3 +204,5 @@ def submit(sub, env='Hummel'):
 if __name__ == '__main__':
     execute(sys.argv[1])
 '''
+
+print(keys(1, 'Hub'))
