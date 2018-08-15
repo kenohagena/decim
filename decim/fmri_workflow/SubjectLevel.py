@@ -158,9 +158,7 @@ class SubjectLevel(object):
                         attribute[session][task].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session), key=task))
 
 
-def execute(keys):
-    sub = keys[0]
-    environment = keys[1]
+def execute(sub, environment):
     sl = SubjectLevel(sub, environment=environment)
     sl.PupilFrame = defaultdict(dict)
     files = glob(join(sl.flex_dir, 'pupil/NEW_PUPILFRAMES', '*Frame_{}_*'.format(sl.sub)))
