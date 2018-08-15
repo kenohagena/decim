@@ -122,7 +122,6 @@ class SubjectLevel(object):
         for session in self.sessions:
             for run, task in self.runs.items():
                 print('Do choice epochs', self.subject, session, run)
-                print(session, run)
                 self.ChoiceEpochs[session][run] =\
                     ce.execute(self.subject, session,
                                run, task, self.flex_dir,
@@ -178,7 +177,7 @@ class SubjectLevel(object):
 
 
 def execute(sub, environment):
-    sl = SubjectLevel(sub, environment=environment)
+    sl = SubjectLevel(sub, ses=[2], environment=environment)
     sl.PupilFrame = defaultdict(dict)
     files = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{}_*'.format(sl.sub)))
     for file in files:
