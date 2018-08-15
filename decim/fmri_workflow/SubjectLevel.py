@@ -52,12 +52,14 @@ class SubjectLevel(object):
         First Level
         OUTPUT: PupilFrames
         '''
+        print('Do pupil ', self.subject)
         if hasattr(self, 'PupilFrame'):
             pass
         else:
             self.PupilFrame = defaultdict(dict)
         for session in self.sessions:
             for run in self.runs.keys():
+                print('Do pupil ', self.subject, session, run)
                 if run in self.PupilFrame[session].keys():
                     pass
                 else:
@@ -70,14 +72,17 @@ class SubjectLevel(object):
         First Level
         OUTPUT: BehavFrames
         '''
+        print('Do behavior ', self.subject)
         self.BehavFrame = defaultdict(dict)
         for session in self.sessions:
             for run, task in self.runs.items():
+                print('Do behav ', self.subject, session, run)
                 try:
                     behavior_frame = bd.execute(self.subject, session,
                                                 run, task, self.flex_dir, self.summary)
                     self.BehavFrame[session][run] = behavior_frame
                 except RuntimeError:
+                    print('Runtimeerror for', self.subject, session, run)
                     self.BehavFrame[session][run] = None
 
     def BehavAlign(self):
@@ -85,9 +90,11 @@ class SubjectLevel(object):
         Second Level
         INPUT: BehavFrames
         '''
+        print('Do behavior align', self.subject)
         self.BehavAligned = defaultdict(dict)
         for session in self.sessions:
             for run, task in self.runs.items():
+                print('Do behav align', self.subject, session, run)
                 BehavFrame = self.BehavFrame[session][run]
                 if BehavFrame is not None:
                     BehavAligned = bd.fmri_align(BehavFrame, task)
@@ -98,19 +105,23 @@ class SubjectLevel(object):
     def RoiExtract(self):
         '''
         '''
+        print('Do roi extract', self.subject)
         self.CortRois = defaultdict(dict)
         self.BrainstemRois = defaultdict(dict)
         for session in self.sessions:
             for run in self.runs.keys():
+                print('Do roi extract', self.subject, session, run)
                 self.CortRois[session][run] =\
                     re.execute(self.subject, session, run, self.flex_dir)[1]
                 self.BrainstemRois[session][run] =\
                     re.execute(self.subject, session, run, self.flex_dir)[0]
 
     def ChoiceEpochs(self):
+        print('Do choice epochs', self.subject)
         self.ChoiceEpochs = defaultdict(dict)
         for session in self.sessions:
             for run, task in self.runs.items():
+                print('Do choice epochs', self.subject, session, run)
                 print(session, run)
                 self.ChoiceEpochs[session][run] =\
                     ce.execute(self.subject, session,
@@ -123,6 +134,7 @@ class SubjectLevel(object):
         '''
         Concatenate runs within a Session per task.
         '''
+        print('Clean epochs')
         self.CleanEpochs = defaultdict(dict)
         for session in self.sessions:
             per_session = []
@@ -136,6 +148,7 @@ class SubjectLevel(object):
             self.CleanEpochs['session'] = clean
 
     def LinregVoxel(self):
+        print('Linreg voxel')
         self.VoxelReg = defaultdict(dict)
         self.SurfaceTxt = defaultdict(dict)
         for task in set(self.runs.values()):
@@ -146,6 +159,7 @@ class SubjectLevel(object):
                                                                                           self.BehavAligned[session])
 
     def Output(self):
+        print('Output')
         output_dir = join(self.flex_dir, 'SubjectLevel', self.subject)
         slu.mkdir_p(output_dir)
         for name, attribute in self.__iter__():
