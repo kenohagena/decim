@@ -9,7 +9,6 @@ from collections import defaultdict
 from os.path import join
 from glob import glob
 from pymeg import parallel as pbs
-from multiprocessing import Pool
 # from decim.fmri_workflow import PupilLinear as pf
 
 
@@ -74,9 +73,12 @@ class SubjectLevel(object):
         self.BehavFrame = defaultdict(dict)
         for session in self.sessions:
             for run, task in self.runs.items():
-                behavior_frame = bd.execute(self.subject, session,
-                                            run, task, self.flex_dir, self.summary)
-                self.BehavFrame[session][run] = behavior_frame
+                try:
+                    behavior_frame = bd.execute(self.subject, session,
+                                                run, task, self.flex_dir, self.summary)
+                    self.BehavFrame[session][run] = behavior_frame
+                except RuntimeError:
+                    self.BehavFrame[session][run] = None
 
     def BehavAlign(self):
         '''
@@ -87,8 +89,11 @@ class SubjectLevel(object):
         for session in self.sessions:
             for run, task in self.runs.items():
                 BehavFrame = self.BehavFrame[session][run]
-                BehavAligned = bd.fmri_align(BehavFrame, task)
-                self.BehavAligned[session][run] = BehavAligned
+                if BehavFrame is not None:
+                    BehavAligned = bd.fmri_align(BehavFrame, task)
+                    self.BehavAligned[session][run] = BehavAligned
+                else:
+                    continue
 
     def RoiExtract(self):
         '''
@@ -161,7 +166,7 @@ class SubjectLevel(object):
 def execute(sub, environment):
     sl = SubjectLevel(sub, environment=environment)
     sl.PupilFrame = defaultdict(dict)
-    files = glob(join(sl.flex_dir, 'pupil/NEW_PUPILFRAMES', '*Frame_{}_*'.format(sl.sub)))
+    files = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{}_*'.format(sl.sub)))
     for file in files:
         ses = file[file.find('ses-'):file.find('.hdf')]
         with pd.HDFStore(file) as hdf:
@@ -169,19 +174,13 @@ def execute(sub, environment):
         for run in k:
             sl.PupilFrame[ses][run[run.find('in'):]] = pd.read_hdf(file, key=run)
     sl.BehavFrames()
+    print('ok')
     sl.RoiExtract()
     sl.BehavAlign()
     sl.ChoiceEpochs()
     sl.CleanEpochs()
     sl.LinregVoxel()
     sl.Output()
-
-
-def keys(sub, env):
-    keys = []
-    for s in range(sub, sub + 2):
-        keys.append(((s, env)))
-    return keys
 
 
 def submit(sub, env='Hummel'):
@@ -191,9 +190,3 @@ def submit(sub, env='Hummel'):
     elif env == 'Climag':
         pbs.pmap(execute, [(sub, env)], walltime='4:00:00',
                  memory=15, nodes=1, tasks=1, name='SubjectLevel')
-
-
-'''
-if __name__ == '__main__':
-    execute(sys.argv[1])
-'''

@@ -38,7 +38,6 @@ class BehavDataframe(object):
         self.bids_path = join(flex_dir, 'raw', 'bids_mr_v1.2')
 
     def inference(self, summary):
-
         logs = gc.load_logs_bids(self.subject, self.session, self.bids_path)
         df = logs[self.run]
         H = summary.loc[(summary.subject == self.subject) & (summary.session == self.session)].hmode.values[0]
@@ -51,6 +50,7 @@ class BehavDataframe(object):
                                    'CHOICE_TRIAL_RULE_RESP', 'GL_TRIAL_START',
                                    'GL_TRIAL_REWARD', 'CHOICE_TRIAL_RT'])]
         df = df.reset_index()
+        df = df.replace('n/a', np.nan)
         df['trial_id'] = df.loc[df.event == 'GL_TRIAL_START'].value.astype(int)
         df.trial_id = df.trial_id.fillna(method='ffill')
         df['gen_side'] = df.loc[df.event == 'GL_TRIAL_GENSIDE'].value.astype('float')
