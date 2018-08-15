@@ -182,7 +182,7 @@ def execute(keys):
 def keys(sub, env):
     keys = []
     for s in range(sub, sub + 2):
-        keys.append((s, env))
+        keys.append(([s, env]))
     return keys
 
 
