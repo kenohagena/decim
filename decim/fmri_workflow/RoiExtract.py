@@ -1,7 +1,7 @@
 import pandas as pd
 from nilearn import image, masking
 from glob import glob
-from os.path import join
+from os.path import join, expanduser
 import numpy as np
 from nilearn import surface
 import nibabel as ni
@@ -9,11 +9,12 @@ import subprocess
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.linear_model import LinearRegression
 import nibabel as nib
-'''
+
+from decim import slurm_submit as slu
 from joblib import Memory
-cachedir = '/Users/kenohagena/Flexrule/cachedir'
+cachedir = expanduser('~/joblib_cache')
+slu.mkdir_p(cachedir)
 memory = Memory(cachedir=cachedir, verbose=0)
-'''
 
 
 class EPI(object):
@@ -169,7 +170,7 @@ class EPI(object):
         self.cortical = cortical_rois
 
 
-#@memory.cache
+@memory.cache
 def execute(subject, session, run, flex_dir, atlas_warp=False):
     RE = EPI(subject, session, run, flex_dir)
     RE.load_epi()
