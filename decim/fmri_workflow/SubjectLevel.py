@@ -9,7 +9,10 @@ from collections import defaultdict
 from os.path import join
 from glob import glob
 from pymeg import parallel as pbs
-from decim.fmri_workflow import PupilLinear as pf
+try:
+    from decim.fmri_workflow import PupilLinear as pf
+except ImportError:
+    pass
 
 
 class SubjectLevel(object):
