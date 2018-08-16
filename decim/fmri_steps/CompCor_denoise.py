@@ -1,9 +1,10 @@
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.linear_model import LinearRegression
+
 import pandas as pd
 from os.path import join
 import nibabel as nib
-from sklearn.linear_model import LinearRegression
 import itertools
 from decim import slurm_submit as slu
 import sys

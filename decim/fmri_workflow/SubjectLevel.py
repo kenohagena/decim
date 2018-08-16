@@ -9,7 +9,7 @@ from collections import defaultdict
 from os.path import join
 from glob import glob
 from pymeg import parallel as pbs
-# from decim.fmri_workflow import PupilLinear as pf
+from decim.fmri_workflow import PupilLinear as pf
 
 
 class SubjectLevel(object):
@@ -152,6 +152,7 @@ class SubjectLevel(object):
         self.SurfaceTxt = defaultdict(dict)
         for task in set(self.runs.values()):
             for session in self.sessions:
+                print(task, session)
                 runs = {k: v for (k, v) in self.runs.items() if v == task}
                 self.VoxelReg[session][task], self.SurfaceTxt[session][task] = lv.execute(self.subject, session, runs,
                                                                                           self.flex_dir,
@@ -165,15 +166,15 @@ class SubjectLevel(object):
             if name in ['BehavFrame', 'BehavAligned', 'PupilFrame', 'CortRois', 'BrainstemRois', 'ChoiceEpochs']:
                 for session in self.sessions:
                     for run in attribute[session].keys():
-                        attribute[session][run].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session), key=run))
+                        attribute[session][run].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session)), key=run)
 
             elif name == 'CleanEpochs':
                 for session in self.sessions:
-                    attribute[session].to_hdf(join(output_dir, '{0}_{1}.hdf'.format(name, self.subject), key=session))
+                    attribute[session].to_hdf(join(output_dir, '{0}_{1}.hdf'.format(name, self.subject)), key=session)
             elif name in ['VoxelReg', 'SurfaceTxt']:
                 for session in self.sessions:
                     for task in set(self.runs.values()):
-                        attribute[session][task].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session), key=task))
+                        attribute[session][task].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session)), key=task)
 
 
 def execute(sub, environment):
@@ -187,6 +188,8 @@ def execute(sub, environment):
         for run in k:
             sl.PupilFrame[ses][run[run.find('in'):]] = pd.read_hdf(file, key=run)
     sl.BehavFrames()
+    df = sl.BehavFrame['ses-2']['inference_run-4']
+    print(df.columns)
     print('ok')
     sl.RoiExtract()
     sl.BehavAlign()
@@ -203,3 +206,6 @@ def submit(sub, env='Hummel'):
     elif env == 'Climag':
         pbs.pmap(execute, [(sub, env)], walltime='4:00:00',
                  memory=15, nodes=1, tasks=1, name='SubjectLevel')
+
+
+#execute(3, 'Volume')
