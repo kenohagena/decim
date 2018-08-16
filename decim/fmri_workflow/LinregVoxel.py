@@ -63,6 +63,7 @@ class VoxelSubject(object):
         session_behav = (session_behav - session_behav.mean()) / session_behav.std()
         assert session_behav.shape[0] == session_nifti.shape[0]
         self.parameters = behav.columns
+        print(self.parameter)
         for param in self.parameters:
             print(param)
             linreg = LinearRegression()
