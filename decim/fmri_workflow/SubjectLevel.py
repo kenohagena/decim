@@ -166,17 +166,21 @@ class SubjectLevel(object):
         output_dir = join(self.flex_dir, 'SubjectLevel', self.subject)
         slu.mkdir_p(output_dir)
         for name, attribute in self.__iter__():
+            print(name, attribute)
             if name in ['BehavFrame', 'BehavAligned', 'PupilFrame', 'CortRois', 'BrainstemRois', 'ChoiceEpochs']:
                 for session in self.sessions:
                     for run in attribute[session].keys():
+                        print('Saving', name, session, run)
                         attribute[session][run].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session)), key=run)
 
             elif name == 'CleanEpochs':
                 for session in self.sessions:
+                    print('Saving', name, session)
                     attribute[session].to_hdf(join(output_dir, '{0}_{1}.hdf'.format(name, self.subject)), key=session)
             elif name in ['VoxelReg', 'SurfaceTxt']:
                 for session in self.sessions:
                     for task in set(self.runs.values()):
+                        print('Saving', name, session, task)
                         attribute[session][task].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session)), key=task)
 
 
