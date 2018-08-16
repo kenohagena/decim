@@ -188,9 +188,6 @@ def execute(sub, environment):
         for run in k:
             sl.PupilFrame[ses][run[run.find('in'):]] = pd.read_hdf(file, key=run)
     sl.BehavFrames()
-    df = sl.BehavFrame['ses-2']['inference_run-4']
-    print(df.columns)
-    print('ok')
     sl.RoiExtract()
     sl.BehavAlign()
     sl.ChoiceEpochs()
