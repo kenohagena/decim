@@ -66,16 +66,19 @@ class VoxelSubject(object):
         print(self.parameters)
         for param in self.parameters:
             print(param)
-            linreg = LinearRegression()
-            linreg.fit(session_behav[param].values.reshape(-1, 1),
-                       session_nifti)
-            predict = linreg.predict(session_behav[param].values.reshape(-1, 1))
-            reg_result = np.concatenate(([linreg.coef_.flatten()], [linreg.intercept_],
-                                         [r2_score(session_nifti, predict, multioutput='raw_values')],
-                                         [mean_squared_error(session_nifti, predict, multioutput='raw_values')]), axis=0)
-            new_shape = np.stack([reg_result[i, :].reshape(shape[0:3]) for i in range(reg_result.shape[0])], -1)
-            new_image = nib.Nifti1Image(new_shape, affine=nifti.affine)
-            self.voxel_regressions[param] = new_image
+            try:
+                linreg = LinearRegression()
+                linreg.fit(session_behav[param].values.reshape(-1, 1),
+                           session_nifti)
+                predict = linreg.predict(session_behav[param].values.reshape(-1, 1))
+                reg_result = np.concatenate(([linreg.coef_.flatten()], [linreg.intercept_],
+                                             [r2_score(session_nifti, predict, multioutput='raw_values')],
+                                             [mean_squared_error(session_nifti, predict, multioutput='raw_values')]), axis=0)
+                new_shape = np.stack([reg_result[i, :].reshape(shape[0:3]) for i in range(reg_result.shape[0])], -1)
+                new_image = nib.Nifti1Image(new_shape, affine=nifti.affine)
+                self.voxel_regressions[param] = new_image
+            except ValueError:
+                print(param, 'failed', session_behav[param].values.reshape(-1, 1), session_nifti)
 
     def vol_2surf(self, radius=.3):
         for param, img in self.voxel_regressions.items():
