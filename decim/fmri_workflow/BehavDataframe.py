@@ -109,7 +109,10 @@ class BehavDataframe(object):
         df.value = df.value.replace('n/a', np.nan)
         df.onset = df.onset.astype(float)
         df = df.sort_values(by='onset').reset_index(drop=True)
-        df['stim_id'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.astype('float') - 1
+        if df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.values.astype(float).mean() > 1: # In some subjects grating ID is decoded with 0 / 1 in others with 1 /2
+            df['stim_id'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.astype('float') - 1
+        elif df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.values.astype(float).mean() < 1:
+            df['stim_id'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.astype('float')
         df['rule_resp'] = df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP'].\
             set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float')
         df['rt'] = df.loc[df.event == 'CHOICE_TRIAL_RT'].\
