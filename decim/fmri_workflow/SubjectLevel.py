@@ -147,7 +147,7 @@ class SubjectLevel(object):
                 per_session.append(run_epochs)
             per_session = pd.concat(per_session, ignore_index=True)
             clean = ce.defit_clean(per_session)
-            self.CleanEpochs['session'] = clean
+            self.CleanEpochs[session] = clean
 
     def LinregVoxel(self):
         print('Linreg voxel')
