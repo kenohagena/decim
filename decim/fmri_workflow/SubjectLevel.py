@@ -180,8 +180,13 @@ class SubjectLevel(object):
             elif name in ['VoxelReg', 'SurfaceTxt']:
                 for session in self.sessions:
                     for task in set(self.runs.values()):
-                        print('Saving', name, session, task)
-                        attribute[session][task].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session)), key=task)
+                        for parameter, content in attribute[session][task].items():
+                            print('Saving', name, session, task, parameter)
+                            if name == 'VoxelReg':
+                                content.to_hdf(join(output_dir, '{0}_{1}_{2}_{3}.hdf'.format(name, self.subject, session, parameter)), key=task)
+                            elif name == 'SurfaceTxt':
+                                for hemisphere, cont in content.items():
+                                    cont.to_hdf(join(output_dir, '{0}_{1}_{2}_{3}_{4}.hdf'.format(name, self.subject, session, parameter, hemisphere)), key=task)
 
 
 def execute(sub, environment):
@@ -195,9 +200,13 @@ def execute(sub, environment):
         for run in k:
             sl.PupilFrame[ses][run[run.find('in'):]] = pd.read_hdf(file, key=run)
     sl.BehavFrames()
+    sl.Output()
     sl.RoiExtract()
+    sl.Output()
     sl.BehavAlign()
+    sl.Output()
     sl.ChoiceEpochs()
+    sl.Output()
     sl.CleanEpochs()
     sl.LinregVoxel()
     sl.Output()
