@@ -166,7 +166,6 @@ class SubjectLevel(object):
         output_dir = join(self.flex_dir, 'SubjectLevel', self.subject)
         slu.mkdir_p(output_dir)
         for name, attribute in self.__iter__():
-            print(name, attribute)
             if name in ['BehavFrame', 'BehavAligned', 'PupilFrame', 'CortRois', 'BrainstemRois', 'ChoiceEpochs']:
                 for session in self.sessions:
                     for run in attribute[session].keys():
