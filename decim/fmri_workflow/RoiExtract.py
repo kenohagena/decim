@@ -165,6 +165,7 @@ class EPI(object):
             surf_df['label_index'] = affiliation
             df = surf_df.groupby('label_index').mean().T
             df.columns = labels
+            df = df.rename(columns={'???': '{}_???'.format(hemi)})
             hemispheres.append(df)
         cortical_rois = pd.concat(hemispheres, axis=1)
         self.cortical = cortical_rois
