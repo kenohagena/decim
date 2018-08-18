@@ -183,7 +183,7 @@ class SubjectLevel(object):
                         for parameter, content in attribute[session][task].items():
                             print('Saving', name, session, task, parameter)
                             if name == 'VoxelReg':
-                                content.to_hdf(join(output_dir, '{0}_{1}_{2}_{3}.hdf'.format(name, self.subject, session, parameter)), key=task)
+                                content.to_filename(join(output_dir, '{0}_{1}_{2}_{3}_{4}.nii.gz'.format(name, self.subject, session, parameter, task)))
                             elif name == 'SurfaceTxt':
                                 for hemisphere, cont in content.items():
                                     cont.to_hdf(join(output_dir, '{0}_{1}_{2}_{3}_{4}.hdf'.format(name, self.subject, session, parameter, hemisphere)), key=task)
