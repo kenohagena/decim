@@ -189,7 +189,7 @@ class SubjectLevel(object):
 
 
 def execute(sub, environment):
-    sl = SubjectLevel(sub, ses=[2], environment=environment)
+    sl = SubjectLevel(sub, environment=environment)
     sl.PupilFrame = defaultdict(dict)
     files = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{}_*'.format(sl.sub)))
     for file in files:
