@@ -70,13 +70,17 @@ class EPI(object):
         '''
         file = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
                          '*{}*space-T1w_preproc_denoise.nii.gz'.format(self.run)))
-        if len(file) == 1:
-            self.EPI = image.load_img(file)
-        elif len(file) == 0:
-            print('CompCor denoising first...')
-            self.EPI = self.denoise()
-        else:
+        if len(file) > 1:
             print('More than one EPI found for ', self.subject, self.session, self.run)
+        else:
+            try:
+                self.EPI = image.load_img(file)
+            except TypeError:  # no img found
+                print('CompCor denoising first...')
+                self.EPI = self.denoise()
+            except ImageFileError:
+                print('CompCor denoising again...')
+                self.EPI = self.denoise()
 
     def warp_atlases(self):
         atlas_dir = join(self.flex_dir, 'fmri', 'atlases')
