@@ -41,7 +41,7 @@ class VoxelSubject(object):
         '''
         session_nifti = []
         session_behav = []
-        for run in self.runs.keys():
+        for run in self.runs:
             behav = self.BehavAligned[run]
             nifti = nib.load(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
                                   '{0}_{1}_task-{2}_bold_space-T1w_preproc_denoise.nii.gz'.format(self.subject, self.session, run)))

@@ -17,19 +17,19 @@ except ImportError:
 
 class SubjectLevel(object):
 
-    def __init__(self, sub, ses=[2, 3], runs=[4, 5, 6, 7, 8],
+    def __init__(self, sub, ses_runs={2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
                  environment='Volume'):
         self.sub = sub
         self.subject = 'sub-{}'.format(sub)
-        self.ses = ses
+        self.ses = ses_runs.keys()
         self.sessions = ['ses-{}'.format(i) for i in ses]
-        self.run_indices = runs
         run_names = ['inference_run-4',
                      'inference_run-5',
                      'inference_run-6',
                      'instructed_run-7',
                      'instructed_run-8']
-        self.runs = {i: i[:-6] for i in np.array(run_names)[np.array(runs) - 4]}
+        self.session_runs = {'ses-{}'.format(session): {i: i[:-6] for i in np.array(run_names)[np.array(runs) - 4]}
+                             for session, runs in ses_runs.items()}
         if environment == 'Volume':
             self.flex_dir = '/Volumes/flxrl/FLEXRULE'
             self.summary = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv')
@@ -60,8 +60,8 @@ class SubjectLevel(object):
             pass
         else:
             self.PupilFrame = defaultdict(dict)
-        for session in self.sessions:
-            for run in self.runs.keys():
+        for session, runs in self.session_runs.items():
+            for run in runs.keys():
                 print('Do pupil ', self.subject, session, run)
                 if run in self.PupilFrame[session].keys():
                     pass
@@ -77,8 +77,8 @@ class SubjectLevel(object):
         '''
         print('Do behavior ', self.subject)
         self.BehavFrame = defaultdict(dict)
-        for session in self.sessions:
-            for run, task in self.runs.items():
+        for session, runs in self.session_runs.items():
+            for run, task in runs.items():
                 print('Do behav ', self.subject, session, run)
                 try:
                     behavior_frame = bd.execute(self.subject, session,
@@ -95,8 +95,8 @@ class SubjectLevel(object):
         '''
         print('Do behavior align', self.subject)
         self.BehavAligned = defaultdict(dict)
-        for session in self.sessions:
-            for run, task in self.runs.items():
+        for session, runs in self.session_runs.items():
+            for run, task in runs.items():
                 print('Do behav align', self.subject, session, run)
                 BehavFrame = self.BehavFrame[session][run]
                 if BehavFrame is not None:
@@ -111,8 +111,8 @@ class SubjectLevel(object):
         print('Do roi extract', self.subject)
         self.CortRois = defaultdict(dict)
         self.BrainstemRois = defaultdict(dict)
-        for session in self.sessions:
-            for run in self.runs.keys():
+        for session, runs in self.session_runs.items():
+            for run in runs.keys():
                 print('Do roi extract', self.subject, session, run)
                 self.CortRois[session][run] =\
                     re.execute(self.subject, session, run, self.flex_dir)[1]
@@ -122,8 +122,8 @@ class SubjectLevel(object):
     def ChoiceEpochs(self):
         print('Do choice epochs', self.subject)
         self.ChoiceEpochs = defaultdict(dict)
-        for session in self.sessions:
-            for run, task in self.runs.items():
+        for session, runs in self.session_runs.items():
+            for run, task in runs.items():
                 print('Do choice epochs', self.subject, session, run)
                 self.ChoiceEpochs[session][run] =\
                     ce.execute(self.subject, session,
@@ -138,9 +138,9 @@ class SubjectLevel(object):
         '''
         print('Clean epochs')
         self.CleanEpochs = defaultdict(dict)
-        for session in self.sessions:
+        for session, runs in self.session_runs.items():
             per_session = []
-            for run, task in self.runs.items():
+            for run, task in runs.items():
                 run_epochs = self.ChoiceEpochs[session][run]
                 run_epochs['run'] = run
                 run_epochs['task'] = task
@@ -153,10 +153,10 @@ class SubjectLevel(object):
         print('Linreg voxel')
         self.VoxelReg = defaultdict(dict)
         self.SurfaceTxt = defaultdict(dict)
-        for task in set(self.runs.values()):
-            for session in self.sessions:
+        for session, runs in self.session_runs.items():
+            for task in set(runs.values()):
                 print(task, session)
-                runs = {k: v for (k, v) in self.runs.items() if v == task}
+                runs = [r for r in runs.keys() if runs[r] == task]
                 self.VoxelReg[session][task], self.SurfaceTxt[session][task] = lv.execute(self.subject, session, runs,
                                                                                           self.flex_dir,
                                                                                           self.BehavAligned[session])
@@ -167,18 +167,18 @@ class SubjectLevel(object):
         slu.mkdir_p(output_dir)
         for name, attribute in self.__iter__():
             if name in ['BehavFrame', 'BehavAligned', 'PupilFrame', 'CortRois', 'BrainstemRois', 'ChoiceEpochs']:
-                for session in self.sessions:
+                for session in attribute.keys():
                     for run in attribute[session].keys():
                         print('Saving', name, session, run)
                         attribute[session][run].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session)), key=run)
 
             elif name == 'CleanEpochs':
-                for session in self.sessions:
+                for session in attribute.keys():
                     print('Saving', name, session)
                     attribute[session].to_hdf(join(output_dir, '{0}_{1}.hdf'.format(name, self.subject)), key=session)
             elif name in ['VoxelReg', 'SurfaceTxt']:
-                for session in self.sessions:
-                    for task in set(self.runs.values()):
+                for session in attribute.keys():
+                    for task in attribute[session].keys():
                         for parameter, content in attribute[session][task].items():
                             print('Saving', name, session, task, parameter)
                             if name == 'VoxelReg':
