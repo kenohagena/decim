@@ -161,8 +161,8 @@ class SubjectLevel(object):
         for session, runs in self.session_runs.items():
             for task in set(runs.values()):
                 print(task, session)
-                runs = [r for r in runs.keys() if runs[r] == task]
-                self.VoxelReg[session][task], self.SurfaceTxt[session][task] = lv.execute(self.subject, session, runs,
+                rs = [r for r in runs.keys() if runs[r] == task]
+                self.VoxelReg[session][task], self.SurfaceTxt[session][task] = lv.execute(self.subject, session, rs,
                                                                                           self.flex_dir,
                                                                                           self.BehavAligned[session])
 
