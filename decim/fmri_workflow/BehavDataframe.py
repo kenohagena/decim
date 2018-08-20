@@ -74,9 +74,12 @@ class BehavDataframe(object):
         df['LLR'] = np.nan
         df.loc[df.event == 'GL_TRIAL_LOCATION', 'LLR'] =\
             gl.LLR(df.loc[df.event == 'GL_TRIAL_LOCATION'].value.astype(float).values)
-        df['test'] = np.convolve(df.belief.values, [1, 1], 'same')
-        df['test2'] = np.convolve(df.belief.abs().values, [1, 1], 'same')
-        df['switch'] = df.test.abs() < df.test2.abs()
+
+        asign = np.sign(df.belief.values)
+        signchange = (np.roll(asign, 1) - asign)
+        df['switch'] = signchange != 0
+        df['switch_right'] = signchange < 0
+        df['switch_left'] = signchange > 0
         df = df.drop(['test', 'test2'], axis=1)
         df['prior_belief'] = np.nan
         df.loc[df.event == 'GL_TRIAL_LOCATION', 'prior_belief'] =\
@@ -109,7 +112,7 @@ class BehavDataframe(object):
         df.value = df.value.replace('n/a', np.nan)
         df.onset = df.onset.astype(float)
         df = df.sort_values(by='onset').reset_index(drop=True)
-        if df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.values.astype(float).mean() > 1: # In some subjects grating ID is decoded with 0 / 1 in others with 1 /2
+        if df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.values.astype(float).mean() > 1:  # In some subjects grating ID is decoded with 0 / 1 in others with 1 /2
             df['stim_id'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.astype('float') - 1
         elif df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.values.astype(float).mean() < 1:
             df['stim_id'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.astype('float')
