@@ -15,6 +15,12 @@ except ImportError:
     pass
 
 
+spec_subs = {1: {2: [4, 5, 6, 7], 3: [4, 5, 6, 7, 8]},
+             4: {2: [4, 5, 6], 3: [4, 5, 6, 7, 8]},
+             20: {2: [4, 5, 6, 7], 3: [4, 5, 6, 7, 8]},
+             21: {2: [4, 5, 6, 8], 3: [4, 5, 6, 7, 8]}}
+
+
 class SubjectLevel(object):
 
     def __init__(self, sub, ses_runs={2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
@@ -22,7 +28,6 @@ class SubjectLevel(object):
         self.sub = sub
         self.subject = 'sub-{}'.format(sub)
         self.ses = ses_runs.keys()
-        self.sessions = ['ses-{}'.format(i) for i in ses]
         run_names = ['inference_run-4',
                      'inference_run-5',
                      'inference_run-6',
@@ -189,7 +194,7 @@ class SubjectLevel(object):
 
 
 def execute(sub, environment):
-    sl = SubjectLevel(sub, environment=environment)
+    sl = SubjectLevel(sub, ses_runs=spec_subs[sub], environment=environment)
     sl.PupilFrame = defaultdict(dict)
     files = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{}_*'.format(sl.sub)))
     for file in files:
