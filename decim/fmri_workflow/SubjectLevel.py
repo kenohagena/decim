@@ -234,7 +234,6 @@ def execute(sub, environment):
     sl.Output()
 
 
-
 def submit(sub, env='Hummel'):
     if env == 'Hummel':
         slu.pmap(par_execute, keys(sub, 'Hummel'), walltime='4:00:00',
@@ -242,6 +241,3 @@ def submit(sub, env='Hummel'):
     elif env == 'Climag':
         pbs.pmap(execute, [(sub, env)], walltime='4:00:00',
                  memory=24, nodes=1, tasks=1, name='SubjectLevel')
-
-
-execute(5, 'Volume')
