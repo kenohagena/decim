@@ -212,6 +212,7 @@ class SubjectLevel(object):
 
 
 def execute(sub, environment):
+    '''
     sl = SubjectLevel(sub, ses_runs=spec_subs[sub], environment=environment)
     sl.PupilFrame = defaultdict(dict)
     files = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{}_*'.format(sl.sub)))
@@ -232,15 +233,24 @@ def execute(sub, environment):
     sl.CleanEpochs()
     sl.LinregVoxel()
     sl.Output()
+    '''
+    sl = SubjectLevel(sub, ses_runs=spec_subs[sub], environment=environment)
+    sl.BehavFrames()
+    sl.Output()
+    sl.RoiExtract()
+    sl.Output()
+    sl.BehavAlign()
+    sl.LinregVoxel()
+    sl.Output()
 
 
 def submit(sub, env='Hummel'):
     if env == 'Hummel':
         slu.pmap(par_execute, keys(sub, 'Hummel'), walltime='4:00:00',
-                 memory=15, nodes=1, tasks=1, name='SubjectLevel')
+                 memory=24, nodes=1, tasks=1, name='SubjectLevel')
     elif env == 'Climag':
         pbs.pmap(execute, [(sub, env)], walltime='4:00:00',
-                 memory=15, nodes=1, tasks=1, name='SubjectLevel')
+                 memory=24, nodes=1, tasks=1, name='SubjectLevel')
 
 
 #execute(3, 'Volume')

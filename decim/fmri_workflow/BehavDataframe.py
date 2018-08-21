@@ -207,7 +207,7 @@ def fmri_align(BehavDf, task):
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
     if task == 'inference':
-        b = b.loc[:, ['onset', 'belief', 'murphy_surprise', 'switch', 'point', 'response', 'response_left',
+        b = b.loc[:, ['onset', 'switch_left', 'switch_right', 'belief', 'murphy_surprise', 'switch', 'point', 'response', 'response_left',
                       'response_right', 'stimulus_horiz', 'stimulus_vert', 'stimulus',
                       'rresp_left', 'rresp_right', 'LLR']]
     elif task == 'instructed':
