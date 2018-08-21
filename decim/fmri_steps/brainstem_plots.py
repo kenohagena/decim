@@ -28,7 +28,7 @@ FIRST: Extract brainstem Rois and weight them
 def extract_brainstem(sub, flex_dir, task):
     cit = pd.read_table(join(flex_dir, 'fmri', 'atlases', 'CIT168_RL_Subcortical_Nuclei/CIT168_Reinf_Learn_v1/labels.txt'), sep='  ', header=None)
     subject = 'sub-{}'.format(sub)
-    files = glob(join(flex_dir, 'SubjectLevel2', subject, 'VoxelReg*{}*'.format(task)))
+    files = glob(join(flex_dir, 'SubjectLevel', subject, 'VoxelReg*{}*'.format(task)))
     l_coef_ = []
     for file in files:
         nifti = nib.load(file)
