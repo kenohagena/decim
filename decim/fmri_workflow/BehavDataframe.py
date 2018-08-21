@@ -80,7 +80,6 @@ class BehavDataframe(object):
         df['switch'] = signchange != 0
         df['switch_right'] = signchange < 0
         df['switch_left'] = signchange > 0
-        df = df.drop(['test', 'test2'], axis=1)
         df['prior_belief'] = np.nan
         df.loc[df.event == 'GL_TRIAL_LOCATION', 'prior_belief'] =\
             np.roll(df.loc[df.event == 'GL_TRIAL_LOCATION', 'belief'].values, 1)
