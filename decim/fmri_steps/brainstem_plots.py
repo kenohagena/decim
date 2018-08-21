@@ -185,5 +185,7 @@ def single_plots(data):
         f.savefig('/Users/kenohagena/Flexrule/fmri/plots/brainstem_regressions/{}.png'.format(param), dpi=160)
 
 
+'''
 data = concat_all()
 print(data.loc[data.subject == 'sub-10'])
+'''
