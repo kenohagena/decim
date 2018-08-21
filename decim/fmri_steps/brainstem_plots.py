@@ -81,8 +81,8 @@ def hummel_submit():
 
 def climag_submit():
     flex_dir = '/home/khagena/FLEXRULE'
-    for sub in range(1, 23):
-        for task in ['inference', 'instructed']:
+    for sub in [10]:
+        for task in ['inference']:
             pbs.pmap(extract_brainstem, [(sub, flex_dir, task)], walltime='1:00:00',
                      memory=15, nodes=1, tasks=1, name='bs_coefs_{}'.format(sub))
 
@@ -111,9 +111,9 @@ def concat_all():
                 print(sub, task)
                 continue
     brainstem = pd.concat(b, ignore_index=True)
-    data = brainstem.groupby(['subject', 'parameter', 'atlas']).mean().reset_index()
+    data = brainstem.groupby(['subject', 'parameter', 'atlas', 'task']).mean().reset_index()
     data = data.loc[data.atlas.isin(['AAN_DR', 'LC_standard_1', 'VTA', 'SNc', 'basal_forebrain_4_Zaborszky', 'basal_forebrain_123_Zaborszky', 'NAC'])]
-    return data
+    return brainstem
 
 
 def overview_plot(data):
@@ -183,3 +183,7 @@ def single_plots(data):
 
         sns.despine(trim=True, left=True)
         f.savefig('/Users/kenohagena/Flexrule/fmri/plots/brainstem_regressions/{}.png'.format(param), dpi=160)
+
+
+data = concat_all()
+print(data.loc[data.subject == 'sub-10'])
