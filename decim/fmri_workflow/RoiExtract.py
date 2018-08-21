@@ -60,8 +60,10 @@ class EPI(object):
         denoise = d2 - noise
         new_shape = np.stack([denoise[i, :].reshape(shape[0:3]) for i in range(denoise.shape[0])], -1)
         new_image = nib.Nifti1Image(new_shape, affine=nifti.affine)
+        '''
         new_image.to_filename(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
                                    '{0}_{1}_task-{2}_bold_space-T1w_preproc_denoise.nii.gz'.format(self.subject, self.session, self.run)))
+        '''
         return new_image
 
     def load_epi(self):
@@ -139,9 +141,11 @@ class EPI(object):
             else:
                 weight = self.weights[key].T
             roi = self.epi_masked[key]
-            roi = (roi - roi.mean()) / roi.std()  # z-score per voxel
+            roi = (roi - roi.mean(axis=0)) / roi.std(axis=0)  # z-score per voxel
             weight = weight / weight.sum()  # normalize weights ...
             weighted = np.dot(roi, weight)
+            print(roi.shape, weight.shape)
+            print(key, weight)
             weighted_averages[key] = weighted.flatten()
         self.brainstem_weighted = pd.DataFrame(weighted_averages)
 
@@ -175,7 +179,7 @@ class EPI(object):
         self.cortical = cortical_rois
 
 
-@memory.cache
+#@memory.cache
 def execute(subject, session, run, flex_dir, atlas_warp=False):
     RE = EPI(subject, session, run, flex_dir)
     RE.load_epi()
