@@ -186,7 +186,7 @@ class SubjectLevel(object):
 
     def Output(self):
         print('Output')
-        output_dir = join(self.flex_dir, 'SubjectLevel2', self.subject)
+        output_dir = join(self.flex_dir, 'SubjectLevel5', self.subject)
         slu.mkdir_p(output_dir)
         for name, attribute in self.__iter__():
             if name in ['BehavFrame', 'BehavAligned', 'PupilFrame', 'CortRois', 'BrainstemRois', 'ChoiceEpochs']:
@@ -212,7 +212,6 @@ class SubjectLevel(object):
 
 
 def execute(sub, environment):
-    '''
     sl = SubjectLevel(sub, ses_runs=spec_subs[sub], environment=environment)
     sl.PupilFrame = defaultdict(dict)
     files = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{}_*'.format(sl.sub)))
@@ -233,15 +232,7 @@ def execute(sub, environment):
     sl.CleanEpochs()
     sl.LinregVoxel()
     sl.Output()
-    '''
-    sl = SubjectLevel(sub, ses_runs=spec_subs[sub], environment=environment)
-    sl.BehavFrames()
-    sl.Output()
-    sl.RoiExtract()
-    sl.Output()
-    sl.BehavAlign()
-    sl.LinregVoxel()
-    sl.Output()
+
 
 
 def submit(sub, env='Hummel'):
@@ -253,4 +244,4 @@ def submit(sub, env='Hummel'):
                  memory=24, nodes=1, tasks=1, name='SubjectLevel')
 
 
-#execute(3, 'Volume')
+execute(5, 'Volume')
