@@ -28,7 +28,7 @@ FIRST: Extract brainstem Rois and weight them
 def extract_brainstem(sub, flex_dir, task):
     cit = pd.read_table(join(flex_dir, 'fmri', 'atlases', 'CIT168_RL_Subcortical_Nuclei/CIT168_Reinf_Learn_v1/labels.txt'), sep='  ', header=None)
     subject = 'sub-{}'.format(sub)
-    files = glob(join(flex_dir, 'SubjectLevel', subject, 'VoxelReg*{}*'.format(task)))
+    files = glob(join(flex_dir, 'SubjectLevel5', subject, 'VoxelReg*{}*'.format(task)))
     l_coef_ = []
     for file in files:
         nifti = nib.load(file)
@@ -56,7 +56,7 @@ def extract_brainstem(sub, flex_dir, task):
                                 'parameter': parameter,
                                 'task': task,
                                 'coef_': coef_})
-    out_dir = join(flex_dir, 'fmri', 'brainstem_regression')
+    out_dir = join(flex_dir, 'fmri', 'brainstem_regression5')
     slu.mkdir_p(out_dir)
     pd.DataFrame(l_coef_).to_hdf(join(out_dir, 'brainstem_coefs_{}.hdf'.format(task)), key=subject)
 
@@ -91,12 +91,18 @@ def climag_submit():
 SECOND: Concat per subject & plot
 '''
 
-parameters = {'abs_belief': 'Glaze belief (magnitude)',
-              'murphy_surprise': 'Surprise',
-              'response': 'Response',
-              'stimulus': 'Stimulus',
-              'switch': 'Switch',
-              'abs_LLR': 'LLR (magnitude)'}
+parameters = {'_abs_belief_': 'Glaze belief (magnitude)',
+              '_murphy_surprise_': 'Surprise',
+              '_response_': 'Response',
+              '_stimulus_': 'Stimulus',
+              '_switch_': 'Switch',
+              '_abs_LLR_': 'LLR (magnitude)'}
+
+parameters_instructed = {
+    '_response_': 'Response',
+    '_stimulus_': 'Stimulus',
+    '_switch_': 'Switch',
+}
 
 
 def concat_all():
@@ -113,18 +119,19 @@ def concat_all():
     brainstem = pd.concat(b, ignore_index=True)
     data = brainstem.groupby(['subject', 'parameter', 'atlas', 'task']).mean().reset_index()
     data = data.loc[data.atlas.isin(['AAN_DR', 'LC_standard_1', 'VTA', 'SNc', 'basal_forebrain_4_Zaborszky', 'basal_forebrain_123_Zaborszky', 'NAC'])]
-    return brainstem
+    data = data.loc[data.task == 'instructed']
+    return data
 
 
 def overview_plot(data):
 
     sns.set(style="ticks")
-    d = data.loc[data.parameter.isin(parameters.keys())]
+    d = data.loc[data.parameter.isin(parameters_instructed.keys())]
 
-    f, ax = plt.subplots(3, 2, figsize=(18, 16))
+    f, ax = plt.subplots(3, 1, figsize=(10, 16))
     plt.subplots_adjust(wspace=.2, hspace=.3)
 
-    for param, a in zip(parameters.keys(), ax.flatten()):
+    for param, a in zip(parameters_instructed.keys(), ax.flatten()):
         d = data.loc[data.parameter == param]
 
         sns.boxplot(x="coef_", y="atlas", data=d,
@@ -138,10 +145,12 @@ def overview_plot(data):
                                                                                           'Substantia nigra', 'Ventral tegmental area',
                                                                                           'Basalforebrain 1-3', 'Basal forebrain 4'], xticks=np.arange(-.04, .06, .02),
               title=parameters[param])
+    '''
     for axlist in ax:
         axlist[1].set(ylabel='', yticks=[])
+    '''
     sns.despine(trim=True, left=True)
-    f.savefig('/Users/kenohagena/Flexrule/fmri/plots/brainstem_regressions/all.png', dpi=160)
+    f.savefig('/Volumes/flxrl/FLEXRULE/fmri/brainstem_regression/plots/all_instructed.png', dpi=160)
 
 
 def single_plots(data):
@@ -165,7 +174,7 @@ def single_plots(data):
         'axes.labelpad': 4.0,
     })
 
-    for param, title in parameters.items():
+    for param, title in parameters_instructed.items():
         f, a = plt.subplots(figsize=(9, 5))
         d = data.loc[data.parameter == param]
 
@@ -182,10 +191,9 @@ def single_plots(data):
               title=parameters[param])
 
         sns.despine(trim=True, left=True)
-        f.savefig('/Users/kenohagena/Flexrule/fmri/plots/brainstem_regressions/{}.png'.format(param), dpi=160)
+        f.savefig('/Volumes/flxrl/FLEXRULE/fmri/brainstem_regression/plots/{0}{1}.png'.format('instructed', param), dpi=160)
 
 
-'''
 data = concat_all()
-print(data.loc[data.subject == 'sub-10'])
-'''
+single_plots(data)
+overview_plot(data)
