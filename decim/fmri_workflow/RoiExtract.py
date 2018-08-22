@@ -72,7 +72,7 @@ class EPI(object):
         Find and load EPI-files.
         '''
         file = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
-                         '*{}*space-T1w_preproc{}.nii.gz'.format(denoise).format(self.run)))
+                         '*{0}*space-T1w_preproc{1}.nii.gz'.format(self.run, denoise)))
         if len(file) > 1:
             print('More than one EPI found for ', self.subject, self.session, self.run)
         else:
