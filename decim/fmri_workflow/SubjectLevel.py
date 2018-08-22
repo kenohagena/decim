@@ -128,7 +128,7 @@ class SubjectLevel(object):
                 else:
                     continue
 
-    def RoiExtract(self):
+    def RoiExtract(self, denoise=True):
         '''
         '''
         print('Do roi extract', self.subject)
@@ -137,10 +137,8 @@ class SubjectLevel(object):
         for session, runs in self.session_runs.items():
             for run in runs.keys():
                 print('Do roi extract', self.subject, session, run)
-                self.CortRois[session][run] =\
-                    re.execute(self.subject, session, run, self.flex_dir)[1]
-                self.BrainstemRois[session][run] =\
-                    re.execute(self.subject, session, run, self.flex_dir)[0]
+                self.BrainstemRois[session][run], self.CortRois[session][run] =\
+                    re.execute(self.subject, session, run, self.flex_dir, denoise=denoise)
 
     def ChoiceEpochs(self):
         print('Do choice epochs', self.subject)
@@ -184,9 +182,9 @@ class SubjectLevel(object):
                                                                                           self.flex_dir,
                                                                                           self.BehavAligned[session])
 
-    def Output(self):
+    def Output(self, dir='SubjectLevel'):
         print('Output')
-        output_dir = join(self.flex_dir, 'SubjectLevel5', self.subject)
+        output_dir = join(self.flex_dir, dir, self.subject)
         slu.mkdir_p(output_dir)
         for name, attribute in self.__iter__():
             if name in ['BehavFrame', 'BehavAligned', 'PupilFrame', 'CortRois', 'BrainstemRois', 'ChoiceEpochs']:
@@ -234,10 +232,27 @@ def execute(sub, environment):
     sl.Output()
 
 
+def ventricle(sub, environment):
+    sl = SubjectLevel(sub, ses_runs=spec_subs[sub], environment=environment)
+    sl.PupilFrame = defaultdict(dict)
+    files = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{}_*'.format(sl.sub)))
+    for file in files:
+        ses = file[file.find('ses-'):file.find('.hdf')]
+        with pd.HDFStore(file) as hdf:
+            k = hdf.keys()
+        for run in k:
+            sl.PupilFrame[ses][run[run.find('in'):]] = pd.read_hdf(file, key=run)
+    sl.BehavFrames()
+    sl.RoiExtract(denoise=False)
+    sl.ChoiceEpochs()
+    sl.CleanEpochs()
+    sl.Output(dir='Ventricle_no_denoise')
+
+
 def submit(sub, env='Hummel'):
     if env == 'Hummel':
         slu.pmap(par_execute, keys(sub, 'Hummel'), walltime='4:00:00',
                  memory=24, nodes=1, tasks=1, name='SubjectLevel')
     elif env == 'Climag':
-        pbs.pmap(execute, [(sub, env)], walltime='4:00:00',
+        pbs.pmap(ventricle, [(sub, env)], walltime='4:00:00',
                  memory=24, nodes=1, tasks=1, name='SubjectLevel')

@@ -26,6 +26,7 @@ class EPI(object):
         self.flex_dir = flex_dir
         self.atlases = {
             'AAN_DR': 'aan_dr',
+            '4th_ventricle': '4th_ventricle',
             'basal_forebrain_4': 'zaborsky_bf4',
             'basal_forebrain_123': 'zaborsky_bf123',
             'LC_Keren_2std': 'keren_lc_2std',
@@ -66,12 +67,12 @@ class EPI(object):
         '''
         return new_image
 
-    def load_epi(self):
+    def load_epi(self, denoise='_denoise'):
         '''
         Find and load EPI-files.
         '''
         file = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
-                         '*{}*space-T1w_preproc_denoise.nii.gz'.format(self.run)))
+                         '*{}*space-T1w_preproc{}.nii.gz'.format(denoise).format(self.run)))
         if len(file) > 1:
             print('More than one EPI found for ', self.subject, self.session, self.run)
         else:
@@ -79,9 +80,6 @@ class EPI(object):
                 self.EPI = image.load_img(file)
             except TypeError:  # no img found
                 print('CompCor denoising first...')
-                self.EPI = self.denoise()
-            except ImageFileError:
-                print('CompCor denoising again...')
                 self.EPI = self.denoise()
 
     def warp_atlases(self):
@@ -180,9 +178,12 @@ class EPI(object):
 
 
 #@memory.cache
-def execute(subject, session, run, flex_dir, atlas_warp=False):
+def execute(subject, session, run, flex_dir, atlas_warp=False, denoise=True):
     RE = EPI(subject, session, run, flex_dir)
-    RE.load_epi()
+    if denoise is False:
+        RE.load_epi(denoise='')
+    else:
+        RE.load_epi()
     if atlas_warp is True:
         RE.warp_atlases()
     RE.load_mask()
