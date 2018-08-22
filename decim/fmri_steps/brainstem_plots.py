@@ -81,8 +81,8 @@ def hummel_submit():
 
 def climag_submit():
     flex_dir = '/home/khagena/FLEXRULE'
-    for sub in [10]:
-        for task in ['instructed']:
+    for sub in range(1,23):
+        for task in ['inference', 'instructed']:
             pbs.pmap(extract_brainstem, [(sub, flex_dir, task)], walltime='1:00:00',
                      memory=15, nodes=1, tasks=1, name='bs_coefs_{}'.format(sub))
 
