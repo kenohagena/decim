@@ -9,16 +9,24 @@ from nilearn import surface
 import nibabel as ni
 
 
-epi_dir = '/home/khagena/FLEXRULE/fmri/completed_preprocessed'
-atlas_dir = '/home/khagena/FLEXRULE/fmri/atlases'
-out_dir = '/home/khagena/FLEXRULE/fmri/roi_extract'
+def climag():
+    epi_dir = '/home/khagena/FLEXRULE/fmri/completed_preprocessed'
+    atlas_dir = '/home/khagena/FLEXRULE/fmri/atlases'
+    out_dir = '/home/khagena/FLEXRULE/fmri/test_roi_extract'
+    slu.mkdir_p(out_dir)
+    return epi_dir, atlas_dir, out_dir
+
+
+def local_machine():
+    epi_dir = '/Volumes/flxrl/FLEXRULE/fmri/completed_preprocessed'
+    atlas_dir = '/Volumes/flxrl/FLEXRULE/fmri/atlases'
+    out_dir = '/Volumes/flxrl/FLEXRULE/fmri/roi_extract_denoise'
+    return epi_dir, atlas_dir, out_dir
+
+
 subjects = [12, 13, 14, 19, 20, 21]
-sessions = ['ses-2', 'ses-3']
-runs = ['inference_run-4',
-        'inference_run-5',
-        'inference_run-6',
-        'instructed_run-7',
-        'instructed_run-8']
+sessions = ['ses-2']
+runs = ['inference_run-4']
 atlases = {
     'AAN_DR': 'aan_dr',
     'basal_forebrain_4': 'zaborsky_bf4',
@@ -180,6 +188,7 @@ def weighted_average(sub, session, run, atlas, roi_dir):
 
 
 def execute(sub):
+    slu.mkdir_p(out_dir)
     extract_brainstem_roi(sub, epi_dir, atlas_dir, out_dir)
     concat_single_rois(sub, out_dir)
     for session in sessions:
@@ -195,4 +204,5 @@ def execute(sub):
 
 
 if __name__ == "__main__":
+    epi_dir, atlas_dir, out_dir = climag()
     execute(sys.argv[1])
