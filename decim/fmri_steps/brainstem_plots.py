@@ -194,6 +194,8 @@ def single_plots(data):
         f.savefig('/Volumes/flxrl/FLEXRULE/fmri/brainstem_regression/plots/{0}{1}.png'.format('instructed', param), dpi=160)
 
 
+'''
 data = concat_all()
 single_plots(data)
 overview_plot(data)
+'''
