@@ -75,13 +75,13 @@ def belief(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='message')
     locs = (df.loc[df['{}'.format(ident)] == point_message, 'value']
             .astype(float))
     belief = 0 * locs.values
-    prior = 0 * locs.values
+    psi = 0 * locs.values
     for i, value in enumerate(locs):
         if i == 0:
             belief[i] = LLR(value, sigma=gen_var)
         else:
             belief[i] = prior(belief[i - 1], H) + LLR(value, sigma=gen_var)
-            prior[i] = prior(belief[i - 1], H)
+            psi[i] = prior(belief[i - 1], H)
     surprise = murphy_surprise(prior, LLR(locs.values))
     return pd.Series(belief, index=locs.index), pd.Series(prior, index=locs.index), pd.Series(LLR(locs.values), index=locs.index), pd.Series(surprise, index=locs.index)
 
