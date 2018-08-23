@@ -87,8 +87,6 @@ class BehavDataframe(object):
         df['surprise_right'] = np.nan
         df.loc[df.event == 'GL_TRIAL_LOCATION', 'surprise_right'] =\
             gl.murphy_surprise(df.loc[df.event == 'GL_TRIAL_LOCATION'].prior_belief.values, df.loc[df.event == 'GL_TRIAL_LOCATION'].belief.values)
-        df['surprise_left'] = -df.surprise_right
-        df['abs_surprise'] = df.surprise_right.abs()
         df['point'] = df.event == 'GL_TRIAL_LOCATION'
         df['response'] = df.event == 'CHOICE_TRIAL_RESP'
         df['response_left'] = ((df.event == 'CHOICE_TRIAL_RESP') & (df.value == '0'))
@@ -222,12 +220,14 @@ def fmri_align(BehavDf, task):
     b.loc[0] = 0
     if task == 'inference':
         b.belief = b.belief.fillna(method='ffill')
-        b.murphy_surprise = b.murphy_surprise.fillna(method='ffill')
+        b.surprise_right = b.surprise_right.fillna(method='ffill')
         b['abs_belief'] = b.belief.abs()
         b['belief_left'] = -b.belief
         b['LLR_right'] = b.LLR
         b['LLR_left'] = -b.LLR
         b['abs_LLR'] = b.LLR.abs()
+        b['surprise_left'] = -b.surprise_right
+        b['abs_surprise'] = b.surprise_right.abs()
     b = b.fillna(False).astype(float)
     for column in b.columns:
         b[column] = make_bold(b[column].values, dt=.001)
