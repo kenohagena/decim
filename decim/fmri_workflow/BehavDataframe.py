@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
-from decim import glaze_control as gc
-from decim import glaze2 as gl
+from decim import glaze_model as gm
 from os.path import join, expanduser
 from scipy.interpolate import interp1d
 from decim import slurm_submit as slu
@@ -38,12 +37,11 @@ class BehavDataframe(object):
         self.bids_path = join(flex_dir, 'raw', 'bids_mr_v1.2')
 
     def inference(self, summary):
-        logs = gc.load_logs_bids(self.subject, self.session, self.bids_path)
+        logs = gm.load_logs_bids(self.subject, self.session, self.bids_path)
         df = logs[self.run]
         H = summary.loc[(summary.subject == self.subject) & (summary.session == self.session)].hmode.values[0]
-        df['belief'] = gl.belief(df, H=H, ident='event')
+        df['belief'], df['psi'], df['LLR'], df['surprise'] = gm.belief(df, H=H, ident='event')
         df.belief = df.belief.fillna(method='ffill')
-        df['obj_belief'] = gl.belief(df, H=1 / 70, ident='event')
         df = df.loc[df.event.isin(['GL_TRIAL_LOCATION', 'GL_TRIAL_GENSIDE',
                                    'GL_TRIAL_STIM_ID', 'CHOICE_TRIAL_ONSET',
                                    'CHOICE_TRIAL_STIMOFF', 'CHOICE_TRIAL_RESP',
@@ -68,25 +66,15 @@ class BehavDataframe(object):
                                    'CHOICE_TRIAL_STIMOFF',
                                    'CHOICE_TRIAL_RESP'])]
         df = df.loc[:, ['onset', 'event', 'value',
-                        'belief', 'obj_belief', 'gen_side',
+                        'belief', 'psi', 'LLR', 'gen_side',
                         'stim_id', 'rule_resp', 'trial_id', 'reward', 'rt']]
         df = df.reset_index(drop=True)
-        df['LLR'] = np.nan
-        df.loc[df.event == 'GL_TRIAL_LOCATION', 'LLR'] =\
-            gl.LLR(df.loc[df.event == 'GL_TRIAL_LOCATION'].value.astype(float).values)
-
         asign = np.sign(df.belief.values)
         signchange = (np.roll(asign, 1) - asign)
+        signchange[0] = 0
         df['switch'] = signchange != 0
-        df['switch_right'] = signchange < 0
-        df['switch_left'] = signchange > 0
-        df['prior_belief'] = np.nan
-        df.loc[df.event == 'GL_TRIAL_LOCATION', 'prior_belief'] =\
-            np.roll(df.loc[df.event == 'GL_TRIAL_LOCATION', 'belief'].values, 1)
-        df.loc[0, 'prior_belief'] = 0
-        df['surprise_right'] = np.nan
-        df.loc[df.event == 'GL_TRIAL_LOCATION', 'surprise_right'] =\
-            gl.murphy_surprise(df.loc[df.event == 'GL_TRIAL_LOCATION'].prior_belief.values, df.loc[df.event == 'GL_TRIAL_LOCATION'].belief.values)
+        df['switch_right'] = -signchange / 2
+        df['switch_left'] = signchange / 2
         df['point'] = df.event == 'GL_TRIAL_LOCATION'
         df['response'] = df.event == 'CHOICE_TRIAL_RESP'
         df['response_left'] = ((df.event == 'CHOICE_TRIAL_RESP') & (df.value == '0'))
@@ -96,13 +84,12 @@ class BehavDataframe(object):
         df['stimulus'] = df.event == 'CHOICE_TRIAL_ONSET'
         df['rresp_left'] = (df.event == 'CHOICE_TRIAL_RESP') & (df.rule_resp == 0)
         df['rresp_right'] = (df.event == 'CHOICE_TRIAL_RESP') & (df.rule_resp == 1)
-        df['belief_left'] = - df.belief
         df.onset = df.onset.astype(float)
         df = df.sort_values(by='onset')
         self.BehavDataframe = df
 
     def instructed(self):
-        logs = gc.load_logs_bids(self.subject, self.session, self.bids_path, run='instructed')
+        logs = gm.load_logs_bids(self.subject, self.session, self.bids_path, run='instructed')
         df = logs[self.run]
         df = df.loc[df.event.isin(['REWARDED_RULE_STIM', 'IR_STIM', 'IR_TRIAL_START',
                                    'CHOICE_TRIAL_ONSET', 'CHOICE_TRIAL_STIMOFF',
@@ -207,27 +194,27 @@ def fmri_align(BehavDf, task):
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
     if task == 'inference':
-        b = b.loc[:, ['onset', 'switch_left', 'switch_right', 'belief', 'abs_surprise', 'surprise_right', 'surprise_left', 'switch', 'point', 'response', 'response_left',
-                      'response_right', 'stimulus_horiz', 'stimulus_vert', 'stimulus',
-                      'rresp_left', 'rresp_right', 'LLR']]
-    elif task == 'instructed':
-        b = b.loc[:, ['onset', 'switch_left', 'switch_right', 'switch', 'response', 'response_left',
-                      'response_right', 'stimulus_horiz', 'stimulus_vert', 'stimulus',
+        b = b.loc[:, ['onset', 'switch', 'switch_left', 'switch_right',
+                      'belief', 'LLR', 'surprise',
+                      'point', 'response', 'response_left', 'response_right',
+                      'stimulus_horiz', 'stimulus_vert', 'stimulus',
                       'rresp_left', 'rresp_right']]
-
+    elif task == 'instructed':
+        b = b.loc[:, ['onset', 'switch_left', 'switch_right', 'switch',
+                      'response', 'response_left', 'response_right',
+                      'stimulus_horiz', 'stimulus_vert', 'stimulus',
+                      'rresp_left', 'rresp_right']]
     b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
     b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
     b.loc[0] = 0
     if task == 'inference':
         b.belief = b.belief.fillna(method='ffill')
-        b.surprise_right = b.surprise_right.fillna(method='ffill')
-        b['abs_belief'] = b.belief.abs()
+        b['belief_right'] = b.belief
         b['belief_left'] = -b.belief
+        b['belief'] = b.belief_right.abs()
         b['LLR_right'] = b.LLR
         b['LLR_left'] = -b.LLR
-        b['abs_LLR'] = b.LLR.abs()
-        b['surprise_left'] = -b.surprise_right
-        b['abs_surprise'] = b.surprise_right.abs()
+        b['LLR'] = b.LLR.abs()
     b = b.fillna(False).astype(float)
     for column in b.columns:
         b[column] = make_bold(b[column].values, dt=.001)
