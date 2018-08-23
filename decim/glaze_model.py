@@ -60,11 +60,11 @@ def prior(b_prior, H):
     return psi
 
 
-def murphy_surprise(prior, llr):
+def murphy_surprise(psi, llr):
     '''
     Calculate new surprise measure of Peter
     '''
-    surprise = - (prior * llr)
+    surprise = - (psi * llr)
     return surprise
 
 
@@ -82,7 +82,7 @@ def belief(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='message')
         else:
             belief[i] = prior(belief[i - 1], H) + LLR(value, sigma=gen_var)
             psi[i] = prior(belief[i - 1], H)
-    surprise = murphy_surprise(prior, LLR(locs.values))
+    surprise = murphy_surprise(psi, LLR(locs.values))
     return pd.Series(belief, index=locs.index), pd.Series(prior, index=locs.index), pd.Series(LLR(locs.values), index=locs.index), pd.Series(surprise, index=locs.index)
 
 
