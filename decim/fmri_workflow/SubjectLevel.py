@@ -220,16 +220,12 @@ def execute(sub, environment):
         for run in k:
             sl.PupilFrame[ses][run[run.find('in'):]] = pd.read_hdf(file, key=run)
     sl.BehavFrames()
-    sl.Output()
     sl.RoiExtract()
-    sl.Output()
     sl.BehavAlign()
-    sl.Output()
     sl.ChoiceEpochs()
-    sl.Output()
     sl.CleanEpochs()
     sl.LinregVoxel()
-    sl.Output()
+    sl.Output(dir='SubjectLevel6')
 
 
 def ventricle(sub, environment):
@@ -254,5 +250,5 @@ def submit(sub, env='Hummel'):
         slu.pmap(par_execute, keys(sub, 'Hummel'), walltime='4:00:00',
                  memory=24, nodes=1, tasks=1, name='SubjectLevel')
     elif env == 'Climag':
-        pbs.pmap(ventricle, [(sub, env)], walltime='4:00:00',
+        pbs.pmap(execute, [(sub, env)], walltime='4:00:00',
                  memory=24, nodes=1, tasks=1, name='SubjectLevel')

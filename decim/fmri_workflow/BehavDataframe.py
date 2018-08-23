@@ -84,9 +84,11 @@ class BehavDataframe(object):
         df.loc[df.event == 'GL_TRIAL_LOCATION', 'prior_belief'] =\
             np.roll(df.loc[df.event == 'GL_TRIAL_LOCATION', 'belief'].values, 1)
         df.loc[0, 'prior_belief'] = 0
-        df['murphy_surprise'] = np.nan
-        df.loc[df.event == 'GL_TRIAL_LOCATION', 'murphy_surprise'] =\
+        df['surprise_right'] = np.nan
+        df.loc[df.event == 'GL_TRIAL_LOCATION', 'surprise_right'] =\
             gl.murphy_surprise(df.loc[df.event == 'GL_TRIAL_LOCATION'].prior_belief.values, df.loc[df.event == 'GL_TRIAL_LOCATION'].belief.values)
+        df['surprise_left'] = -df.surprise_right
+        df['abs_surprise'] = df.surprise_right.abs()
         df['point'] = df.event == 'GL_TRIAL_LOCATION'
         df['response'] = df.event == 'CHOICE_TRIAL_RESP'
         df['response_left'] = ((df.event == 'CHOICE_TRIAL_RESP') & (df.value == '0'))
@@ -207,7 +209,7 @@ def fmri_align(BehavDf, task):
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
     if task == 'inference':
-        b = b.loc[:, ['onset', 'switch_left', 'switch_right', 'belief', 'murphy_surprise', 'switch', 'point', 'response', 'response_left',
+        b = b.loc[:, ['onset', 'switch_left', 'switch_right', 'belief', 'abs_surprise', 'surprise_right', 'surprise_left', 'switch', 'point', 'response', 'response_left',
                       'response_right', 'stimulus_horiz', 'stimulus_vert', 'stimulus',
                       'rresp_left', 'rresp_right', 'LLR']]
     elif task == 'instructed':
