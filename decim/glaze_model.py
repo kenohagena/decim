@@ -68,7 +68,7 @@ def murphy_surprise(prior, llr):
     return surprise
 
 
-def glaze_parameters(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='message'):
+def belief(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='message'):
     """
     Return pd.Series for belief, psi and LLR at given timepoints
     """
