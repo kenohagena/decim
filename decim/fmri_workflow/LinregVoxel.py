@@ -29,7 +29,7 @@ class VoxelSubject(object):
         self.voxel_regressions = {}
         self.surface_textures = defaultdict(dict)
 
-    def linreg_voxel(self):
+    def linreg_data(self):
         '''
         Concatenate runwise BOLD- and behavioral timeseries per subject-session.
         Regress each voxel on each behavioral parameter.
@@ -45,7 +45,8 @@ class VoxelSubject(object):
             behav = self.BehavAligned[run]
             nifti = nib.load(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
                                   '{0}_{1}_task-{2}_bold_space-T1w_preproc_denoise.nii.gz'.format(self.subject, self.session, run)))
-            shape = nifti.get_data().shape
+            self.nifti_shape = nifti.get_data().shape
+            self.nifti_affine = nifti.affine
             data = nifti.get_data()
             d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.shape[-1])])
             if len(d2) > len(behav):
@@ -56,25 +57,48 @@ class VoxelSubject(object):
             session_nifti.append(pd.DataFrame(d2))
         session_nifti = pd.concat(session_nifti, ignore_index=True)
         session_behav = pd.concat(session_behav, ignore_index=True)
-
-        # Z-Score behavior and voxels
         session_nifti = (session_nifti - session_nifti.mean()) / session_nifti.std()
-        session_nifti = session_nifti.fillna(0)  # some voxels have std = 0 thus NaNs are introduced
+        session_nifti = session_nifti.fillna(0)  # because if voxels have std == 0 --> NaNs introduced
         session_behav = (session_behav - session_behav.mean()) / session_behav.std()
         assert session_behav.shape[0] == session_nifti.shape[0]
-        self.parameters = behav.columns
-        for param in self.parameters:
-            print(param)
+        self.session_nifti = session_nifti
+        self.session_behav = session_behav
+
+    def single_linreg(self):
+        # Z-Score behavior and voxels
+        voxels = self.session_nifti
+        behav = self.session_behav
+        for param in behav.columns:
             linreg = LinearRegression()
-            linreg.fit(session_behav[param].values.reshape(-1, 1),
-                       session_nifti)
-            predict = linreg.predict(session_behav[param].values.reshape(-1, 1))
+            linreg.fit(behav[param].values.reshape(-1, 1),
+                       voxels)
+            predict = linreg.predict(behav[param].values.reshape(-1, 1))
             reg_result = np.concatenate(([linreg.coef_.flatten()], [linreg.intercept_],
-                                         [r2_score(session_nifti, predict, multioutput='raw_values')],
-                                         [mean_squared_error(session_nifti, predict, multioutput='raw_values')]), axis=0)
-            new_shape = np.stack([reg_result[i, :].reshape(shape[0:3]) for i in range(reg_result.shape[0])], -1)
-            new_image = nib.Nifti1Image(new_shape, affine=nifti.affine)
+                                         [r2_score(voxels, predict, multioutput='raw_values')],
+                                         [mean_squared_error(voxels, predict, multioutput='raw_values')]), axis=0)
+            new_shape = np.stack([reg_result[i, :].reshape(self.shape[0:3]) for i in range(reg_result.shape[0])], -1)
+            new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine)
             self.voxel_regressions[param] = new_image
+
+    def glm(self):
+        voxels = self.session_nifti
+        behav = self.session_behav
+        behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
+                              'response_right', 'response_left',
+                              'switch', 'switch_left',
+                              'belief', 'belief_left',
+                              'LLR', 'LLR_left',
+                              'surprise']]
+        linreg = LinearRegression()
+        linreg.fit(behav.values, voxels.values)
+        predict = linreg.predict(behav.values)
+        for i, parameter in enumerate(behav.columns):
+            reg_result = np.concatenate(([linreg.coef_[:, i].flatten()], [linreg.intercept_],
+                                         [r2_score(voxels, predict, multioutput='raw_values')],
+                                         [mean_squared_error(voxels, predict, multioutput='raw_values')]), axis=0)
+            new_shape = np.stack([reg_result[i, :].reshape(self.nifti_shape[0:3]) for i in range(reg_result.shape[0])], -1)
+            new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine())
+            self.voxel_regressions[parameter + '_multi'] = new_image
 
     def vol_2surf(self, radius=.3):
         for param, img in self.voxel_regressions.items():
@@ -90,5 +114,6 @@ class VoxelSubject(object):
 def execute(subject, session, runs, flex_dir, BehavAligned):
     v = VoxelSubject(subject, session, runs, flex_dir, BehavAligned)
     v.linreg_voxel()
+    v.glm()
     v.vol_2surf()
     return v.voxel_regressions, v.surface_textures
