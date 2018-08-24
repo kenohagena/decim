@@ -98,7 +98,7 @@ class VoxelSubject(object):
                                          [r2_score(voxels, predict, multioutput='raw_values')],
                                          [mean_squared_error(voxels, predict, multioutput='raw_values')]), axis=0)
             new_shape = np.stack([reg_result[i, :].reshape(self.nifti_shape[0:3]) for i in range(reg_result.shape[0])], -1)
-            new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine())
+            new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine)
             self.voxel_regressions[parameter + '_multi'] = new_image
 
     def vol_2surf(self, radius=.3):
