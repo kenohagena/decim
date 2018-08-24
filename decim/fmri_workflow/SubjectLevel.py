@@ -212,13 +212,13 @@ class SubjectLevel(object):
 def execute(sub, ses, environment):
     sl = SubjectLevel(sub, ses_runs={ses: [4, 5, 6]}, environment=environment)
     sl.PupilFrame = defaultdict(dict)
-    files = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{}_*'.format(sl.sub)))
-    for file in files:
-        ses = file[file.find('ses-'):file.find('.hdf')]
-        with pd.HDFStore(file) as hdf:
-            k = hdf.keys()
-        for run in k:
-            sl.PupilFrame[ses][run[run.find('in'):]] = pd.read_hdf(file, key=run)
+    file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
+    if len(file) != 1:
+        print(len(file), ' pupil frames found...')
+    with pd.HDFStore(file) as hdf:
+        k = hdf.keys()
+    for run in k:
+        sl.PupilFrame['ses_{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file, key=run)
     sl.BehavFrames()
     sl.RoiExtract()
     sl.BehavAlign()
