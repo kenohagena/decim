@@ -142,8 +142,6 @@ class EPI(object):
             roi = (roi - roi.mean(axis=0)) / roi.std(axis=0)  # z-score per voxel
             weight = weight / weight.sum()  # normalize weights ...
             weighted = np.dot(roi, weight)
-            print(roi.shape, weight.shape)
-            print(key, weight)
             weighted_averages[key] = weighted.flatten()
         self.brainstem_weighted = pd.DataFrame(weighted_averages)
 
