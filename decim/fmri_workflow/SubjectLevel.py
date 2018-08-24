@@ -209,8 +209,8 @@ class SubjectLevel(object):
                                     cont.to_hdf(join(output_dir, '{0}_{1}_{2}_{3}_{4}.hdf'.format(name, self.subject, session, parameter, hemisphere)), key=task)
 
 
-def execute(sub, environment):
-    sl = SubjectLevel(sub, ses_runs={2: [4, 5, 6], 3: [4, 5, 6]}, environment=environment)
+def execute(sub, ses, environment):
+    sl = SubjectLevel(sub, ses_runs={ses: [4, 5, 6]}, environment=environment)
     sl.PupilFrame = defaultdict(dict)
     files = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{}_*'.format(sl.sub)))
     for file in files:
@@ -223,11 +223,23 @@ def execute(sub, environment):
     sl.RoiExtract()
     sl.BehavAlign()
     sl.ChoiceEpochs()
+    del sl.PupilFrame
     sl.CleanEpochs()
     sl.LinregVoxel()
     sl.Output(dir='SubjectLevel6')
 
 
+def submit(sub, env='Hummel'):
+    if env == 'Hummel':
+        slu.pmap(par_execute, keys(sub, 'Hummel'), walltime='4:00:00',
+                 memory=24, nodes=1, tasks=1, name='SubjectLevel')
+    elif env == 'Climag':
+        for ses in [2, 3]:
+            pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
+                     memory=24, nodes=1, tasks=1, name='SubjectLevel')
+
+
+'''
 def ventricle(sub, environment):
     sl = SubjectLevel(sub, ses_runs=spec_subs[sub], environment=environment)
     sl.PupilFrame = defaultdict(dict)
@@ -243,12 +255,4 @@ def ventricle(sub, environment):
     sl.ChoiceEpochs()
     sl.CleanEpochs()
     sl.Output(dir='Ventricle_no_denoise')
-
-
-def submit(sub, env='Hummel'):
-    if env == 'Hummel':
-        slu.pmap(par_execute, keys(sub, 'Hummel'), walltime='4:00:00',
-                 memory=24, nodes=1, tasks=1, name='SubjectLevel')
-    elif env == 'Climag':
-        pbs.pmap(execute, [(sub, env)], walltime='4:00:00',
-                 memory=24, nodes=1, tasks=1, name='SubjectLevel')
+'''

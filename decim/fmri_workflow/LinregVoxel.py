@@ -113,6 +113,7 @@ class VoxelSubject(object):
 #@memory.cache
 def execute(subject, session, runs, flex_dir, BehavAligned):
     v = VoxelSubject(subject, session, runs, flex_dir, BehavAligned)
+    v.linreg_data()
     v.single_linreg()
     v.glm()
     v.vol_2surf()
