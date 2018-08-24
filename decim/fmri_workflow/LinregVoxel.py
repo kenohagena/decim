@@ -69,6 +69,7 @@ class VoxelSubject(object):
         voxels = self.session_nifti
         behav = self.session_behav
         for param in behav.columns:
+            print(param)
             linreg = LinearRegression()
             linreg.fit(behav[param].values.reshape(-1, 1),
                        voxels)
