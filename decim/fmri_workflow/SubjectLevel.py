@@ -218,7 +218,7 @@ def execute(sub, ses, environment):
     with pd.HDFStore(file[0]) as hdf:
         k = hdf.keys()
     for run in k:
-        sl.PupilFrame['ses_{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
+        sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
     sl.BehavFrames()
     sl.RoiExtract()
     sl.BehavAlign()
