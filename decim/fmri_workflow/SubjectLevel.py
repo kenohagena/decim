@@ -180,7 +180,7 @@ class SubjectLevel(object):
                 rs = [r for r in runs.keys() if runs[r] == task]
                 self.VoxelReg[session][task], self.SurfaceTxt[session][task] = lv.execute(self.subject, session, rs,
                                                                                           self.flex_dir,
-                                                                                          self.BehavAligned[session])
+                                                                                          self.BehavAligned[session], task)
 
     def Output(self, dir='SubjectLevel'):
         print('Output')

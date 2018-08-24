@@ -20,7 +20,7 @@ SECOND: Concatenate and average magnitude and lateralization
 
 
 class VoxelSubject(object):
-    def __init__(self, subject, session, runs, flex_dir, BehavAligned):
+    def __init__(self, subject, session, runs, flex_dir, BehavAligned, task):
         self.subject = subject
         self.session = session
         self.runs = runs
@@ -28,6 +28,7 @@ class VoxelSubject(object):
         self.BehavAligned = BehavAligned
         self.voxel_regressions = {}
         self.surface_textures = defaultdict(dict)
+        self.task = task
 
     def linreg_data(self):
         '''
@@ -84,12 +85,17 @@ class VoxelSubject(object):
     def glm(self):
         voxels = self.session_nifti
         behav = self.session_behav
-        behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
-                              'response_right', 'response_left',
-                              'switch', 'switch_left',
-                              'belief', 'belief_left',
-                              'LLR', 'LLR_left',
-                              'surprise']]
+        if self.task == 'instructed':
+            behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
+                                  'response_right', 'response_left',
+                                  'switch', 'switch_left']]
+        elif self.task == 'inference':
+            behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
+                                  'response_right', 'response_left',
+                                  'switch', 'switch_left',
+                                  'belief', 'belief_left',
+                                  'LLR', 'LLR_left',
+                                  'surprise']]
         linreg = LinearRegression()
         linreg.fit(behav.values, voxels.values)
         predict = linreg.predict(behav.values)
@@ -112,10 +118,10 @@ class VoxelSubject(object):
 
 
 #@memory.cache
-def execute(subject, session, runs, flex_dir, BehavAligned):
-    v = VoxelSubject(subject, session, runs, flex_dir, BehavAligned)
+def execute(subject, session, runs, flex_dir, BehavAligned, task):
+    v = VoxelSubject(subject, session, runs, flex_dir, BehavAligned, task)
     v.linreg_data()
-    #v.single_linreg()
+    # v.single_linreg()
     v.glm()
     v.vol_2surf()
     return v.voxel_regressions, v.surface_textures
