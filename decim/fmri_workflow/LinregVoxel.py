@@ -115,7 +115,7 @@ class VoxelSubject(object):
 def execute(subject, session, runs, flex_dir, BehavAligned):
     v = VoxelSubject(subject, session, runs, flex_dir, BehavAligned)
     v.linreg_data()
-    #v.single_linreg()
+    v.single_linreg()
     v.glm()
     v.vol_2surf()
     return v.voxel_regressions, v.surface_textures
