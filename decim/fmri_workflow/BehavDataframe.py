@@ -67,7 +67,7 @@ class BehavDataframe(object):
                                    'CHOICE_TRIAL_RESP'])]
         df = df.loc[:, ['onset', 'event', 'value',
                         'belief', 'psi', 'LLR', 'gen_side',
-                        'stim_id', 'rule_resp', 'trial_id', 'reward', 'rt']]
+                        'stim_id', 'rule_resp', 'trial_id', 'reward', 'rt', 'surprise']]
         df = df.reset_index(drop=True)
         asign = np.sign(df.belief.values)
         signchange = (np.roll(asign, 1) - asign)
