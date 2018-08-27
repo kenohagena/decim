@@ -4,6 +4,7 @@ from decim.fmri_workflow import BehavDataframe as bd
 from decim.fmri_workflow import RoiExtract as re
 from decim.fmri_workflow import ChoiceEpochs as ce
 from decim.fmri_workflow import LinregVoxel as lv
+from decim.fmri_workflow import SwitchEpochs as se
 from decim import slurm_submit as slu
 from collections import defaultdict
 from os.path import join
@@ -131,7 +132,6 @@ class SubjectLevel(object):
     def RoiExtract(self, denoise=True):
         '''
         '''
-        print('Do roi extract', self.subject)
         self.CortRois = defaultdict(dict)
         self.BrainstemRois = defaultdict(dict)
         for session, runs in self.session_runs.items():
@@ -141,13 +141,24 @@ class SubjectLevel(object):
                     re.execute(self.subject, session, run, self.flex_dir, denoise=denoise)
 
     def ChoiceEpochs(self):
-        print('Do choice epochs', self.subject)
         self.ChoiceEpochs = defaultdict(dict)
         for session, runs in self.session_runs.items():
             for run, task in runs.items():
                 print('Do choice epochs', self.subject, session, run)
                 self.ChoiceEpochs[session][run] =\
                     ce.execute(self.subject, session,
+                               run, task, self.flex_dir,
+                               self.BehavFrame[session][run],
+                               self.PupilFrame[session][run],
+                               self.BrainstemRois[session][run])
+
+    def SwitchEpochs(self):
+        self.SwitchEpochs = defaultdict(dict)
+        for session, runs in self.session_runs.items():
+            for run, task in runs.items():
+                print('Do switch epochs', self.subject, session, run)
+                self.SwitchEpochs[session][run] =\
+                    se.execute(self.subject, session,
                                run, task, self.flex_dir,
                                self.BehavFrame[session][run],
                                self.PupilFrame[session][run],
@@ -211,7 +222,7 @@ class SubjectLevel(object):
 
 def execute(sub, ses, environment):
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses][3:]}, environment=environment)
-    '''
+
     sl.PupilFrame = defaultdict(dict)
     file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
     if len(file) != 1:
@@ -220,15 +231,16 @@ def execute(sub, ses, environment):
         k = hdf.keys()
     for run in k:
         sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
-    '''
+
     sl.BehavFrames()
-    # sl.RoiExtract()
-    sl.BehavAlign()
+    sl.RoiExtract()
+    # sl.BehavAlign()
     # sl.ChoiceEpochs()
-    #del sl.PupilFrame
+    sl.Switchepochs()
+    # del sl.PupilFrame
     # sl.CleanEpochs()
-    sl.LinregVoxel()
-    sl.Output(dir='GLM')
+    # sl.LinregVoxel()
+    sl.Output(dir='SwitchEpochs')
 
 
 def submit(sub, env='Hummel'):
