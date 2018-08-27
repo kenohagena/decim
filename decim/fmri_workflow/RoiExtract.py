@@ -175,7 +175,7 @@ class EPI(object):
         self.cortical = cortical_rois
 
 
-#@memory.cache
+@memory.cache
 def execute(subject, session, run, flex_dir, atlas_warp=False, denoise=True):
     RE = EPI(subject, session, run, flex_dir)
     if denoise is False:
@@ -190,3 +190,5 @@ def execute(subject, session, run, flex_dir, atlas_warp=False, denoise=True):
     RE.brainstem()
     RE.cortical()
     return RE.brainstem_weighted, RE.cortical
+
+'bla'
