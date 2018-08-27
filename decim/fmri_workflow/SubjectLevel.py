@@ -236,7 +236,7 @@ def execute(sub, ses, environment):
     sl.RoiExtract()
     # sl.BehavAlign()
     # sl.ChoiceEpochs()
-    sl.Switchepochs()
+    sl.SwitchEpochs()
     # del sl.PupilFrame
     # sl.CleanEpochs()
     # sl.LinregVoxel()
