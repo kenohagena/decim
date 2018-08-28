@@ -186,15 +186,15 @@ def fmri_align(BehavDf, task):
         b.belief = b.belief.fillna(method='ffill')
     elif task == 'instructed':
         b = b.loc[:, ['switch', 'response',
-        'stimulus', 'rule_resp']]
+                      'stimulus', 'rule_resp']]
     b.loc[0] = 0
     b = b.fillna(False).astype(float)
     for column in b.columns:
         print('Align ', column)
         print(b[column].mean())
         assert b[column].std() != 0
-        b[column] = make_bold(b[column].values, dt=.001)
         b['abs_' + column] = make_bold(b[column].abs().values, dt=.001)
+        b[column] = make_bold(b[column].values, dt=.001)
     b = regular(b, target='1900ms')
     b.loc[pd.Timedelta(0)] = 0
     b = b.sort_index()
