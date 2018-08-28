@@ -221,7 +221,7 @@ class SubjectLevel(object):
 
 
 def execute(sub, ses, environment):
-    sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses][3:]}, environment=environment)
+    sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
     '''
     sl.PupilFrame = defaultdict(dict)
     file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
@@ -233,7 +233,7 @@ def execute(sub, ses, environment):
         sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
     '''
     sl.BehavFrames()
-    #sl.RoiExtract()
+    # sl.RoiExtract()
     sl.BehavAlign()
     # sl.ChoiceEpochs()
     # sl.SwitchEpochs()
@@ -251,22 +251,3 @@ def submit(sub, env='Hummel'):
         for ses in [2, 3]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
                      memory=24, nodes=1, tasks=2, name='SubjectLevel')
-
-
-'''
-def ventricle(sub, environment):
-    sl = SubjectLevel(sub, ses_runs=spec_subs[sub], environment=environment)
-    sl.PupilFrame = defaultdict(dict)
-    files = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{}_*'.format(sl.sub)))
-    for file in files:
-        ses = file[file.find('ses-'):file.find('.hdf')]
-        with pd.HDFStore(file) as hdf:
-            k = hdf.keys()
-        for run in k:
-            sl.PupilFrame[ses][run[run.find('in'):]] = pd.read_hdf(file, key=run)
-    sl.BehavFrames()
-    sl.RoiExtract(denoise=False)
-    sl.ChoiceEpochs()
-    sl.CleanEpochs()
-    sl.Output(dir='Ventricle_no_denoise')
-'''
