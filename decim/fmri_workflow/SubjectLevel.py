@@ -52,7 +52,8 @@ class SubjectLevel(object):
                      'inference_run-6',
                      'instructed_run-7',
                      'instructed_run-8']
-        self.session_runs = {'ses-{}'.format(session): {i: i[:-6] for i in np.array(run_names)[np.array(runs) - 4]}
+        self.session_runs = {'ses-{}'.format(session):
+                             {i: i[:-6] for i in np.array(run_names)[np.array(runs) - 4]}
                              for session, runs in ses_runs.items()}
         if environment == 'Volume':
             self.flex_dir = '/Volumes/flxrl/FLEXRULE'
@@ -106,7 +107,8 @@ class SubjectLevel(object):
                 print('Do behav ', self.subject, session, run)
                 try:
                     behavior_frame = bd.execute(self.subject, session,
-                                                run, task, self.flex_dir, self.summary)
+                                                run, task, self.flex_dir,
+                                                self.summary)
                     self.BehavFrame[session][run] = behavior_frame
                 except RuntimeError:
                     print('Runtimeerror for', self.subject, session, run)
@@ -138,7 +140,8 @@ class SubjectLevel(object):
             for run in runs.keys():
                 print('Do roi extract', self.subject, session, run)
                 self.BrainstemRois[session][run], self.CortRois[session][run] =\
-                    re.execute(self.subject, session, run, self.flex_dir, denoise=denoise)
+                    re.execute(self.subject, session, run,
+                               self.flex_dir, denoise=denoise)
 
     def ChoiceEpochs(self):
         self.ChoiceEpochs = defaultdict(dict)
@@ -189,40 +192,55 @@ class SubjectLevel(object):
             for task in set(runs.values()):
                 print(task, session)
                 rs = [r for r in runs.keys() if runs[r] == task]
-                self.VoxelReg[session][task], self.SurfaceTxt[session][task] = lv.execute(self.subject, session, rs,
-                                                                                          self.flex_dir,
-                                                                                          self.BehavAligned[session], task)
+                self.VoxelReg[session][task], self.SurfaceTxt[session][task] =\
+                    lv.execute(self.subject, session, rs,
+                               self.flex_dir,
+                               self.BehavAligned[session], task)
 
     def Output(self, dir='SubjectLevel'):
         print('Output')
         output_dir = join(self.flex_dir, dir, self.subject)
         slu.mkdir_p(output_dir)
         for name, attribute in self.__iter__():
-            if name in ['BehavFrame', 'BehavAligned', 'PupilFrame', 'CortRois', 'BrainstemRois', 'ChoiceEpochs']:
+            if name in ['BehavFrame', 'BehavAligned', 'PupilFrame',
+                        'CortRois', 'BrainstemRois', 'ChoiceEpochs']:
                 for session in attribute.keys():
                     for run in attribute[session].keys():
                         print('Saving', name, session, run)
-                        attribute[session][run].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session)), key=run)
+                        attribute[session][run].to_hdf(join(output_dir,
+                                                            '{0}_{1}_{2}.hdf'.
+                                                            format(name,
+                                                                   self.subject,
+                                                                   session)),
+                                                       key=run)
 
             elif name == 'CleanEpochs':
                 for session in attribute.keys():
                     print('Saving', name, session)
-                    attribute[session].to_hdf(join(output_dir, '{0}_{1}.hdf'.format(name, self.subject)), key=session)
+                    attribute[session].to_hdf(join(output_dir, '{0}_{1}.hdf'.
+                                                   format(name, self.subject)),
+                                              key=session)
             elif name in ['VoxelReg', 'SurfaceTxt']:
                 for session in attribute.keys():
                     for task in attribute[session].keys():
                         for parameter, content in attribute[session][task].items():
                             print('Saving', name, session, task, parameter)
                             if name == 'VoxelReg':
-                                content.to_filename(join(output_dir, '{0}_{1}_{2}_{3}_{4}.nii.gz'.format(name, self.subject, session, parameter, task)))
+                                content.to_filename(join(output_dir,
+                                                         '{0}_{1}_{2}_{3}_{4}.nii.gz'.
+                                                         format(name, self.subject,
+                                                                session, parameter, task)))
                             elif name == 'SurfaceTxt':
                                 for hemisphere, cont in content.items():
-                                    cont.to_hdf(join(output_dir, '{0}_{1}_{2}_{3}_{4}.hdf'.format(name, self.subject, session, parameter, hemisphere)), key=task)
+                                    cont.to_hdf(join(output_dir,
+                                                     '{0}_{1}_{2}_{3}_{4}.hdf'.
+                                                     format(name, self.subject,
+                                                            session, parameter, hemisphere)),
+                                                key=task)
 
 
 def execute(sub, ses, environment):
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
-    '''
     sl.PupilFrame = defaultdict(dict)
     file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
     if len(file) != 1:
@@ -231,15 +249,14 @@ def execute(sub, ses, environment):
         k = hdf.keys()
     for run in k:
         sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
-    '''
-    sl.BehavFrames()
-    # sl.RoiExtract()
-    sl.BehavAlign()
+        sl.BehavFrames()
+    sl.RoiExtract()
+    #sl.BehavAlign()
     # sl.ChoiceEpochs()
-    # sl.SwitchEpochs()
-    # del sl.PupilFrame
+    sl.SwitchEpochs()
+    del sl.PupilFrame
     # sl.CleanEpochs()
-    sl.LinregVoxel()
+    # sl.LinregVoxel()
     sl.Output(dir='GLM')
 
 
@@ -250,4 +267,4 @@ def submit(sub, env='Hummel'):
     elif env == 'Climag':
         for ses in [2, 3]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
-                     memory=24, nodes=1, tasks=2, name='SubjectLevel')
+                     memory=10, nodes=1, tasks=2, name='SubjectLevel')
