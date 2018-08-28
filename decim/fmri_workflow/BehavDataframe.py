@@ -179,14 +179,14 @@ def fmri_align(BehavDf, task):
     b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
     b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
     if task == 'inference':
-        b = b.loc[:, ['onset', 'switch',
+        b = b.loc[:, ['switch',
                       'belief', 'LLR', 'surprise',
                       'point', 'response',
                       'stimulus', 'rule_resp']]
         b.belief = b.belief.fillna(method='ffill')
     elif task == 'instructed':
-        b = b.loc[:, ['onset', 'switch',
-                      'response' 'stimulus', 'rule_resp']]
+        b = b.loc[:, ['switch', 'response',
+        'stimulus', 'rule_resp']]
     b.loc[0] = 0
     b = b.fillna(False).astype(float)
     for column in b.columns:
