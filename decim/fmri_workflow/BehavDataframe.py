@@ -191,7 +191,7 @@ def fmri_align(BehavDf, task):
     b = b.fillna(False).astype(float)
     for column in b.columns:
         print('Align ', column)
-        print(b[column])
+        print(b[column].mean())
         assert b[column].std() != 0
         b[column] = make_bold(b[column].values, dt=.001)
         b['abs_' + column] = make_bold(b[column].abs().values, dt=.001)
