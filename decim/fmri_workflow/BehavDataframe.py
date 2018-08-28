@@ -176,6 +176,8 @@ def fmri_align(BehavDf, task):
     b = BehavDf
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
+    b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
+    b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
     if task == 'inference':
         b = b.loc[:, ['onset', 'switch',
                       'belief', 'LLR', 'surprise',
@@ -185,17 +187,23 @@ def fmri_align(BehavDf, task):
     elif task == 'instructed':
         b = b.loc[:, ['onset', 'switch',
                       'response' 'stimulus', 'rule_resp']]
-    b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
-    b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
     b.loc[0] = 0
     b = b.fillna(False).astype(float)
     for column in b.columns:
         print('Align ', column)
         print(b[column])
-        assert b[column].isnull().std() != 0
+        assert b[column].std() != 0
         b[column] = make_bold(b[column].values, dt=.001)
         b['abs_' + column] = make_bold(b[column].abs().values, dt=.001)
     b = regular(b, target='1900ms')
     b.loc[pd.Timedelta(0)] = 0
     b = b.sort_index()
     return b
+
+
+'''
+b = BehavDataframe('sub-17', 'ses-2', 'inference_run-4', '/Volumes/flxrl/FLEXRULE')
+b.inference(pd.read_csv('/Volumes/flxrl/FLEXRULE/behavior/bids_stan_fits/summary_stan_fits.csv'))
+
+print(b.BehavDataframe['switch'].std())
+'''
