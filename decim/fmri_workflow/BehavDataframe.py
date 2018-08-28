@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from decim import glaze_model as gm
+import patsy
 from os.path import join, expanduser
 from scipy.interpolate import interp1d
 from decim import slurm_submit as slu
@@ -53,10 +54,10 @@ class BehavDataframe(object):
         df.trial_id = df.trial_id.fillna(method='ffill')
         df['gen_side'] = df.loc[df.event == 'GL_TRIAL_GENSIDE'].value.astype('float')
         df.gen_side = df.gen_side.fillna(method='ffill')
-        df['stim_id'] = df.loc[df.event == 'GL_TRIAL_STIM_ID'].\
-            set_index(df.loc[df.event == 'CHOICE_TRIAL_ONSET'].index).value.astype('float')
+        df['stimulus'] = df.loc[df.event == 'GL_TRIAL_STIM_ID'].\
+            set_index(df.loc[df.event == 'CHOICE_TRIAL_ONSET'].index).value.astype('float') * 2 - 1  # horiz -> -1 | vert -> +1
         df['rule_resp'] = df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP'].\
-            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float')
+            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float') * 2 - 1
         df['reward'] = df.loc[df.event == 'GL_TRIAL_REWARD'].\
             set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float')
         df['rt'] = df.loc[df.event == 'CHOICE_TRIAL_RT'].\
@@ -67,23 +68,15 @@ class BehavDataframe(object):
                                    'CHOICE_TRIAL_RESP'])]
         df = df.loc[:, ['onset', 'event', 'value',
                         'belief', 'psi', 'LLR', 'gen_side',
-                        'stim_id', 'rule_resp', 'trial_id', 'reward', 'rt', 'surprise']]
+                        'stimulus', 'rule_resp', 'trial_id', 'reward', 'rt', 'surprise']]
         df = df.reset_index(drop=True)
         asign = np.sign(df.belief.values)
         signchange = (np.roll(asign, 1) - asign)
         signchange[0] = 0
-        df['switch'] = signchange != 0
-        df['switch_right'] = -signchange / 2
-        df['switch_left'] = signchange / 2
+        df['switch'] = signchange / 2
         df['point'] = df.event == 'GL_TRIAL_LOCATION'
         df['response'] = df.event == 'CHOICE_TRIAL_RESP'
-        df['response_left'] = ((df.event == 'CHOICE_TRIAL_RESP') & (df.value == '0'))
-        df['response_right'] = (df.event == 'CHOICE_TRIAL_RESP') & (df.value == '1')
-        df['stimulus_horiz'] = (df.event == 'CHOICE_TRIAL_ONSET') & (df.stim_id == 0)
-        df['stimulus_vert'] = (df.event == 'CHOICE_TRIAL_ONSET') & (df.stim_id == 1)
-        df['stimulus'] = df.event == 'CHOICE_TRIAL_ONSET'
-        df['rresp_left'] = (df.event == 'CHOICE_TRIAL_RESP') & (df.rule_resp == 0)
-        df['rresp_right'] = (df.event == 'CHOICE_TRIAL_RESP') & (df.rule_resp == 1)
+        df.loc[df.response == True, 'response'] = df.loc[df.response == True, 'value'].astype(float) * 2 - 1  # left -> -1 | right -> +1
         df.onset = df.onset.astype(float)
         df = df.sort_values(by='onset')
         self.BehavDataframe = df
@@ -99,11 +92,11 @@ class BehavDataframe(object):
         df.onset = df.onset.astype(float)
         df = df.sort_values(by='onset').reset_index(drop=True)
         if df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.values.astype(float).mean() > 1:  # In some subjects grating ID is decoded with 0 / 1 in others with 1 /2
-            df['stim_id'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.astype('float') - 1
+            df['stimulus'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.astype('float') * 2 - 3
         elif df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.values.astype(float).mean() < 1:
-            df['stim_id'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.astype('float')
+            df['stimulus'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.astype('float') * 2 - 1
         df['rule_resp'] = df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP'].\
-            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float')
+            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float') * 2 - 1
         df['rt'] = df.loc[df.event == 'CHOICE_TRIAL_RT'].\
             set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float')
         df['reward'] = df.loc[df.event == 'IR_TRIAL_REWARD'].\
@@ -115,21 +108,12 @@ class BehavDataframe(object):
                                    'CHOICE_TRIAL_RESP'])]
 
         df = df.loc[:, ['onset', 'event', 'value', 'rt', 'rewarded_rule',
-                        'stim_id', 'rule_resp', 'reward']].reset_index(drop=True)
+                        'stimulus', 'rule_resp', 'reward']].reset_index(drop=True)
         df.rewarded_rule = df.rewarded_rule.ffill()
         df.value = df.value.astype(float)
-
-        df['switch'] = df.index.isin(np.where(np.diff(df.rewarded_rule.values) != 0)[0] + 1)
-        df['switch_right'] = df.index.isin(np.where(np.diff(df.rewarded_rule.values) == 1)[0] + 1)
-        df['switch_left'] = df.index.isin(np.where(np.diff(df.rewarded_rule.values) == -1)[0] + 1)
+        df['switch'] = np.append([0], np.diff(df.rewarded_rule.values))
         df['response'] = df.event == 'CHOICE_TRIAL_RESP'
-        df['response_left'] = (df.event == 'CHOICE_TRIAL_RESP') & (df.value == 0)
-        df['response_right'] = (df.event == 'CHOICE_TRIAL_RESP') & (df.value == 1)
-        df['stimulus_horiz'] = (df.event == 'CHOICE_TRIAL_ONSET') & (df.stim_id == 0)
-        df['stimulus_vert'] = (df.event == 'CHOICE_TRIAL_ONSET') & (df.stim_id == 1)
-        df['stimulus'] = df.event == 'CHOICE_TRIAL_ONSET'
-        df['rresp_left'] = (df.event == 'CHOICE_TRIAL_RESP') & (df.rule_resp == 0)
-        df['rresp_right'] = (df.event == 'CHOICE_TRIAL_RESP') & (df.rule_resp == 1)
+        df.loc[df.response == True, 'response'] = df.loc[df.response == True, 'value'].astype(float) * 2 - 1  # left -> -1 | right -> +1
         self.BehavDataframe = df
 
 
@@ -189,35 +173,27 @@ def fmri_align(BehavDf, task):
                 - convolved with hrf
                 - downsampled to EPI-f
     '''
-
     b = BehavDf
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
     if task == 'inference':
-        b = b.loc[:, ['onset', 'switch', 'switch_left', 'switch_right',
+        b = b.loc[:, ['onset', 'switch',
                       'belief', 'LLR', 'surprise',
-                      'point', 'response', 'response_left', 'response_right',
-                      'stimulus_horiz', 'stimulus_vert', 'stimulus',
-                      'rresp_left', 'rresp_right']]
+                      'point', 'response',
+                      'stimulus', 'rule_resp']]
+        b.belief = b.belief.fillna(method='ffill')
     elif task == 'instructed':
-        b = b.loc[:, ['onset', 'switch_left', 'switch_right', 'switch',
-                      'response', 'response_left', 'response_right',
-                      'stimulus_horiz', 'stimulus_vert', 'stimulus',
-                      'rresp_left', 'rresp_right']]
+        b = b.loc[:, ['onset', 'switch',
+                      'response' 'stimulus', 'rule_resp']]
     b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
     b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
     b.loc[0] = 0
-    if task == 'inference':
-        b.belief = b.belief.fillna(method='ffill')
-        b['belief_right'] = b.belief
-        b['belief_left'] = -b.belief
-        b['belief'] = b.belief_right.abs()
-        b['LLR_right'] = b.LLR
-        b['LLR_left'] = -b.LLR
-        b['LLR'] = b.LLR.abs()
     b = b.fillna(False).astype(float)
     for column in b.columns:
+        print('Align ', column)
+        assert b[column].values.mean() != 0
         b[column] = make_bold(b[column].values, dt=.001)
+        b['abs_' + column] = make_bold(b[column].abs().values, dt=.001)
     b = regular(b, target='1900ms')
     b.loc[pd.Timedelta(0)] = 0
     b = b.sort_index()

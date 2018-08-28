@@ -222,7 +222,7 @@ class SubjectLevel(object):
 
 def execute(sub, ses, environment):
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses][3:]}, environment=environment)
-
+    '''
     sl.PupilFrame = defaultdict(dict)
     file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
     if len(file) != 1:
@@ -231,16 +231,16 @@ def execute(sub, ses, environment):
         k = hdf.keys()
     for run in k:
         sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
-
+    '''
     sl.BehavFrames()
-    sl.RoiExtract()
-    # sl.BehavAlign()
+    #sl.RoiExtract()
+    sl.BehavAlign()
     # sl.ChoiceEpochs()
-    sl.SwitchEpochs()
+    # sl.SwitchEpochs()
     # del sl.PupilFrame
     # sl.CleanEpochs()
-    # sl.LinregVoxel()
-    sl.Output(dir='SwitchEpochs')
+    sl.LinregVoxel()
+    sl.Output(dir='GLM')
 
 
 def submit(sub, env='Hummel'):

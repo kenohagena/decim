@@ -38,7 +38,7 @@ class VoxelSubject(object):
         Return one Nifti per session, subject & parameter with four frames:
             coef_, intercept_, r2_score, mean_squared_error
 
-        Z-score Behavior & voxel
+        Z-score voxel (not behavior anymore...)
         '''
         session_nifti = []
         session_behav = []
@@ -60,7 +60,7 @@ class VoxelSubject(object):
         session_behav = pd.concat(session_behav, ignore_index=True)
         session_nifti = (session_nifti - session_nifti.mean()) / session_nifti.std()
         session_nifti = session_nifti.fillna(0)  # because if voxels have std == 0 --> NaNs introduced
-        session_behav = (session_behav - session_behav.mean()) / session_behav.std()
+        # session_behav = (session_behav - session_behav.mean()) / session_behav.std()
         assert session_behav.shape[0] == session_nifti.shape[0]
         self.session_nifti = session_nifti
         self.session_behav = session_behav
@@ -86,15 +86,15 @@ class VoxelSubject(object):
         voxels = self.session_nifti
         behav = self.session_behav
         if self.task == 'instructed':
-            behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
-                                  'response_right', 'response_left',
-                                  'switch', 'switch_left']]
+            behav = behav.loc[:, ['stimulus', 'abs_stimulus',
+                                  'response', 'abs_response',
+                                  'switch', 'abs_switch']]
         elif self.task == 'inference':
-            behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
-                                  'response_right', 'response_left',
-                                  'switch', 'switch_left',
-                                  'belief', 'belief_left',
-                                  'LLR', 'LLR_left',
+            behav = behav.loc[:, ['stimulus', 'abs_stimulus',
+                                  'response', 'abs_response',
+                                 'switch', 'abs_switch',
+                                  'belief', 'abs_belief',
+                                  'LLR', 'abs_LLR',
                                   'surprise']]
         linreg = LinearRegression()
         linreg.fit(behav.values, voxels.values)
