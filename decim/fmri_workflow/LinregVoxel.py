@@ -40,12 +40,13 @@ class VoxelSubject(object):
 
         Z-score voxel (not behavior anymore...)
         '''
+        print('load glm data...')
         session_nifti = []
         session_behav = []
         for run in self.runs:
             behav = self.BehavAligned[run]
             nifti = nib.load(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
-                                  '{0}_{1}_task-{2}_bold_space-T1w_preproc_denoise.nii.gz'.format(self.subject, self.session, run)))
+                                  '{0}_{1}_task-{2}_bold_space-T1w_preproc.nii.gz'.format(self.subject, self.session, run)))
             self.nifti_shape = nifti.get_data().shape
             self.nifti_affine = nifti.affine
             data = nifti.get_data()
@@ -92,11 +93,12 @@ class VoxelSubject(object):
         elif self.task == 'inference':
             behav = behav.loc[:, ['stimulus', 'abs_stimulus',
                                   'response', 'abs_response',
-                                 'switch', 'abs_switch',
+                                  'switch', 'abs_switch',
                                   'belief', 'abs_belief',
                                   'LLR', 'abs_LLR',
                                   'surprise']]
         linreg = LinearRegression()
+        print('fit')
         linreg.fit(behav.values, voxels.values)
         predict = linreg.predict(behav.values)
         for i, parameter in enumerate(behav.columns):
