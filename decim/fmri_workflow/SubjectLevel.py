@@ -9,6 +9,7 @@ from decim import slurm_submit as slu
 from collections import defaultdict
 from os.path import join
 from glob import glob
+from multiprocessing import Pool
 from pymeg import parallel as pbs
 try:
     from decim.fmri_workflow import PupilLinear as pf
@@ -260,6 +261,11 @@ def execute(sub, ses, environment):
     sl.Output(dir='GLM')
 
 
+def par_execute(keys):
+    with Pool(2) as p:
+        p.starmap(execute, keys)
+
+
 def submit(sub, env='Hummel'):
     if env == 'Hummel':
         def keys(sub):
@@ -267,10 +273,6 @@ def submit(sub, env='Hummel'):
             for ses in [2, 3]:
                 keys.append((sub, ses, env))
             return keys
-
-        def par_execute(keys):
-            with Pool(2) as p:
-                p.starmap(execute, keys)
 
         slu.pmap(par_execute, keys(sub), walltime='2:00:00',
                  memory=24, nodes=1, tasks=2, name='SubjectLevel')
