@@ -114,7 +114,7 @@ class SubjectLevel(object):
                     print('Runtimeerror for', self.subject, session, run)
                     self.BehavFrame[session][run] = None
 
-    def BehavAlign(self):
+    def BehavAlign(self, fast=False):
         '''
         Second Level
         INPUT: BehavFrames
@@ -126,7 +126,7 @@ class SubjectLevel(object):
                 print('Do behav align', self.subject, session, run)
                 BehavFrame = self.BehavFrame[session][run]
                 if BehavFrame is not None:
-                    BehavAligned = bd.fmri_align(BehavFrame, task)
+                    BehavAligned = bd.fmri_align(BehavFrame, task, fast)
                     self.BehavAligned[session][run] = BehavAligned
                 else:
                     continue
@@ -241,19 +241,17 @@ class SubjectLevel(object):
 
 def execute(sub, ses, environment):
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
-    '''
-    sl.PupilFrame = defaultdict(dict)
-    file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
+    sl.BehavAligned = defaultdict(dict)
+    file = (join(sl.flex_dir, 'BehavAligned', sl.subject, 'BehavAligned_{0}_ses-{1}.hdf'.format(sl.subject, ses)))
     if len(file) != 1:
         print(len(file), ' pupil frames found...')
     with pd.HDFStore(file[0]) as hdf:
         k = hdf.keys()
     for run in k:
-        sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
-    '''
-    sl.BehavFrames()
+        sl.BehavAligned['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
+    # sl.BehavFrames()
     # sl.RoiExtract()
-    sl.BehavAlign()
+    # sl.BehavAlign(fast=True)
     # sl.ChoiceEpochs()
     # sl.SwitchEpochs()
     # del sl.PupilFrame
@@ -264,9 +262,30 @@ def execute(sub, ses, environment):
 
 def submit(sub, env='Hummel'):
     if env == 'Hummel':
-        slu.pmap(par_execute, keys(sub, 'Hummel'), walltime='4:00:00',
-                 memory=24, nodes=1, tasks=1, name='SubjectLevel')
+        def keys(sub):
+            keys = []
+            for ses in [2, 3]:
+                keys.append((sub, ses, env))
+            return keys
+
+        def par_execute(keys):
+            with Pool(2) as p:
+                p.starmap(execute, keys)
+
+        slu.pmap(par_execute, keys(sub), walltime='2:00:00',
+                 memory=24, nodes=1, tasks=2, name='SubjectLevel')
     elif env == 'Climag':
         for ses in [2, 3]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
                      memory=10, nodes=1, tasks=2, name='SubjectLevel')
+
+    '''
+    sl.PupilFrame = defaultdict(dict)
+    file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
+    if len(file) != 1:
+        print(len(file), ' pupil frames found...')
+    with pd.HDFStore(file[0]) as hdf:
+        k = hdf.keys()
+    for run in k:
+        sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
+    '''
