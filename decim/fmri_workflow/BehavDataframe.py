@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from decim import glaze_model as gm
-import patsy
 from os.path import join, expanduser
 from scipy.interpolate import interp1d
 from decim import slurm_submit as slu
@@ -9,7 +8,8 @@ from joblib import Memory
 if expanduser('~') == '/home/faty014':
     cachedir = expanduser('/work/faty014/joblib_cache')
 else:
-    cachedir = expanduser('~/joblib_cache')slu.mkdir_p(cachedir)
+    cachedir = expanduser('~/joblib_cache')
+slu.mkdir_p(cachedir)
 memory = Memory(cachedir=cachedir, verbose=0)
 '''
 INPUT: Behavioral data from .tsv files in BIDS-Format
