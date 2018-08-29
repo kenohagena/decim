@@ -6,8 +6,10 @@ from os.path import join, expanduser
 from scipy.interpolate import interp1d
 from decim import slurm_submit as slu
 from joblib import Memory
-cachedir = expanduser('~/joblib_cache')
-slu.mkdir_p(cachedir)
+if expanduser('~') == '/home/faty014':
+    cachedir = expanduser('/work/faty014/joblib_cache')
+else:
+    cachedir = expanduser('~/joblib_cache')slu.mkdir_p(cachedir)
 memory = Memory(cachedir=cachedir, verbose=0)
 '''
 INPUT: Behavioral data from .tsv files in BIDS-Format

@@ -12,7 +12,10 @@ import nibabel as nib
 
 from decim import slurm_submit as slu
 from joblib import Memory
-cachedir = expanduser('~/joblib_cache')
+if expanduser('~') == '/home/faty014':
+    cachedir = expanduser('/work/faty014/joblib_cache')
+else:
+    cachedir = expanduser('~/joblib_cache')
 slu.mkdir_p(cachedir)
 memory = Memory(cachedir=cachedir, verbose=0)
 
@@ -190,5 +193,6 @@ def execute(subject, session, run, flex_dir, atlas_warp=False, denoise=True):
     RE.brainstem()
     RE.cortical()
     return RE.brainstem_weighted, RE.cortical
+
 
 'bla'
