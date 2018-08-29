@@ -243,10 +243,8 @@ class SubjectLevel(object):
 def execute(sub, ses, environment):
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
     sl.BehavAligned = defaultdict(dict)
-    file = (join(sl.flex_dir, 'BehavAligned', sl.subject, 'BehavAligned_{0}_ses-{1}.hdf'.format(sl.subject, ses)))
-    if len(file) != 1:
-        print(len(file), ' pupil frames found...')
-    with pd.HDFStore(file[0]) as hdf:
+    file = join(sl.flex_dir, 'BehavAligned', sl.subject, 'BehavAligned_{0}_ses-{1}.hdf'.format(sl.subject, ses))
+    with pd.HDFStore(file) as hdf:
         k = hdf.keys()
     for run in k:
         sl.BehavAligned['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
@@ -291,3 +289,6 @@ def submit(sub, env='Hummel'):
     for run in k:
         sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
     '''
+
+
+par_execute([(1, 2, 'Hummel'), (1, 3, 'Hummel')],)
