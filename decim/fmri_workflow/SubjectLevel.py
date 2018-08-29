@@ -289,6 +289,3 @@ def submit(sub, env='Hummel'):
     for run in k:
         sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
     '''
-
-
-par_execute([(1, 2, 'Hummel'), (1, 3, 'Hummel')],)
