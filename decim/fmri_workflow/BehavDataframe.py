@@ -41,7 +41,7 @@ class BehavDataframe(object):
         logs = gm.load_logs_bids(self.subject, self.session, self.bids_path)
         df = logs[self.run]
         H = summary.loc[(summary.subject == self.subject) & (summary.session == self.session)].hmode.values[0]
-        df['belief'], df['psi'], df['LLR'], df['surprise'] = gm.belief(df, H=H, ident='event')
+        df['belief'], psi, df['LLR'], df['surprise'] = gm.belief(df, H=H, ident='event')
         df.belief = df.belief.fillna(method='ffill')
         df = df.loc[df.event.isin(['GL_TRIAL_LOCATION', 'GL_TRIAL_GENSIDE',
                                    'GL_TRIAL_STIM_ID', 'CHOICE_TRIAL_ONSET',
@@ -67,7 +67,7 @@ class BehavDataframe(object):
                                    'CHOICE_TRIAL_STIMOFF',
                                    'CHOICE_TRIAL_RESP'])]
         df = df.loc[:, ['onset', 'event', 'value',
-                        'belief', 'psi', 'LLR', 'gen_side',
+                        'belief', 'LLR', 'gen_side',
                         'stimulus', 'rule_resp', 'trial_id', 'reward', 'rt', 'surprise']]
         df = df.reset_index(drop=True)
         asign = np.sign(df.belief.values)
@@ -165,7 +165,7 @@ def regular(df, target='16ms'):
 
 
 @memory.cache
-def fmri_align(BehavDf, task):
+def fmri_align(BehavDf, task, fast=False):
     '''
     Output: pd.DataFrame with
                 - parameters as columns
@@ -179,22 +179,25 @@ def fmri_align(BehavDf, task):
     b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
     b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
     if task == 'inference':
-        b = b.loc[:, ['switch',
-                      'belief', 'LLR', 'surprise',
-                      'point', 'response',
-                      'stimulus', 'rule_resp']]
+        b = b.loc[:, ['switch', 'belief', 'LLR', 'surprise',
+                      'point', 'response', 'stimulus', 'rule_resp']]
         b.belief = b.belief.fillna(method='ffill')
     elif task == 'instructed':
-        b = b.loc[:, ['switch', 'response',
-                      'stimulus', 'rule_resp']]
+        b = b.loc[:, ['switch', 'response', 'stimulus', 'rule_resp']]
+    if fast is True:
+        b = b.fillna(method='ffill', limit=100)
+        b = b.loc[np.arange(b.index[0], b.index[-1], 100)]
+        dt = .1
+    elif fast is False:
+        dt = .001
     b.loc[0] = 0
     b = b.fillna(False).astype(float)
     for column in b.columns:
         print('Align ', column)
         print(b[column].mean())
         assert b[column].std() != 0
-        b['abs_' + column] = make_bold(b[column].abs().values, dt=.001)
-        b[column] = make_bold(b[column].values, dt=.001)
+        b['abs_' + column] = make_bold(b[column].abs().values, dt=dt)
+        b[column] = make_bold(b[column].values, dt=dt)
     b = regular(b, target='1900ms')
     b.loc[pd.Timedelta(0)] = 0
     b = b.sort_index()
