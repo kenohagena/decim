@@ -30,7 +30,7 @@ class VoxelSubject(object):
         self.surface_textures = defaultdict(dict)
         self.task = task
 
-    def linreg_data(self):
+    def linreg_data(self, denoise=False):
         '''
         Concatenate runwise BOLD- and behavioral timeseries per subject-session.
         Regress each voxel on each behavioral parameter.
@@ -45,8 +45,13 @@ class VoxelSubject(object):
         session_behav = []
         for run in self.runs:
             behav = self.BehavAligned[run]
-            nifti = nib.load(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
-                                  '{0}_{1}_task-{2}_bold_space-T1w_preproc.nii.gz'.format(self.subject, self.session, run)))
+            if denoise is True:
+                nifti = nib.load(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
+                                      '{0}_{1}_task-{2}_bold_space-T1w_preproc_denoise.nii.gz'.format(self.subject, self.session, run)))
+            else:
+                nifti = nib.load(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
+                                      '{0}_{1}_task-{2}_bold_space-T1w_preproc.nii.gz'.format(self.subject, self.session, run)))
+
             self.nifti_shape = nifti.get_data().shape
             self.nifti_affine = nifti.affine
             data = nifti.get_data()
@@ -87,16 +92,16 @@ class VoxelSubject(object):
         voxels = self.session_nifti
         behav = self.session_behav
         if self.task == 'instructed':
-            behav = behav.loc[:, ['stimulus', 'abs_stimulus',
-                                  'response', 'abs_response',
+            behav = behav.loc[:, ['stimulus', 'stimulus_offset',
+                                  'response_left', 'response_right',
                                   'switch', 'abs_switch']]
         elif self.task == 'inference':
-            behav = behav.loc[:, ['stimulus', 'abs_stimulus',
-                                  'response', 'abs_response',
+            behav = behav.loc[:, ['stimulus', 'stimulus_offset',
+                                  'response_left', 'response_right',
                                   'switch', 'abs_switch',
                                   'belief', 'abs_belief',
                                   'LLR', 'abs_LLR',
-                                  'surprise']]
+                                  'surprise_pro', 'surprise_contra']]
         linreg = LinearRegression()
         print('fit')
         linreg.fit(behav.values, voxels.values)
