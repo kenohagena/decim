@@ -252,7 +252,7 @@ def execute(sub, ses, environment):
     '''
     sl.BehavFrames()
     # sl.RoiExtract()
-    sl.BehavAlign(fast=True)
+    sl.BehavAlign(fast=False)
     # sl.ChoiceEpochs()
     # sl.SwitchEpochs()
     # del sl.PupilFrame
