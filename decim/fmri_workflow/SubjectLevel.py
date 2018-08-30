@@ -242,21 +242,23 @@ class SubjectLevel(object):
 
 def execute(sub, ses, environment):
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
+    '''
     sl.BehavAligned = defaultdict(dict)
     file = join(sl.flex_dir, 'BehavAligned_30-08-2018', sl.subject, 'BehavAligned_{0}_ses-{1}.hdf'.format(sl.subject, ses))
     with pd.HDFStore(file) as hdf:
         k = hdf.keys()
     for run in k:
         sl.BehavAligned['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file, key=run)
-    # sl.BehavFrames()
+    '''
+    sl.BehavFrames()
     # sl.RoiExtract()
-    # sl.BehavAlign(fast=True)
+    sl.BehavAlign(fast=True)
     # sl.ChoiceEpochs()
     # sl.SwitchEpochs()
     # del sl.PupilFrame
     # sl.CleanEpochs()
     sl.LinregVoxel()
-    sl.Output(dir='GLM_30-08-2018')
+    sl.Output(dir='GLM_31-08-2018')
 
 
 def par_execute(keys):

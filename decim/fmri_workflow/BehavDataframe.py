@@ -4,6 +4,7 @@ from decim import glaze_model as gm
 from os.path import join, expanduser
 from scipy.interpolate import interp1d
 from decim import slurm_submit as slu
+import matplotlib.pyplot as plt
 from joblib import Memory
 if expanduser('~') == '/home/faty014':
     cachedir = expanduser('/work/faty014/joblib_cache')
@@ -58,6 +59,7 @@ class BehavDataframe(object):
         df.gen_side = df.gen_side.fillna(method='ffill')
         df['stimulus'] = df.loc[df.event == 'GL_TRIAL_STIM_ID'].\
             set_index(df.loc[df.event == 'CHOICE_TRIAL_ONSET'].index).value.astype('float') * 2 - 1  # horiz -> -1 | vert -> +1
+        df['stimulus_off'] = df.event == 'CHOICE_TRIAL_STIMOFF'
         df['rule_resp'] = df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP'].\
             set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float') * 2 - 1
         df['reward'] = df.loc[df.event == 'GL_TRIAL_REWARD'].\
@@ -70,7 +72,7 @@ class BehavDataframe(object):
                                    'CHOICE_TRIAL_RESP'])]
         df = df.loc[:, ['onset', 'event', 'value',
                         'belief', 'LLR', 'gen_side',
-                        'stimulus', 'rule_resp', 'trial_id', 'reward', 'rt', 'surprise']]
+                        'stimulus', 'stimulus_off', 'rule_resp', 'trial_id', 'reward', 'rt', 'surprise']]
         df = df.reset_index(drop=True)
         asign = np.sign(df.belief.values)
         signchange = (np.roll(asign, 1) - asign)
@@ -97,6 +99,7 @@ class BehavDataframe(object):
             df['stimulus'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.astype('float') * 2 - 3
         elif df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.values.astype(float).mean() < 1:
             df['stimulus'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.astype('float') * 2 - 1
+        df['stimulus_off'] = df.event == 'CHOICE_TRIAL_STIMOFF'
         df['rule_resp'] = df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP'].\
             set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float') * 2 - 1
         df['rt'] = df.loc[df.event == 'CHOICE_TRIAL_RT'].\
@@ -110,7 +113,7 @@ class BehavDataframe(object):
                                    'CHOICE_TRIAL_RESP'])]
 
         df = df.loc[:, ['onset', 'event', 'value', 'rt', 'rewarded_rule',
-                        'stimulus', 'rule_resp', 'reward']].reset_index(drop=True)
+                        'stimulus', 'stimulus_off', 'rule_resp', 'reward']].reset_index(drop=True)
         df.rewarded_rule = df.rewarded_rule.ffill()
         df.value = df.value.astype(float)
         df['switch'] = np.append([0], np.diff(df.rewarded_rule.values))
@@ -119,7 +122,7 @@ class BehavDataframe(object):
         self.BehavDataframe = df
 
 
-@memory.cache
+#@memory.cache
 def execute(subject, session, run, type, flex_dir, summary):
     summary = summary
     bd = BehavDataframe(subject, session, run, flex_dir)
@@ -166,7 +169,7 @@ def regular(df, target='16ms'):
     return pd.concat([interp(dt, df[c], target) for c in df.columns], axis=1)
 
 
-@memory.cache
+#@memory.cache
 def fmri_align(BehavDf, task, fast=False):
     '''
     Output: pd.DataFrame with
@@ -178,16 +181,25 @@ def fmri_align(BehavDf, task, fast=False):
     b = BehavDf
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
+    b['response_left'] = b.response == -1
+    b['response_right'] = b.response == 1
+    b['stimulus_horiz'] = b.stimulus == 1
+    b['stimulus_vert'] = b.stimulus == -1
     b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
     b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
     if task == 'inference':
+        b['surprise_pro'] = np.nan
+        b.loc[b.surprise < 0, 'surprise_pro'] = b.loc[b.surprise < 0, 'surprise'].abs().astype(float)
+        b['surprise_contra'] = np.nan
+        b.loc[b.surprise > 0, 'surprise_contra'] = b.loc[b.surprise > 0, 'surprise'].abs().astype(float)
         b = b.loc[:, ['switch', 'belief', 'LLR', 'surprise',
-                      'point', 'response', 'stimulus', 'rule_resp']]
+                      'point', 'response_left', 'response_right', 'stimulus_vert', 'stimulus_horiz', 'rule_resp']]
         b.belief = b.belief.fillna(method='ffill')
     elif task == 'instructed':
-        b = b.loc[:, ['switch', 'response', 'stimulus', 'rule_resp']]
+        b = b.loc[:, ['switch', 'response_left', 'response_right', 'stimulus_vert', 'stimulus_horiz', 'rule_resp']]
+    b.loc[0] = 0
     if fast is True:
-        b = b.fillna(method='ffill', limit=100)
+        b = b.fillna(method='ffill', limit=99)
         b = b.loc[np.arange(b.index[0], b.index[-1], 100)]
         dt = .1
     elif fast is False:
@@ -196,7 +208,6 @@ def fmri_align(BehavDf, task, fast=False):
     b = b.fillna(False).astype(float)
     for column in b.columns:
         print('Align ', column)
-        print(b[column].mean())
         assert b[column].std() != 0
         b['abs_' + column] = make_bold(b[column].abs().values, dt=dt)
         b[column] = make_bold(b[column].values, dt=dt)
@@ -207,8 +218,11 @@ def fmri_align(BehavDf, task, fast=False):
 
 
 '''
-b = BehavDataframe('sub-17', 'ses-2', 'inference_run-4', '/Volumes/flxrl/FLEXRULE')
-b.inference(pd.read_csv('/Volumes/flxrl/FLEXRULE/behavior/bids_stan_fits/summary_stan_fits.csv'))
 
-print(b.BehavDataframe['switch'].std())
+b = BehavDataframe('sub-19', 'ses-3', 'inference_run-6', '/Volumes/flxrl/FLEXRULE')
+b.inference(pd.read_csv('/Volumes/flxrl/FLEXRULE/behavior/bids_stan_fits/summary_stan_fits.csv'))
+# b.instructed
+f = fmri_align(b.BehavDataframe, 'inference', fast=True)
+# print(f)
+print(b.BehavDataframe.loc[b.BehavDataframe.point == False])
 '''

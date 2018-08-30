@@ -92,16 +92,16 @@ class VoxelSubject(object):
         voxels = self.session_nifti
         behav = self.session_behav
         if self.task == 'instructed':
-            behav = behav.loc[:, ['abs_stimulus', 'stimulus_off',
+            behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
                                   'response_left', 'response_right',
                                   'switch', 'abs_switch']]
         elif self.task == 'inference':
-            behav = behav.loc[:, ['abs_stimulus', 'stimulus_off',
+            behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
                                   'response_left', 'response_right',
                                   'switch', 'abs_switch',
                                   'belief', 'abs_belief',
                                   'LLR', 'abs_LLR',
-                                  'surprise_pro', 'surprise_contra']]
+                                  'surprise']]
         linreg = LinearRegression()
         print('fit')
         linreg.fit(behav.values, voxels.values)
