@@ -114,7 +114,9 @@ class BehavDataframe(object):
 
         df = df.loc[:, ['onset', 'event', 'value', 'rt', 'rewarded_rule',
                         'stimulus', 'stimulus_off', 'rule_resp', 'reward']].reset_index(drop=True)
+
         df.rewarded_rule = df.rewarded_rule.ffill()
+        df.rewarded_rule = df.rewarded_rule.ffill() * 2 - 1
         df.value = df.value.astype(float)
         df['switch'] = np.append([0], np.diff(df.rewarded_rule.values))
         df['response'] = df.event == 'CHOICE_TRIAL_RESP'
@@ -196,7 +198,7 @@ def fmri_align(BehavDf, task, fast=False):
                       'point', 'response_left', 'response_right', 'stimulus_vert', 'stimulus_horiz', 'rule_resp']]
         b.belief = b.belief.fillna(method='ffill')
     elif task == 'instructed':
-        b = b.loc[:, ['switch', 'response_left', 'response_right', 'stimulus_vert', 'stimulus_horiz', 'rule_resp']]
+        b = b.loc[:, ['switch', 'response_left', 'response_right', 'stimulus_vert', 'stimulus_horiz', 'rule_resp', 'rewarded_rule']]
     b.loc[0] = 0
     if fast is True:
         b = b.fillna(method='ffill', limit=99)
@@ -218,11 +220,9 @@ def fmri_align(BehavDf, task, fast=False):
 
 
 '''
-
-b = BehavDataframe('sub-19', 'ses-3', 'inference_run-6', '/Volumes/flxrl/FLEXRULE')
-b.inference(pd.read_csv('/Volumes/flxrl/FLEXRULE/behavior/bids_stan_fits/summary_stan_fits.csv'))
-# b.instructed
-f = fmri_align(b.BehavDataframe, 'inference', fast=True)
+b = BehavDataframe('sub-19', 'ses-3', 'instructed_run-7', '/Volumes/flxrl/FLEXRULE')
+# b.inference(pd.read_csv('/Volumes/flxrl/FLEXRULE/behavior/bids_stan_fits/summary_stan_fits.csv'))
+b.instructed()
+f = fmri_align(b.BehavDataframe, 'instructed', fast=True)
 # print(f)
-print(b.BehavDataframe.loc[b.BehavDataframe.point == False])
 '''

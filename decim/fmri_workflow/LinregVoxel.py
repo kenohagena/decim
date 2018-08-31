@@ -94,7 +94,7 @@ class VoxelSubject(object):
         if self.task == 'instructed':
             behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
                                   'response_left', 'response_right',
-                                  'switch', 'abs_switch']]
+                                  'rewarded_rule', 'abs_switch']]
         elif self.task == 'inference':
             behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
                                   'response_left', 'response_right',
@@ -112,7 +112,7 @@ class VoxelSubject(object):
                                          [mean_squared_error(voxels, predict, multioutput='raw_values')]), axis=0)
             new_shape = np.stack([reg_result[i, :].reshape(self.nifti_shape[0:3]) for i in range(reg_result.shape[0])], -1)
             new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine)
-            self.voxel_regressions[parameter + '_multi'] = new_image
+            self.voxel_regressions[parameter + '_glm'] = new_image
 
     def vol_2surf(self, radius=.3):
         for param, img in self.voxel_regressions.items():

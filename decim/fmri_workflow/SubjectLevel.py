@@ -279,7 +279,7 @@ def submit(sub, env='Hummel'):
     elif env == 'Climag':
         for ses in [2, 3]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
-                     memory=10, nodes=1, tasks=2, name='SubjectLevel')
+                     memory=10, nodes=1, tasks=2, name='murphy_queue')
 
     '''
     sl.PupilFrame = defaultdict(dict)
