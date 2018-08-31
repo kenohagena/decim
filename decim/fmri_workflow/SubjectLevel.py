@@ -244,7 +244,7 @@ def execute(sub, ses, environment):
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
 
     sl.BehavAligned = defaultdict(dict)
-    file = join(sl.flex_dir, 'BehavAligned_30-08-2018', sl.subject, 'BehavAligned_{0}_ses-{1}.hdf'.format(sl.subject, ses))
+    file = join(sl.flex_dir, 'BehavAligned_31-08-2018', sl.subject, 'BehavAligned_{0}_ses-{1}.hdf'.format(sl.subject, ses))
     with pd.HDFStore(file) as hdf:
         k = hdf.keys()
     for run in k:
