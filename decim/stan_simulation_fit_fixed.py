@@ -5,9 +5,9 @@ import pandas as pd
 import pystan
 
 from decim import statmisc
-from decim import glaze_stan as gs
+from decim import glaze_to_stan as gs
 from decim import pointsimulation as pt
-from itertools import zip_longest
+from itertools import zip_longest, product
 from multiprocessing import Pool
 
 
@@ -25,17 +25,12 @@ models = {'vfix': 'stan_models/inv_glaze_b_fixV.stan',
 def fix_keys():
     Hs = [.01, .05, .1, .15, .2, .25, .3, .35, .4, .45]
     Hs += [1 - x for x in Hs]
-    for isi in np.arange(2, 26):
-        trials = np.round(60 * 70 / (0.4 + 2. / isi)).astype(int)
-        for V in [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]:
-            for H in Hs:
-                for i in range(10):
-                    yield(H, V, 1, i, 'V', models['gvfix'], 'gvfix', ['H', 'V'], isi, trials)
-
-        for gen_var in [1, 1.5, 2, 2.5, 3, 3.5]:
-            for H in Hs:
-                for i in range(10):
-                    yield(H, 1, gen_var, i, 'gen_var', models['vfix'], 'vfix', ['H', 'gen_var'], isi, trials)
+    Vs = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
+    gvs = [1, 1.5, 2, 2.5, 3, 3.5]
+    for V, H, i in product(Vs, Hs, range(10)):
+        yield(H, V, 1, i, 'V', models['gvfix'], 'gvfix', ['H', 'V'], 35., 5000)
+    for gv, H, i in product(gvs, Hs, range(10)):
+        yield(H, 1, gv, i, 'V', models['gvfix'], 'gvfix', ['H', 'V'], 35., 5000)
 
 
 def par_execute(ii, chunk):
