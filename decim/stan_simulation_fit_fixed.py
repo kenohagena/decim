@@ -39,7 +39,7 @@ def par_execute(ii, chunk):
     with Pool(16) as p:
         values = p.starmap(execute, chunk)
         df = pd.DataFrame(values)
-        df.to_csv('chunk%i.csv' % ii)
+        df.to_hdf('/work/faty014/simulation_fit_05-10-2018', key=ii)
 
 
 def execute(H, V, gv, i, var, model, fixed_variable, parameters, isi, trials):
