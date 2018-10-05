@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 import pandas as pd
 import pystan
+from os.path import join
 
 from decim import statmisc
 from decim import glaze_to_stan as gs
