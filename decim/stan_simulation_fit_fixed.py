@@ -44,7 +44,7 @@ def par_execute(ii, chunk):
 
 def execute(H, V, gv, i, var, model, fixed_variable, parameters, isi, trials):
     model_file = decim.get_data(model)
-    compilefile = model.replace('/', '') + 'stan_compiled.pkl'
+    compilefile = join('/work/faty014', model.replace('/', '') + 'stan_compiled.pkl')
     try:
         sm = pickle.load(open(compilefile, 'rb'))
     except IOError:
