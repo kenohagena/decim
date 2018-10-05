@@ -53,9 +53,8 @@ def add_belief(df, H, gen_var=1):
 
     Takes simulated dataframe and hazardrate
     """
-    glazes = glaze.belief(df, H, gen_var=gen_var, point_message=None)
-    glazesdf = pd.DataFrame(glazes, columns=['belief'])
-    df = pd.concat([df, glazesdf], axis=1)
+    glazes = glaze.belief(df, H, gen_var=gen_var)
+    df['belief'] = glazes[0]
     return df
 
 
