@@ -28,9 +28,9 @@ def fix_keys():
     Hs += [1 - x for x in Hs]
     Vs = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
     gvs = [1, 1.5, 2, 2.5, 3, 3.5]
-    for V, H, i in product(Vs, Hs, range(10)):
+    for V, H, i in product(Vs, Hs, range(100)):
         yield(H, V, 1, i, 'V', models['gvfix'], 'gvfix', ['H', 'V'], 35., 5000)
-    for gv, H, i in product(gvs, Hs, range(10)):
+    for gv, H, i in product(gvs, Hs, range(100)):
         yield(H, 1, gv, i, 'V', models['gvfix'], 'gvfix', ['H', 'V'], 35., 5000)
 
 
@@ -41,7 +41,7 @@ def par_execute(ii, chunk):
         values = p.starmap(execute, chunk)
         print(values)
         df = pd.DataFrame(values)
-        df.to_hdf('/work/faty014/simulation_fit_05-10-2018', key=ii)
+        df.to_hdf('/work/faty014/simulation_fit_05-10-2018-2', key=ii)
 
 
 def execute(H, V, gv, i, var, model, fixed_variable, parameters, isi, trials):
