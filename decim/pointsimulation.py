@@ -90,6 +90,7 @@ def dec_choice_inv(df, V=1):
     Based on belief and internal noise V.
     '''
     df['noisy_belief'] = expit(df.belief / V)
+    df = df.fillna(method='ffill')
     df['choice'] = np.random.rand(len(df))
     df['choice'] = df.noisy_belief > df.choice
     df.choice = df.choice.astype(int)
