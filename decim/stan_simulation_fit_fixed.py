@@ -28,10 +28,10 @@ def fix_keys():
     Hs += [1 - x for x in Hs]
     Vs = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
     gvs = [1, 1.5, 2, 2.5, 3, 3.5]
-    for V, H, i in product(Vs, Hs, range(100)):
+    for V, H, i in product(Vs, Hs, range(200)):
         yield(H, V, 1, i, 'V', models['gvfix'], 'gvfix', ['H', 'V'], 35., 5000)
-    for gv, H, i in product(gvs, Hs, range(100)):
-        yield(H, 1, gv, i, 'V', models['gvfix'], 'gvfix', ['H', 'V'], 35., 5000)
+    for gv, H, i in product(gvs, Hs, range(200)):
+        yield(H, 1, gv, i, 'V', models['vfix'], 'vfix', ['H', 'V'], 35., 5000)
 
 
 def par_execute(ii, chunk):
