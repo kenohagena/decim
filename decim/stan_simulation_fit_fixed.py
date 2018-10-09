@@ -41,7 +41,7 @@ def par_execute(ii, chunk):
         values = p.starmap(execute, chunk)
         print(values)
         df = pd.DataFrame(values)
-        df.to_hdf('/work/faty014/simulation_fit_05-10-2018-2', key=str(ii))
+        df.to_hdf('/work/faty014/simulation_fit_05-10-2018-3', key=str(ii))
 
 
 def execute(H, V, gv, i, var, model, fixed_variable, parameters, isi, trials):
