@@ -30,7 +30,7 @@ class VoxelSubject(object):
         self.surface_textures = defaultdict(dict)
         self.task = task
 
-    def linreg_data(self, denoise=True):
+    def linreg_data(self, denoise=False):
         '''
         Concatenate runwise BOLD- and behavioral timeseries per subject-session.
         Regress each voxel on each behavioral parameter.
@@ -94,7 +94,7 @@ class VoxelSubject(object):
         if self.task == 'instructed':
             behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
                                   'response_left', 'response_right',
-                                  'rewarded_rule', 'abs_switch']]
+                                  'switch', 'abs_switch']]
         elif self.task == 'inference':
             behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
                                   'response_left', 'response_right',

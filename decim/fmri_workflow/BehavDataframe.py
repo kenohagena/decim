@@ -210,7 +210,7 @@ def fmri_align(BehavDf, task, fast=False):
     b = b.fillna(False).astype(float)
     for column in b.columns:
         print('Align ', column)
-        assert b[column].std() != 0
+        #assert b[column].std() != 0
         b['abs_' + column] = make_bold(b[column].abs().values, dt=dt)
         b[column] = make_bold(b[column].values, dt=dt)
     b = regular(b, target='1900ms')
