@@ -251,10 +251,10 @@ def execute(sub, ses, environment):
         sl.BehavAligned['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file, key=run)
     '''
 
-
     sl.BehavFrames()
     sl.RoiExtract()
     sl.BehavAlign(fast=True)
+    '''
     sl.PupilFrame = defaultdict(dict)
     file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
     if len(file) != 1:
@@ -266,9 +266,11 @@ def execute(sub, ses, environment):
     sl.ChoiceEpochs()
     #sl.SwitchEpochs()
     del sl.PupilFrame
+
     sl.CleanEpochs()
+    '''
     sl.LinregVoxel()
-    sl.Output(dir='Sublevel_GLM_Climag_18-10-2018')
+    sl.Output(dir='Sublevel_GLM_Climag_19-10-2018')
 
 
 def par_execute(keys):
@@ -291,6 +293,7 @@ def submit(sub, env='Hummel'):
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
                      memory=40, nodes=1, tasks=2, name='murphy_queue')
 
+
 '''
 sl.PupilFrame = defaultdict(dict)
 file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
@@ -301,5 +304,3 @@ with pd.HDFStore(file[0]) as hdf:
 for run in k:
     sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
 '''
-
-
