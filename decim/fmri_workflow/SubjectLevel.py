@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import datetime
 from decim.fmri_workflow import BehavDataframe as bd
 from decim.fmri_workflow import RoiExtract as re
 from decim.fmri_workflow import ChoiceEpochs as ce
@@ -242,7 +243,7 @@ class SubjectLevel(object):
             elif name == 'DesignMatrix':
                 for session in attribute.keys():
                     for task in attribute[session].keys():
-                        attribute[session][task].to_hdf(join(output_dir, '{0}_{1}_{2}_{3}.hdf'.format(name, task, self.subject, session)))
+                        attribute[session][task].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session)), key=task)
 
 
 def execute(sub, ses, environment):
@@ -275,7 +276,7 @@ def execute(sub, ses, environment):
     sl.CleanEpochs()
     '''
     sl.LinregVoxel()
-    sl.Output(dir='Sublevel_GLM_Climag_19-10-2018')
+    sl.Output(dir='Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
 
 
 def par_execute(keys):
