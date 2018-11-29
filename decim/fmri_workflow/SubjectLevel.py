@@ -189,11 +189,12 @@ class SubjectLevel(object):
         print('Linreg voxel')
         self.VoxelReg = defaultdict(dict)
         self.SurfaceTxt = defaultdict(dict)
+        self.DesignMatrix = defaultdict(dict)
         for session, runs in self.session_runs.items():
             for task in set(runs.values()):
                 print(task, session)
                 rs = [r for r in runs.keys() if runs[r] == task]
-                self.VoxelReg[session][task], self.SurfaceTxt[session][task] =\
+                self.VoxelReg[session][task], self.SurfaceTxt[session][task], self.DesignMatrix[session][task] =\
                     lv.execute(self.subject, session, rs,
                                self.flex_dir,
                                self.BehavAligned[session], task)
@@ -238,6 +239,10 @@ class SubjectLevel(object):
                                                      format(name, self.subject,
                                                             session, parameter, hemisphere)),
                                                 key=task)
+            elif name == 'DesignMatrix':
+                for session in attribute.keys():
+                    for task in attribute[session].keys():
+                        attribute[session][task].to_hdf(join(output_dir, '{0}_{1}_{2}_{3}.hdf'.format(name, task, self.subject, session)))
 
 
 def execute(sub, ses, environment):

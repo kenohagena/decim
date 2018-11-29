@@ -64,9 +64,7 @@ class VoxelSubject(object):
             session_nifti.append(pd.DataFrame(d2))
         session_nifti = pd.concat(session_nifti, ignore_index=True)
         session_behav = pd.concat(session_behav, ignore_index=True)
-        session_nifti = (session_nifti - session_nifti.mean()) / session_nifti.std()
-        session_nifti = session_nifti.fillna(0)  # because if voxels have std == 0 --> NaNs introduced
-        # session_behav = (session_behav - session_behav.mean()) / session_behav.std()
+
         assert session_behav.shape[0] == session_nifti.shape[0]
         self.session_nifti = session_nifti
         self.session_behav = session_behav
@@ -91,6 +89,11 @@ class VoxelSubject(object):
     def glm(self):
         voxels = self.session_nifti
         behav = self.session_behav
+        # z-scoring
+        voxels = (voxels - voxels.mean()) / voxels.std()
+        voxels = voxels.fillna(0)  # because if voxels have std == 0 --> NaNs introduced
+        behav = (behav - behav.mean()) / behav.std()
+
         if self.task == 'instructed':
             behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
                                   'response_left', 'response_right',
@@ -102,6 +105,9 @@ class VoxelSubject(object):
                                   'belief', 'abs_belief',
                                   'LLR', 'abs_LLR',
                                   'surprise']]
+        # return for diagnostics
+        self.design_matrix = behav
+
         linreg = LinearRegression()
         print('fit')
         linreg.fit(behav.values, voxels.values)
@@ -131,4 +137,4 @@ def execute(subject, session, runs, flex_dir, BehavAligned, task):
     # v.single_linreg()
     v.glm()
     v.vol_2surf()
-    return v.voxel_regressions, v.surface_textures
+    return v.voxel_regressions, v.surface_textures, v.design_matrix
