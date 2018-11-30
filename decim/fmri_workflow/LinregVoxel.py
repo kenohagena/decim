@@ -92,7 +92,7 @@ class VoxelSubject(object):
         # z-scoring
         voxels = (voxels - voxels.mean()) / voxels.std()
         voxels = voxels.fillna(0)  # because if voxels have std == 0 --> NaNs introduced
-        behav = (behav - behav.mean()) / behav.std()
+        #behav = (behav - behav.mean()) / behav.std()
 
         if self.task == 'instructed':
             behav = behav.loc[:, ['stimulus_vert', 'stimulus_horiz',
