@@ -22,45 +22,41 @@ class Choiceframe(object):
 
     def choice_behavior(self):
         df = self.BehavFrame
-        switches = pd.DataFrame({'switch_left': df.loc[df.switch == True].
-                                 switch_left.values,
-                                 'switch_right': df.loc[df.switch == True].
-                                 switch_right.values,
-                                 'switch_surprise': df.loc[df.switch == True].
-                                 surprise.values,
-                                 'onset': df.loc[df.switch == True].
-                                 onset.values.astype(float)})
+        switches = pd.DataFrame({'onset': df.loc[df.switch != 0].onset.values,
+                                 'direction': df.loc[df.switch != 0].switch.values,
+                                 'switch_index': df.loc[df.switch != 0].index.values})
         self.switch_behavior = switches
 
-    def points(self, n=20):
+    def points(self):
         '''
-        Add last n points before choice onset.
+        Add belief values of 11 surrounding samples to later find true switches
         '''
         df = self.BehavFrame
-        points = df.loc[(df.event == 'GL_TRIAL_LOCATION')]
+        points = df.loc[(df.event == 'GL_TRIAL_LOCATION')].reset_index()
         p = []
         for i, row in self.switch_behavior.iterrows():
-            trial_points = points.loc[points.onset.astype('float') < row.onset]
-            if len(trial_points) < 20:
-                trial_points = np.full(20, np.nan)
+            switch_point = points.loc[points['index'] == row.switch_index].index[0]
+            if switch_point < 5:
+                trial_points = points.iloc[0:switch_point + 6]
+                p.append(np.append(np.zeros(11 - len(trial_points)), trial_points.belief.values))
             else:
-                trial_points = trial_points.value.values[len(trial_points) - 20:len(trial_points)]
-            p.append(trial_points)
-        points = pd.DataFrame(p)
-        self.point_kernels = points
+                trial_points = points.iloc[switch_point - 5:switch_point + 6]
+                p.append(trial_points.belief.values)
+        self.point_kernels = pd.DataFrame(p)
 
     def choice_pupil(self, artifact_threshhold=.2, tw=4500):
         '''
         Takes existing pupilframe and makes choicepupil frame.
         If there is no existing pupilframe, a new one is created.
         '''
+        df = self.BehavFrame
         behav_onsets = self.BehavFrame.loc[self.BehavFrame.event ==
                                            'CHOICE_TRIAL_ONSET'].onset.values
         pupil_onsets = self.PupilFrame.loc[self.PupilFrame.message ==
                                            'CHOICE_TRIAL_ONSET'].time.values
         difference = pupil_onsets / 1000 - behav_onsets
         assert difference.std() < 0.05
-        switch_onsets = df.loc[df.switch == True].onset.values
+        switch_onsets = df.loc[df.switch != 0].onset.values
         switch_onsets_pupil = (switch_onsets + difference.mean()) * 1000
         switch_indices = self.PupilFrame.loc[self.PupilFrame.time.
                                              isin(switch_onsets_pupil.astype(int))].index
@@ -76,15 +72,15 @@ class Choiceframe(object):
             if len(df.iloc[switch: switch + 3500, :].loc[df.message == 'RT', 'message_value']) == 0:
                 continue
             else:
-                pupil_switch_lock.append(df.loc[np.arange(switch - 1000, switch + tw - 1000).\
-                astype(int), 'biz'].values)
+                pupil_switch_lock.append(df.loc[np.arange(switch - 1000, switch + tw - 1000).
+                                                astype(int), 'biz'].values)
                 blink_mean.append(df.loc[np.arange(switch - 500, switch + 1500), 'blink'].mean())
         pupil_switch_lock = pd.DataFrame(pupil_switch_lock)
         baseline = np.matrix((pupil_switch_lock.loc[:, 0:1000].mean(axis=1))).T
         pupil_switch_lock = pd.DataFrame(np.matrix(pupil_switch_lock) - baseline)
         self.pupil_switch_lock = pupil_switch_lock
         self.pupil_parameters = pd.DataFrame({'blink': blink_mean})
-        self.pupil_parameters['TPR'] = self.pupil_choice_lock.loc[:, 500:2500].mean(axis=1)
+        self.pupil_parameters['TPR'] = self.pupil_switch_lock.loc[:, 500:2500].mean(axis=1)
 
     def fmri_epochs(self, basel=2000, te=6):
         roi = self.BrainstemRois
@@ -134,7 +130,7 @@ class Choiceframe(object):
                             self.pupil_parameters,
                             self.switch_behavior,
                             self.point_kernels], axis=1)
-        master = master.set_index([master.pupil.parameters.onset])
+        master = master.set_index([master.behavior.parameters.onset])
         singles = []
         for key, frame in self.roi_epochs.items():
             frame.columns = pd.MultiIndex.from_product([['fmri'], [key],
@@ -148,7 +144,7 @@ class Choiceframe(object):
 
 def execute(subject, session, run, task, flex_dir,
             BehavFrame, PupilFrame, BrainstemRois):
-    c = Choiceframe(subject, session, run, task, flex_dir,
+    c = Choiceframe(subject, session, run, flex_dir,
                     BehavFrame, PupilFrame, BrainstemRois)
     c.choice_behavior()
     if task == 'inference':
@@ -159,3 +155,11 @@ def execute(subject, session, run, task, flex_dir,
     c.fmri_epochs()
     c.merge()
     return c.master
+
+
+'''
+behav = pd.read_hdf('/Volumes/flxrl/FLEXRULE/SubjectLevel/sub-17/BehavFrame_sub-17_ses-2.hdf', key='inference_run-4')
+pupil = pd.read_hdf('/Volumes/flxrl/FLEXRULE/SubjectLevel/sub-17/PupilFrame_sub-17_ses-2.hdf', key='inference_run-4')
+brain = pd.read_hdf('/Volumes/flxrl/FLEXRULE/SubjectLevel/sub-17/BrainstemRois_sub-17_ses-2.hdf', key='inference_run-4')
+master = execute('sub-17', 'ses-2', 'inference_run-4', 'inference', '/Volumes/flxrl/FLEXRULE/', behav, pupil, brain)
+'''

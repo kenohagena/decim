@@ -169,7 +169,7 @@ class SubjectLevel(object):
                                self.PupilFrame[session][run],
                                self.BrainstemRois[session][run])
 
-    def CleanEpochs(self):
+    def CleanEpochs(self, epoch='Choice'):
         '''
         Concatenate runs within a Session per task.
         '''
@@ -178,13 +178,18 @@ class SubjectLevel(object):
         for session, runs in self.session_runs.items():
             per_session = []
             for run, task in runs.items():
-                run_epochs = self.ChoiceEpochs[session][run]
+                if epoch == 'Choice':
+                    run_epochs = self.ChoiceEpochs[session][run]
+                if epoch == 'Switch':
+                    run_epochs = self.SwitchEpochs[session][run]
                 run_epochs['run'] = run
                 run_epochs['task'] = task
                 per_session.append(run_epochs)
             per_session = pd.concat(per_session, ignore_index=True)
-            clean = ce.defit_clean(per_session)
-            self.CleanEpochs[session] = clean
+            if epoch == 'Choice':
+                self.CleanEpochs[session] = ce.defit_clean(per_session)
+            else:
+                self.CleanEpochs[session] = per_session
 
     def LinregVoxel(self):
         print('Linreg voxel')
@@ -259,8 +264,8 @@ def execute(sub, ses, environment):
 
     sl.BehavFrames()
     sl.RoiExtract()
-    sl.BehavAlign(fast=True)
-    '''
+    #sl.BehavAlign(fast=True)
+
     sl.PupilFrame = defaultdict(dict)
     file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
     if len(file) != 1:
@@ -269,14 +274,14 @@ def execute(sub, ses, environment):
         k = hdf.keys()
     for run in k:
         sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
-    sl.ChoiceEpochs()
-    #sl.SwitchEpochs()
+    #sl.ChoiceEpochs()
+    sl.SwitchEpochs()
     del sl.PupilFrame
 
     sl.CleanEpochs()
-    '''
-    sl.LinregVoxel()
-    sl.Output(dir='Sublevel_GLM_{1}_{0}-a'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+
+    #sl.LinregVoxel()
+    sl.Output(dir='Sublevel_Switchepochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
 
 
 def par_execute(keys):
