@@ -183,10 +183,14 @@ def fmri_align(BehavDf, task, fast=False):
     b = BehavDf
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
-    b['response_left'] = b.response == -1
-    b['response_right'] = b.response == 1
-    b['stimulus_horiz'] = b.stimulus == 1
-    b['stimulus_vert'] = b.stimulus == -1
+    b['response_lr_left'] = b.response == -1 & (b.rule_resp == -1)
+    b['response_lr_right'] = b.response == 1 & (b.rule_resp == -1)
+    b['response_rr_left'] = b.response == -1 & (b.rule_resp == 1)
+    b['response_rr_right'] = b.response == 1 & (b.rule_resp == 1)
+    b['stimulus_lr_horiz'] = b.stimulus == 1 & (b.rule_resp == -1)
+    b['stimulus_lr_vert'] = (b.stimulus == -1) & (b.rule_resp == -1)
+    b['stimulus_rr_horiz'] = b.stimulus == 1 & (b.rule_resp == 1)
+    b['stimulus_rr_vert'] = (b.stimulus == -1) & (b.rule_resp == 1)
     b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
     b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
     if task == 'inference':
@@ -195,10 +199,16 @@ def fmri_align(BehavDf, task, fast=False):
         b['surprise_contra'] = np.nan
         b.loc[b.surprise > 0, 'surprise_contra'] = b.loc[b.surprise > 0, 'surprise'].abs().astype(float)
         b = b.loc[:, ['switch', 'belief', 'LLR', 'surprise',
-                      'point', 'response_left', 'response_right', 'stimulus_vert', 'stimulus_horiz', 'rule_resp']]
+                      'point',
+                      'response_lr_left', 'response_lr_right', 'response_rr_left', 'response_rr_right',
+                      'stimulus_lr_horiz', 'stimulus_lr_vert', 'stimulus_rr_horiz', 'stimulus_rr_vert',
+                      'rule_resp']]
         b.belief = b.belief.fillna(method='ffill')
     elif task == 'instructed':
-        b = b.loc[:, ['switch', 'response_left', 'response_right', 'stimulus_vert', 'stimulus_horiz', 'rule_resp', 'rewarded_rule']]
+        b = b.loc[:, ['switch',
+                      'response_lr_left', 'response_lr_right', 'response_rr_left', 'response_rr_right',
+                      'stimulus_lr_horiz', 'stimulus_lr_vert', 'stimulus_rr_horiz', 'stimulus_rr_vert',
+                      'rule_resp', 'rewarded_rule']]
     b.loc[0] = 0
     if fast is True:
         b = b.fillna(method='ffill', limit=99)
