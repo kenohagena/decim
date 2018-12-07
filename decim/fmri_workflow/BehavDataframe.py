@@ -183,6 +183,7 @@ def fmri_align(BehavDf, task, fast=False):
     b = BehavDf
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
+    b.rule_resp = b.rule_resp.fillna(method='bfill')  # to ensure that stimulus has rresp, makes rule response column unclean...
     b['response_lr_left'] = (b.response == -1) & (b.rule_resp == -1)
     b['response_lr_right'] = (b.response == 1) & (b.rule_resp == -1)
     b['response_rr_left'] = (b.response == -1) & (b.rule_resp == 1)
@@ -220,7 +221,7 @@ def fmri_align(BehavDf, task, fast=False):
     b = b.fillna(False).astype(float)
     for column in b.columns:
         print('Align ', column)
-        #assert b[column].std() != 0
+        # assert b[column].std() != 0
         b['abs_' + column] = make_bold(b[column].abs().values, dt=dt)
         b[column] = make_bold(b[column].values, dt=dt)
     b = regular(b, target='1900ms')
@@ -230,9 +231,9 @@ def fmri_align(BehavDf, task, fast=False):
 
 
 '''
-b = BehavDataframe('sub-19', 'ses-3', 'instructed_run-7', '/Volumes/flxrl/FLEXRULE')
-# b.inference(pd.read_csv('/Volumes/flxrl/FLEXRULE/behavior/bids_stan_fits/summary_stan_fits.csv'))
-b.instructed()
-f = fmri_align(b.BehavDataframe, 'instructed', fast=True)
-# print(f)
+b = BehavDataframe('sub-19', 'ses-3', 'inference_run-4', '/Volumes/flxrl/FLEXRULE')
+b.inference(pd.read_csv('/Volumes/flxrl/FLEXRULE/behavior/bids_stan_fits/summary_stan_fits.csv'))
+# b.instructed()
+f = fmri_align(b.BehavDataframe, 'inference', fast=True)
+print(f.stimulus_rr_horiz.mean())
 '''
