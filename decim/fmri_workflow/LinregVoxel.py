@@ -95,16 +95,18 @@ class VoxelSubject(object):
         behav = (behav - behav.mean()) / behav.std()
 
         if self.task == 'instructed':
-            behav = behav.loc[:, ['response_lr_left', 'response_lr_right', 'response_rr_left', 'response_rr_right',
-                                  'stimulus_lr_horiz', 'stimulus_lr_vert', 'stimulus_rr_horiz', 'stimulus_rr_vert',
-                                  'switch', 'abs_switch']]
+            behav = behav.loc[:, ['response_left', 'response_right',
+                                  'stimulus_horiz', 'stimulus_vert',
+                                  'switch', 'abs_switch',
+                                  'rule_left', 'rule_right']]
         elif self.task == 'inference':
-            behav = behav.loc[:, ['response_lr_left', 'response_lr_right', 'response_rr_left', 'response_rr_right',
-                                  'stimulus_lr_horiz', 'stimulus_lr_vert', 'stimulus_rr_horiz', 'stimulus_rr_vert',
+            behav = behav.loc[:, ['response_left', 'response_right',
+                                  'stimulus_horiz', 'stimulus_vert',
                                   'switch', 'abs_switch',
                                   'belief', 'abs_belief',
                                   'LLR', 'abs_LLR',
-                                  'surprise']]
+                                  'surprise',
+                                  'rule_left', 'rule_right']]
         # return for diagnostics
         self.design_matrix = behav
 

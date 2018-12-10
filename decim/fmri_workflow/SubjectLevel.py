@@ -264,9 +264,9 @@ def execute(sub, ses, environment):
     '''
 
     sl.BehavFrames()
-    sl.RoiExtract()
-    # sl.BehavAlign(fast=True)
-
+    # sl.RoiExtract()
+    sl.BehavAlign(fast=True)
+    '''
     sl.PupilFrame = defaultdict(dict)
     file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', 'PupilFrame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
     if len(file) != 1:
@@ -280,9 +280,9 @@ def execute(sub, ses, environment):
     del sl.PupilFrame
 
     sl.CleanEpochs(epoch='Switch')
-
-    # sl.LinregVoxel()
-    sl.Output(dir='Sublevel_Switchepochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+    '''
+    sl.LinregVoxel()
+    sl.Output(dir='Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
 
 
 def par_execute(keys):

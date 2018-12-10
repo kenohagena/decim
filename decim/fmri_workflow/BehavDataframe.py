@@ -184,6 +184,7 @@ def fmri_align(BehavDf, task, fast=False):
     b.onset = b.onset.astype(float)
     b = b.sort_values(by='onset')
     b.rule_resp = b.rule_resp.fillna(method='bfill')  # to ensure that stimulus has rresp, makes rule response column unclean...
+    '''
     b['response_lr_left'] = (b.response == -1) & (b.rule_resp == -1)
     b['response_lr_right'] = (b.response == 1) & (b.rule_resp == -1)
     b['response_rr_left'] = (b.response == -1) & (b.rule_resp == 1)
@@ -192,6 +193,7 @@ def fmri_align(BehavDf, task, fast=False):
     b['stimulus_lr_vert'] = (b.stimulus == -1) & (b.rule_resp == -1)
     b['stimulus_rr_horiz'] = (b.stimulus == 1) & (b.rule_resp == 1)
     b['stimulus_rr_vert'] = (b.stimulus == -1) & (b.rule_resp == 1)
+    '''
     b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
     b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
     if task == 'inference':
@@ -201,15 +203,15 @@ def fmri_align(BehavDf, task, fast=False):
         b.loc[b.surprise > 0, 'surprise_contra'] = b.loc[b.surprise > 0, 'surprise'].abs().astype(float)
         b = b.loc[:, ['switch', 'belief', 'LLR', 'surprise',
                       'point',
-                      'response_lr_left', 'response_lr_right', 'response_rr_left', 'response_rr_right',
-                      'stimulus_lr_horiz', 'stimulus_lr_vert', 'stimulus_rr_horiz', 'stimulus_rr_vert',
-                      'rule_resp']]
+                      'response_left', 'response_right',
+                      'stimulus_horiz', 'stimulus_vert',
+                      'rule_resp', 'response', 'stimulus']]
         b.belief = b.belief.fillna(method='ffill')
     elif task == 'instructed':
         b = b.loc[:, ['switch',
-                      'response_lr_left', 'response_lr_right', 'response_rr_left', 'response_rr_right',
-                      'stimulus_lr_horiz', 'stimulus_lr_vert', 'stimulus_rr_horiz', 'stimulus_rr_vert',
-                      'rule_resp', 'rewarded_rule']]
+                      'response_left', 'response_right',
+                      'stimulus_horiz', 'stimulus_vert',
+                      'rule_resp', 'rewarded_rule', 'stimulus', 'response']]
     b.loc[0] = 0
     if fast is True:
         b = b.fillna(method='ffill', limit=99)
@@ -219,6 +221,17 @@ def fmri_align(BehavDf, task, fast=False):
         dt = .001
     b.loc[0] = 0
     b = b.fillna(False).astype(float)
+
+    # boxcar regressor for rule_response between stimulus and button press
+    b['rule_left'] = np.nan
+    b['rule_right'] = np.nan
+    b.loc[(b.stimulus != 0) & (b.rule_resp == -1), 'rule_left'] = 1
+    b.loc[(b.stimulus != 0) & (b.rule_resp == 1), 'rule_right'] = 1
+    b.loc[(b.response != 0), 'rule_right'] = 0
+    b.loc[(b.response != 0), 'rule_left'] = 0
+    b.rule_right = b.rule_right.fillna(method='ffill')
+    b.rule_left = b.rule_left.fillna(method='ffill')
+
     for column in b.columns:
         print('Align ', column)
         # assert b[column].std() != 0
