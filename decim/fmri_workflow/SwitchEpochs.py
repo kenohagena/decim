@@ -63,6 +63,7 @@ class Choiceframe(object):
         assert len(switch_indices) == len(switch_onsets)
         df = self.PupilFrame.loc[:, ['message', 'biz', 'message_value',
                                      'blink', 'run', 'trial_id']]
+        print(df)
         pupil_switch_lock = []
         blink_mean = []
         for switch in switch_indices:
