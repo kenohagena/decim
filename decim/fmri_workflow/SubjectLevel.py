@@ -279,7 +279,7 @@ def execute(sub, ses, environment):
     sl.SwitchEpochs()
     del sl.PupilFrame
 
-    sl.CleanEpochs()
+    sl.CleanEpochs(epoch='Switch')
 
     # sl.LinregVoxel()
     sl.Output(dir='Sublevel_Switchepochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
