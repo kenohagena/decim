@@ -76,6 +76,7 @@ class Choiceframe(object):
                                                 astype(int), 'biz'].values)
                 blink_mean.append(df.loc[np.arange(switch - 500, switch + 1500), 'blink'].mean())
         pupil_switch_lock = pd.DataFrame(pupil_switch_lock)
+        print(pupil_switch_lock)
         baseline = np.matrix((pupil_switch_lock.loc[:, 0:1000].mean(axis=1))).T
         pupil_switch_lock = pd.DataFrame(np.matrix(pupil_switch_lock) - baseline)
         self.pupil_switch_lock = pupil_switch_lock
