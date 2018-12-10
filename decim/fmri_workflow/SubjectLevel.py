@@ -226,8 +226,8 @@ class SubjectLevel(object):
             elif name == 'CleanEpochs':
                 for session in attribute.keys():
                     print('Saving', name, session)
-                    attribute[session].to_hdf(join(output_dir, '{0}_{1}.hdf'.
-                                                   format(name, self.subject)),
+                    attribute[session].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.
+                                                   format(name, self.subject, session)),
                                               key=session)
             elif name in ['VoxelReg', 'SurfaceTxt']:
                 for session in attribute.keys():
