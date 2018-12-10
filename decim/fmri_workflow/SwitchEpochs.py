@@ -150,7 +150,7 @@ def execute(subject, session, run, task, flex_dir,
     if task == 'inference':
         c.points()
     elif task == 'instructed':
-        c.point_kernels = pd.DataFrame(np.zeros((c.choice_behavior.shape[0], 20)))
+        c.point_kernels = pd.DataFrame(np.zeros((c.switch_behavior.shape[0], 11)))
     c.choice_pupil()
     c.fmri_epochs()
     c.merge()
@@ -159,7 +159,7 @@ def execute(subject, session, run, task, flex_dir,
 
 '''
 behav = pd.read_hdf('/Volumes/flxrl/FLEXRULE/SubjectLevel/sub-17/BehavFrame_sub-17_ses-2.hdf', key='inference_run-4')
-pupil = pd.read_hdf('/Volumes/flxrl/FLEXRULE/SubjectLevel/sub-17/PupilFrame_sub-17_ses-2.hdf', key='inference_run-4')
+pupil = pd.read_hdf('/Volumes/flxrl/FLEXRULE/pupil/linear_pupilframes/PupilFrame_17_ses-2.hdf', key='/inference_run-4')
 brain = pd.read_hdf('/Volumes/flxrl/FLEXRULE/SubjectLevel/sub-17/BrainstemRois_sub-17_ses-2.hdf', key='inference_run-4')
 master = execute('sub-17', 'ses-2', 'inference_run-4', 'inference', '/Volumes/flxrl/FLEXRULE/', behav, pupil, brain)
 '''
