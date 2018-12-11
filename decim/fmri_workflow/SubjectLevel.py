@@ -264,10 +264,10 @@ def par_execute(keys):
 
 
 def submit(sub, env='Hummel'):
-    name_list = ["get", "the", "fuck", "out", "of", "the", "murphy", "queue", "dr", "pfeffer",
-                 "get", "the", "fuck", "out", "of", "the", "murphy", "queue", "dr", "pfeffer",
-                 "get", "the", "fuck", "out", "of", "the", "murphy", "queue", "dr", "pfeffer", "get", "the", "fuck", "out", "of", "the", "murphy", "queue", "dr", "pfeffer",
-                 "get", "the", "fuck", "out", "of", "the", "murphy", "queue", "dr", "pfeffer"]
+    name_list = ["The", "owls", "are", "not", "what", "they", "seem", "COOPER","COOPER","COOPER","COOPER","COOPER","COOPER","COOPER",
+    "COOPER","COOPER","COOPER","COOPER","COOPER","COOPER","COOPER","COOPER","COOPER",
+    "COOPER","COOPER","COOPER","COOPER","COOPER","COOPER","COOPER","COOPER","COOPER",
+    "COOPER","COOPER","COOPER","COOPER","COOPER","COOPER","COOPER","COOPER","COOPER"]
     if env == 'Hummel':
         def keys(sub):
             keys = []
