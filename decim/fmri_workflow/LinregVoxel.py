@@ -160,7 +160,7 @@ class VoxelSubject(object):
         behav = (behav - behav.mean()) / behav.std()
         self.DesignMatrix = behav
         linreg = LinearRegression()
-        print('fit')
+        print('fit', self.task)
         linreg.fit(behav.values, voxels.values)
         predict = linreg.predict(behav.values)
         for i, parameter in enumerate(behav.columns):
@@ -191,7 +191,7 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
 
 
 '''
-runs = ['inference_run-4', 'inference_run-5']
+runs = ['instructed_run-7', 'instructed_run-8']
 behav = {run: pd.read_hdf('/Volumes/flxrl/FLEXRULE/GLM/Sublevel_GLM_Climag_2018-12-07-a/sub-17/BehavFrame_sub-17_ses-2.hdf', key=run) for run in runs}
-execute('sub-17', 'ses-2', runs, '/Volumes/flxrl/FLEXRULE', behav, 'inference')
+execute('sub-3', 'ses-2', runs, '/Volumes/flxrl/FLEXRULE', behav, 'inference')
 '''
