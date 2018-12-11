@@ -264,6 +264,10 @@ def par_execute(keys):
 
 
 def submit(sub, env='Hummel'):
+    name_list = ["get", "the", "fuck", "out", "of", "the", "murphy", "queue", "dr", "pfeffer",
+                 "get", "the", "fuck", "out", "of", "the", "murphy", "queue", "dr", "pfeffer",
+                 "get", "the", "fuck", "out", "of", "the", "murphy", "queue", "dr", "pfeffer", "get", "the", "fuck", "out", "of", "the", "murphy", "queue", "dr", "pfeffer",
+                 "get", "the", "fuck", "out", "of", "the", "murphy", "queue", "dr", "pfeffer"]
     if env == 'Hummel':
         def keys(sub):
             keys = []
@@ -276,7 +280,7 @@ def submit(sub, env='Hummel'):
     elif env == 'Climag':
         for ses in [2, 3]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
-                     memory=40, nodes=1, tasks=2, name='murphy_queue')
+                     memory=40, nodes=1, tasks=2, name=name_list[sub])
 
 
 '''
