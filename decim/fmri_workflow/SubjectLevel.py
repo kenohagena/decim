@@ -187,7 +187,7 @@ class SubjectLevel(object):
                 self.VoxelReg[session][task], self.SurfaceTxt[session][task], self.DesignMatrix[session][task] =\
                     lv.execute(self.subject, session, rs,
                                self.flex_dir,
-                               self.BehavAligned[session], task)
+                               self.BehavFrame[session], task)
 
     def Output(self, dir='SubjectLevel'):
         print('Output')
@@ -237,15 +237,6 @@ class SubjectLevel(object):
 
 def execute(sub, ses, environment):
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
-    '''
-    sl.BehavAligned = defaultdict(dict)
-    file = join(sl.flex_dir, 'BehavAligned_31-08-2018', sl.subject, 'BehavAligned_{0}_ses-{1}.hdf'.format(sl.subject, ses))
-    with pd.HDFStore(file) as hdf:
-        k = hdf.keys()
-    for run in k:
-        sl.BehavAligned['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file, key=run)
-    '''
-
     sl.BehavFrames()
     # sl.RoiExtract()
     '''
