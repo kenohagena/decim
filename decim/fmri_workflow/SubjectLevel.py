@@ -116,23 +116,6 @@ class SubjectLevel(object):
                     print('Runtimeerror for', self.subject, session, run)
                     self.BehavFrame[session][run] = None
 
-    def BehavAlign(self, fast=True):
-        '''
-        Second Level
-        INPUT: BehavFrames
-        '''
-        print('Do behavior align', self.subject)
-        self.BehavAligned = defaultdict(dict)
-        for session, runs in self.session_runs.items():
-            for run, task in runs.items():
-                print('Do behav align', self.subject, session, run)
-                BehavFrame = self.BehavFrame[session][run]
-                if BehavFrame is not None:
-                    BehavAligned = bd.fmri_align(BehavFrame, task, fast)
-                    self.BehavAligned[session][run] = BehavAligned
-                else:
-                    continue
-
     def RoiExtract(self, denoise=True):
         '''
         '''
@@ -265,7 +248,6 @@ def execute(sub, ses, environment):
 
     sl.BehavFrames()
     # sl.RoiExtract()
-    sl.BehavAlign(fast=True)
     '''
     sl.PupilFrame = defaultdict(dict)
     file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', 'PupilFrame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))

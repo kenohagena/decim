@@ -45,7 +45,6 @@ class BehavDataframe(object):
         df = logs[self.run]
         H = summary.loc[(summary.subject == self.subject) & (summary.session == self.session)].hmode.values[0]
         df['belief'], psi, df['LLR'], df['surprise'] = gm.belief(df, H=H, ident='event')
-        df.belief = df.belief.fillna(method='ffill')
         df = df.loc[df.event.isin(['GL_TRIAL_LOCATION', 'GL_TRIAL_GENSIDE',
                                    'GL_TRIAL_STIM_ID', 'CHOICE_TRIAL_ONSET',
                                    'CHOICE_TRIAL_STIMOFF', 'CHOICE_TRIAL_RESP',
@@ -133,114 +132,6 @@ def execute(subject, session, run, type, flex_dir, summary):
     elif type == 'instructed':
         bd.instructed()
     return bd.BehavDataframe
-
-
-def hrf(t):
-    '''
-    A hemodynamic response function
-    '''
-    h = t ** 8.6 * np.exp(-t / 0.547)
-    h = np.concatenate((h * 0, h))
-    return h / h.sum()
-
-
-def make_bold(evidence, dt=0.25):
-    '''
-    Convolve with haemodynamic response function.
-    '''
-    t = np.arange(0, 20, dt)
-    return np.convolve(evidence, hrf(t), 'same')
-
-
-def interp(x, y, target):
-    '''
-    Interpolate
-    '''
-    f = interp1d(x.values.astype(int), y)
-    target = target[target.values.astype(int) > min(x.values.astype(int))]
-    return pd.DataFrame({y.name: f(target.values.astype(int))}, index=target)
-
-
-def regular(df, target='16ms'):
-    '''
-    Set datetime index and resample to target frequency.
-    '''
-    dt = pd.to_timedelta(df.index.values, unit='ms')
-    df = df.set_index(dt)
-    target = df.resample(target).mean().index
-    return pd.concat([interp(dt, df[c], target) for c in df.columns], axis=1)
-
-
-#@memory.cache
-def fmri_align(BehavDf, task, fast=False):
-    '''
-    Output: pd.DataFrame with
-                - parameters as columns
-                - timedelta as index
-                - convolved with hrf
-                - downsampled to EPI-f
-    '''
-    b = BehavDf
-    b.onset = b.onset.astype(float)
-    b = b.sort_values(by='onset')
-    b.rule_resp = b.rule_resp.fillna(method='bfill')  # to ensure that stimulus has rresp, makes rule response column unclean...
-    '''
-    b['response_lr_left'] = (b.response == -1) & (b.rule_resp == -1)
-    b['response_lr_right'] = (b.response == 1) & (b.rule_resp == -1)
-    b['response_rr_left'] = (b.response == -1) & (b.rule_resp == 1)
-    b['response_rr_right'] = (b.response == 1) & (b.rule_resp == 1)
-    b['stimulus_lr_horiz'] = (b.stimulus == 1) & (b.rule_resp == -1)
-    b['stimulus_lr_vert'] = (b.stimulus == -1) & (b.rule_resp == -1)
-    b['stimulus_rr_horiz'] = (b.stimulus == 1) & (b.rule_resp == 1)
-    b['stimulus_rr_vert'] = (b.stimulus == -1) & (b.rule_resp == 1)
-    '''
-    b = b.set_index((b.onset.values * 1000).astype(int)).drop('onset', axis=1)
-    b = b.reindex(pd.Index(np.arange(0, b.index[-1] + 15000, 1)))
-    if task == 'inference':
-        b['surprise_pro'] = np.nan
-        b.loc[b.surprise < 0, 'surprise_pro'] = b.loc[b.surprise < 0, 'surprise'].abs().astype(float)
-        b['surprise_contra'] = np.nan
-        b.loc[b.surprise > 0, 'surprise_contra'] = b.loc[b.surprise > 0, 'surprise'].abs().astype(float)
-        b = b.loc[:, ['switch', 'belief', 'LLR', 'surprise',
-                      'point',
-                      'response_left', 'response_right',
-                      'stimulus_horiz', 'stimulus_vert',
-                      'rule_resp', 'response', 'stimulus']]
-        b.belief = b.belief.fillna(method='ffill')
-    elif task == 'instructed':
-        b = b.loc[:, ['switch',
-                      'response_left', 'response_right',
-                      'stimulus_horiz', 'stimulus_vert',
-                      'rule_resp', 'rewarded_rule', 'stimulus', 'response']]
-    b.loc[0] = 0
-    if fast is True:
-        b = b.fillna(method='ffill', limit=99)
-        b = b.loc[np.arange(b.index[0], b.index[-1], 100)]
-        dt = .1
-    elif fast is False:
-        dt = .001
-    b.loc[0] = 0
-    b = b.fillna(False).astype(float)
-
-    # boxcar regressor for rule_response between stimulus and button press
-    b['rule_left'] = np.nan
-    b['rule_right'] = np.nan
-    b.loc[(b.stimulus != 0) & (b.rule_resp == -1), 'rule_left'] = 1
-    b.loc[(b.stimulus != 0) & (b.rule_resp == 1), 'rule_right'] = 1
-    b.loc[(b.response != 0), 'rule_right'] = 0
-    b.loc[(b.response != 0), 'rule_left'] = 0
-    b.rule_right = b.rule_right.fillna(method='ffill')
-    b.rule_left = b.rule_left.fillna(method='ffill')
-
-    for column in b.columns:
-        print('Align ', column)
-        # assert b[column].std() != 0
-        b['abs_' + column] = make_bold(b[column].abs().values, dt=dt)
-        b[column] = make_bold(b[column].values, dt=dt)
-    b = regular(b, target='1900ms')
-    b.loc[pd.Timedelta(0)] = 0
-    b = b.sort_index()
-    return b
 
 
 '''
