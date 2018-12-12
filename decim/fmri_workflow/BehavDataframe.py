@@ -175,6 +175,3 @@ b.inference(pd.read_csv('/Volumes/flxrl/FLEXRULE/behavior/bids_stan_fits/summary
 f = fmri_align(b.BehavDataframe, 'inference', fast=True)
 print(f.stimulus_rr_horiz.mean())
 '''
-
-
-print(execute('sub-3', 'ses-3', 'instructed_run-7', 'instructed', '/Volumes/flxrl/FLEXRULE', 'akdsjlekwjf'))
