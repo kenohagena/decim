@@ -78,10 +78,19 @@ class VoxelSubject(object):
         continuous = behav.loc[:, ['belief', 'LLR', 'surprise', 'onset']]       # Split into categorical and numerical regressors
         categorical = behav.loc[:, ['response', 'stimulus', 'switch',
                                     'rule_resp', 'event']]
-        categorical.loc[categorical.stimulus.isin([-1, 1]), 'rule_resp'] =\
-            categorical.iloc[categorical.
-                             loc[categorical.stimulus.isin([-1, 1])].
-                             index + 1].rule_resp.values                        # rule_resp at onset of stimulus
+
+        categorical.rule_resp = categorical.rule_resp.fillna(method='bfill',
+                                                             limit=1)           # bfill rule_resp at onset of stimulus
+        categorical.rule_resp = categorical.rule_resp.fillna(0.)
+        try:                                                                    # Sanity check I
+            assert all(categorical.loc[categorical.event ==
+                                       'CHOICE_TRIAL_ONSET'].rule_resp.values ==
+                       categorical.loc[categorical.event ==
+                                       'CHOICE_TRIAL_RESP'].rule_resp.values)
+        except AssertionError:
+            print('''Assertion Error:
+                Error in bfilling rule response values from response
+                to sitmulus''')
         categorical.stimulus = categorical.stimulus.\
             fillna(method='ffill', limit=2)                                     # stimulus lasts until offset
         categorical = categorical.fillna(0)
@@ -240,7 +249,8 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
 
 
 '''
-runs = ['instructed_run-7', 'instructed_run-8']
-behav = {run: pd.read_hdf('/Volumes/flxrl/FLEXRULE/GLM/Sublevel_GLM_Climag_2018-11-30-b/sub-3/BehavFrame_sub-3_ses-2.hdf', key=run) for run in runs}
-execute('sub-3', 'ses-2', runs, '/Volumes/flxrl/FLEXRULE', behav, 'instructed')
+from decim.fmri_workflow import BehavDataframe as bd
+behav = bd.execute('sub-3', 'ses-3', 'inference_run-4', 'inference', '/Volumes/flxrl/FLEXRULE', pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv'))
+s = VoxelSubject('sub-3', 'ses-2', ['inference_run-4'], '/Volumes/flxrl/FLEXRULE', behav, 'instructed')
+s.design_matrix(behav)
 '''
