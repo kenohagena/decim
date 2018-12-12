@@ -29,6 +29,12 @@ To execute, make sure to set:
     - outpath: where to store the output DFs?
     - summary: summary-file of stan-fits
     - subject-loop, session-loop
+
+
+codings:
+    - stimulus: -1 --> vertical, 1 --> horizontal
+    - rule: -1 --> vertical-left (A), 1 --> vertical-right (B)
+    - response: -1 --> left, 1 --> right
 '''
 
 
@@ -43,8 +49,10 @@ class BehavDataframe(object):
     def inference(self, summary):
         logs = gm.load_logs_bids(self.subject, self.session, self.bids_path)
         df = logs[self.run]
-        H = summary.loc[(summary.subject == self.subject) & (summary.session == self.session)].hmode.values[0]
-        df['belief'], psi, df['LLR'], df['surprise'] = gm.belief(df, H=H, ident='event')
+        H = summary.loc[(summary.subject == self.subject) &
+                        (summary.session == self.session)].hmode.values[0]
+        df['belief'], psi, df['LLR'], df['surprise'] =\
+            gm.belief(df, H=H, ident='event')
         df = df.loc[df.event.isin(['GL_TRIAL_LOCATION', 'GL_TRIAL_GENSIDE',
                                    'GL_TRIAL_STIM_ID', 'CHOICE_TRIAL_ONSET',
                                    'CHOICE_TRIAL_STIMOFF', 'CHOICE_TRIAL_RESP',
@@ -54,24 +62,30 @@ class BehavDataframe(object):
         df = df.replace('n/a', np.nan)
         df['trial_id'] = df.loc[df.event == 'GL_TRIAL_START'].value.astype(int)
         df.trial_id = df.trial_id.fillna(method='ffill')
-        df['gen_side'] = df.loc[df.event == 'GL_TRIAL_GENSIDE'].value.astype('float')
+        df['gen_side'] = df.loc[df.event == 'GL_TRIAL_GENSIDE'].\
+            value.astype('float')
         df.gen_side = df.gen_side.fillna(method='ffill')
         df['stimulus'] = df.loc[df.event == 'GL_TRIAL_STIM_ID'].\
-            set_index(df.loc[df.event == 'CHOICE_TRIAL_ONSET'].index).value.astype('float') * 2 - 1  # horiz -> -1 | vert -> +1
+            set_index(df.loc[df.event == 'CHOICE_TRIAL_ONSET'].index).\
+            value.astype('float') * (-2) + 1                                    # horiz -> -1 | vert -> +1
         df['stimulus_off'] = df.event == 'CHOICE_TRIAL_STIMOFF'
         df['rule_resp'] = df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP'].\
-            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float') * 2 - 1
+            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).\
+            value.astype('float') * 2 - 1                                       # vertical-left (A) --> -1 | --> vertical-right (B) --> 1
         df['reward'] = df.loc[df.event == 'GL_TRIAL_REWARD'].\
-            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float')
+            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).\
+            value.astype('float')
         df['rt'] = df.loc[df.event == 'CHOICE_TRIAL_RT'].\
-            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float')
+            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).\
+            value.astype('float')
         df = df.loc[df.event.isin(['GL_TRIAL_LOCATION',
                                    'CHOICE_TRIAL_ONSET',
                                    'CHOICE_TRIAL_STIMOFF',
                                    'CHOICE_TRIAL_RESP'])]
         df = df.loc[:, ['onset', 'event', 'value',
                         'belief', 'LLR', 'gen_side',
-                        'stimulus', 'stimulus_off', 'rule_resp', 'trial_id', 'reward', 'rt', 'surprise']]
+                        'stimulus', 'stimulus_off', 'rule_resp',
+                        'trial_id', 'reward', 'rt', 'surprise']]
         df = df.reset_index(drop=True)
         asign = np.sign(df.belief.values)
         signchange = (np.roll(asign, 1) - asign)
@@ -79,47 +93,67 @@ class BehavDataframe(object):
         df['switch'] = signchange / 2
         df['point'] = df.event == 'GL_TRIAL_LOCATION'
         df['response'] = df.event == 'CHOICE_TRIAL_RESP'
-        df.loc[df.response == True, 'response'] = df.loc[df.response == True, 'value'].astype(float) * 2 - 1  # left -> -1 | right -> +1
+        df.loc[df.response == True, 'response'] =\
+            df.loc[df.response == True, 'value'].\
+            astype(float) * 2 - 1                                               # left -> -1 | right -> +1
         df.onset = df.onset.astype(float)
         df = df.sort_values(by='onset')
         self.BehavDataframe = df
 
     def instructed(self):
-        logs = gm.load_logs_bids(self.subject, self.session, self.bids_path, run='instructed')
+        logs = gm.load_logs_bids(self.subject, self.session,
+                                 self.bids_path, run='instructed')
         df = logs[self.run]
-        df = df.loc[df.event.isin(['REWARDED_RULE_STIM', 'IR_STIM', 'IR_TRIAL_START',
-                                   'CHOICE_TRIAL_ONSET', 'CHOICE_TRIAL_STIMOFF',
-                                   'CHOICE_TRIAL_RESP', 'CHOICE_TRIAL_RT', 'CHOICE_TRIAL_RULE_RESP',
-                                   'IR_TRIAL_REWARD'])]
-        df.value = df.value.replace('n/a', np.nan)
-        df.onset = df.onset.astype(float)
-        df = df.sort_values(by='onset').reset_index(drop=True)
-        if df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.values.astype(float).mean() > 1:  # In some subjects grating ID is decoded with 0 / 1 in others with 1 /2
-            df['stimulus'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.astype('float') * 2 - 3
-        elif df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.values.astype(float).mean() < 1:
-            df['stimulus'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].value.astype('float') * 2 - 1
-        df['stimulus_off'] = df.event == 'CHOICE_TRIAL_STIMOFF'
-        df['rule_resp'] = df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP'].\
-            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float') * 2 - 1
         df['rt'] = df.loc[df.event == 'CHOICE_TRIAL_RT'].\
-            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float')
-        df['reward'] = df.loc[df.event == 'IR_TRIAL_REWARD'].\
-            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).value.astype('float')
-
+            set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).\
+            value.astype('float')
         df = df.loc[df.event.isin(['REWARDED_RULE_STIM',
                                    'CHOICE_TRIAL_ONSET',
                                    'CHOICE_TRIAL_STIMOFF',
                                    'CHOICE_TRIAL_RESP'])]
+        df.value = df.value.replace('n/a', np.nan)
+        df.onset = df.onset.astype(float)
+        df = df.sort_values(by='onset').reset_index(drop=True)
 
-        df = df.loc[:, ['onset', 'event', 'value', 'rt', 'rewarded_rule',
-                        'stimulus', 'stimulus_off', 'rule_resp', 'reward']].reset_index(drop=True)
+        df.loc[df.event != 'REWARDED_RULE_STIM', 'rewarded_rule'] = np.nan      # Error in matlab code for first 6 subjects
+        df.rewarded_rule = df.rewarded_rule.fillna(method='ffill') * 2 - 1
 
-        df.rewarded_rule = df.rewarded_rule.ffill()
-        df.rewarded_rule = df.rewarded_rule.ffill() * 2 - 1
-        df.value = df.value.astype(float)
-        df['switch'] = np.append([0], np.diff(df.rewarded_rule.values))
+        if df.loc[df.event == 'CHOICE_TRIAL_ONSET'].\
+                value.values.astype(float).mean() > 1:                          # In some subjects grating ID is decoded with 0 / 1 in others with 2 /1
+            df['stimulus'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].\
+                value.astype('float') * (2) - 3
+        elif df.loc[df.event == 'CHOICE_TRIAL_ONSET'].\
+                value.values.astype(float).mean() < 1:
+            df['stimulus'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].\
+                value.astype('float') * (-2) + 1
+        df.stimulus = df.stimulus.fillna(method='ffill', limit=4)
         df['response'] = df.event == 'CHOICE_TRIAL_RESP'
-        df.loc[df.response == True, 'response'] = df.loc[df.response == True, 'value'].astype(float) * 2 - 1  # left -> -1 | right -> +1
+        df.loc[df.response == True, 'response'] =\
+            df.loc[df.response == True, 'value'].astype(float) * 2 - 1          # left -> -1 | right -> +1
+        df.loc[(df.event == 'CHOICE_TRIAL_RESP'), 'rule_resp'] =\
+            -np.abs(df.loc[(df.event == 'CHOICE_TRIAL_RESP')].stimulus +
+                    df.loc[(df.event == 'CHOICE_TRIAL_RESP')].response) + 1
+        df.loc[(df.event == 'CHOICE_TRIAL_RESP'), 'reward'] =\
+            df.loc[(df.event == 'CHOICE_TRIAL_RESP')].rule_resp ==\
+            df.loc[(df.event == 'CHOICE_TRIAL_RESP')].rewarded_rule
+
+        df = df.loc[:, ['onset', 'event', 'rt', 'rewarded_rule', 'response',
+                        'stimulus', 'stimulus_off', 'rule_resp', 'reward']].\
+            reset_index(drop=True)
+
+        df['switch'] = np.append([0], np.diff(df.rewarded_rule.values)) / 2
+
+        try:                                                                    # Sanity check I
+            assert all(df.loc[df.switch != 0, 'event'] == 'REWARDED_RULE_STIM')
+        except AssertionError:
+            print('''AssertionError:
+                Some switches do NOT coincide with rewarded rule stimulus''')
+        try:                                                                    # Sanity check II
+            assert df.loc[df.event == 'CHOICE_TRIAL_RESP'].reward.mean() > .8
+        except AssertionError:
+            print('AssertionError: Performance in instructed run at {}'.
+                  format(df.loc[df.event == 'CHOICE_TRIAL_RESP'].reward.mean()))
+
         self.BehavDataframe = df
 
 
@@ -141,3 +175,6 @@ b.inference(pd.read_csv('/Volumes/flxrl/FLEXRULE/behavior/bids_stan_fits/summary
 f = fmri_align(b.BehavDataframe, 'inference', fast=True)
 print(f.stimulus_rr_horiz.mean())
 '''
+
+
+print(execute('sub-3', 'ses-3', 'instructed_run-7', 'instructed', '/Volumes/flxrl/FLEXRULE', 'akdsjlekwjf'))
