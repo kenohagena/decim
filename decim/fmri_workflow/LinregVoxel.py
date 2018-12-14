@@ -124,15 +124,13 @@ class VoxelSubject(object):
             design_matrix = dmatrix('''switch + np.abs(switch) +
                             C(stimulus, levels=s) + C(response, levels=b) +
                             C(rule_resp, levels=r) +
-                            (C(stimulus, levels=s) + C(response, levels=b)):
-                            C(rule_resp, levels=r)''', data=combined)
+                            C(response, levels=b):C(rule_resp, levels=r)''', data=combined)
         elif self.task == 'inference':
             design_matrix = dmatrix('''belief + np.abs(belief) + switch +
                 np.abs(switch) + LLR + np.abs(LLR)+ surprise +
                 C(stimulus, levels=s) + C(response, levels=b) +
                 C(rule_resp, levels=r) +
-                (C(stimulus, levels=s) + C(response, levels=b)):
-                C(rule_resp, levels=r)''', data=combined)
+            C(response, levels=b):C(rule_resp, levels=r)''', data=combined)
 
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
                           design_info.column_names, index=combined.index)
