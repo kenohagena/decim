@@ -79,8 +79,8 @@ class VoxelSubject(object):
         categorical = behav.loc[:, ['response', 'stimulus', 'switch',
                                     'rule_resp', 'event']]
 
-        categorical.rule_resp = categorical.rule_resp.fillna(method='bfill',
-                                                             limit=1)           # bfill rule_resp at onset of stimulus
+        #categorical.rule_resp = categorical.rule_resp.fillna(method='bfill',
+        #                                                     limit=1)           # bfill rule_resp at onset of stimulus
         categorical.rule_resp = categorical.rule_resp.fillna(0.)
         try:                                                                    # Sanity check I
             assert all(categorical.loc[categorical.event ==
