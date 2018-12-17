@@ -123,7 +123,7 @@ class VoxelSubject(object):
         if self.task == 'instructed':
             design_matrix = dmatrix('''switch + np.abs(switch) +
                             C(stimulus, levels=s) + C(response, levels=b) +
-                            C(rule_resp, levels=r))''', data=combined)
+                            C(rule_resp, levels=r)''', data=combined)
         elif self.task == 'inference':
             design_matrix = dmatrix('''belief + np.abs(belief) + switch +
                 np.abs(switch) + LLR + np.abs(LLR)+ surprise +
