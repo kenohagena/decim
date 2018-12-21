@@ -255,7 +255,7 @@ def execute(sub, ses, environment):
     sl.CleanEpochs(epoch='Switch')
     '''
     sl.LinregVoxel()
-    sl.Output(dir='Sublevel_GLM_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+    #sl.Output(dir='Sublevel_GLM_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
 
 
 def par_execute(keys):

@@ -79,7 +79,7 @@ class VoxelSubject(object):
         categorical = behav.loc[:, ['response', 'stimulus', 'switch',
                                     'rule_resp', 'event']]
 
-        #categorical.rule_resp = categorical.rule_resp.fillna(method='bfill',
+        # categorical.rule_resp = categorical.rule_resp.fillna(method='bfill',
         #                                                     limit=1)           # bfill rule_resp at onset of stimulus
         categorical.rule_resp = categorical.rule_resp.fillna(0.)
         try:                                                                    # Sanity check I
@@ -127,7 +127,7 @@ class VoxelSubject(object):
             design_matrix = dmatrix('''belief + np.abs(belief) + switch +
                 np.abs(switch) + LLR + np.abs(LLR)+ surprise +
                 C(stimulus, levels=s) + C(response, levels=b)''', data=combined)
-
+        #design_matrix.to_hdf('design_matrix.hdf', key=task)
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
                           design_info.column_names, index=combined.index)
 
