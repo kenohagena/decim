@@ -97,7 +97,7 @@ class VoxelSubject(object):
         combined = combined.\
             reindex(pd.Index(np.arange(0, combined.index[-1] + 15000, 1)))
         combined = combined.fillna(method='ffill', limit=99)
-        combined.stimulus = combined.stimulus.fillna(method='ffill', limit=1900)  # stimulus lasts until offset
+        #combined.stimulus = combined.stimulus.fillna(method='ffill', limit=1900)  # stimulus lasts until offset
         combined = combined.loc[np.arange(combined.index[0],
                                           combined.index[-1], 100)]
         combined.loc[0] = 0
