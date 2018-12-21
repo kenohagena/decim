@@ -126,7 +126,7 @@ class BehavDataframe(object):
                 value.values.astype(float).mean() < 1:
             df['stimulus'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].\
                 value.astype('float') * (-2) + 1
-        df.stimulus = df.stimulus.fillna(method='ffill', limit=4)
+        #df.stimulus = df.stimulus.fillna(method='ffill', limit=4)
         df['response'] = df.event == 'CHOICE_TRIAL_RESP'
         df.loc[df.response == True, 'response'] =\
             df.loc[df.response == True, 'value'].astype(float) * 2 - 1          # left -> -1 | right -> +1

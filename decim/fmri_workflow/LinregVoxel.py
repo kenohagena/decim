@@ -80,7 +80,7 @@ class VoxelSubject(object):
                                     'rule_resp', 'event']]
 
         # categorical.rule_resp = categorical.rule_resp.fillna(method='bfill',
-        #                                                     limit=1)           # bfill rule_resp at onset of stimulus
+        #                                                     limit=1)          # bfill rule_resp at onset of stimulus
         categorical.rule_resp = categorical.rule_resp.fillna(0.)
         try:                                                                    # Sanity check I
             assert all(categorical.loc[categorical.event ==
@@ -91,15 +91,13 @@ class VoxelSubject(object):
             print('''Assertion Error:
                 Error in bfilling rule response values from response
                 to sitmulus''')
-        categorical.stimulus = categorical.stimulus.\
-            fillna(method='ffill', limit=2)                                     # stimulus lasts until offset
-        categorical = categorical.fillna(0)
         combined = pd.concat([categorical, continuous], axis=1)
         combined = combined.set_index((combined.onset.values * 1000).
                                       astype(int)).drop('onset', axis=1)
         combined = combined.\
             reindex(pd.Index(np.arange(0, combined.index[-1] + 15000, 1)))
         combined = combined.fillna(method='ffill', limit=99)
+        combined.stimulus = combined.stimulus.fillna(method='ffill', limit=1900)  # stimulus lasts until offset
         combined = combined.loc[np.arange(combined.index[0],
                                           combined.index[-1], 100)]
         combined.loc[0] = 0
@@ -122,14 +120,15 @@ class VoxelSubject(object):
         r = ['none', 'A', 'B']
         if self.task == 'instructed':
             design_matrix = dmatrix('''switch + np.abs(switch) +
-                            C(stimulus, levels=s) + C(response, levels=b)''', data=combined)
+                            C(stimulus, levels=s) + C(response, levels=b)''',
+                                    data=combined)
         elif self.task == 'inference':
             design_matrix = dmatrix('''belief + np.abs(belief) + switch +
                 np.abs(switch) + LLR + np.abs(LLR)+ surprise +
                 C(stimulus, levels=s) + C(response, levels=b)''', data=combined)
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
                           design_info.column_names, index=combined.index)
-        dm.to_hdf('/home/khagena/design_matrix.hdf', key=self.task)
+        # dm.to_hdf('/Users/kenohagena/Desktop/design_matrix.hdf', key=self.task)# for checking the design matrix before convolution
 
         for column in dm.columns:
             print('Align ', column)
@@ -244,7 +243,7 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
 
 '''
 from decim.fmri_workflow import BehavDataframe as bd
-behav = bd.execute('sub-3', 'ses-3', 'inference_run-4', 'inference', '/Volumes/flxrl/FLEXRULE', pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv'))
-s = VoxelSubject('sub-3', 'ses-2', ['inference_run-4'], '/Volumes/flxrl/FLEXRULE', behav, 'instructed')
+behav = bd.execute('sub-3', 'ses-2', 'instructed_run-7', 'instructed', '/Volumes/flxrl/FLEXRULE', pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv'))
+s = VoxelSubject('sub-3', 'ses-2', ['instructed_run-7'], '/Volumes/flxrl/FLEXRULE', behav, 'instructed')
 s.design_matrix(behav)
 '''
