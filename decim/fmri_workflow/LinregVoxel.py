@@ -129,7 +129,7 @@ class VoxelSubject(object):
                 C(stimulus, levels=s) + C(response, levels=b)''', data=combined)
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
                           design_info.column_names, index=combined.index)
-        dm.to_hdf('design_matrix.hdf', key=task)
+        dm.to_hdf('design_matrix.hdf', key=self.task)
 
         for column in dm.columns:
             print('Align ', column)
