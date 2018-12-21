@@ -127,9 +127,9 @@ class VoxelSubject(object):
             design_matrix = dmatrix('''belief + np.abs(belief) + switch +
                 np.abs(switch) + LLR + np.abs(LLR)+ surprise +
                 C(stimulus, levels=s) + C(response, levels=b)''', data=combined)
-        design_matrix.to_hdf('design_matrix.hdf', key=task)
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
                           design_info.column_names, index=combined.index)
+        dm.to_hdf('design_matrix.hdf', key=task)
 
         for column in dm.columns:
             print('Align ', column)
