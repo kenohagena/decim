@@ -6,7 +6,7 @@ from decim.fmri_workflow import RoiExtract as re
 from decim.fmri_workflow import ChoiceEpochs as ce
 from decim.fmri_workflow import LinregVoxel as lv
 from decim.fmri_workflow import SwitchEpochs as se
-from decim import slurm_submit as slu
+from decim.adjuvant import slurm_submit as slu
 from collections import defaultdict
 from os.path import join
 from glob import glob
@@ -17,7 +17,58 @@ try:
 except ImportError:
     pass
 
+'''
+I use this script to connect several subscripts into workflows.
 
+The workflow is defined in "Execute".
+"Execute" takes the following arguments:
+    a) subject as int (e.g. 17)
+    b) session as int (e.g. 2)
+    c) environment ('Climag', 'Hummel', 'Volume')
+Flexrule directory is then chosen for my accounts on these clusters. (This an be changed in the init function)
+
+Within the execute function, the workflow can be adapted.
+
+Example I (run all analyses from scratch for one subject):
+    def execute(sub, ses, environment):
+        sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
+        sl.BehavFrames()
+        sl.RoiExtract()
+        sl.PupilFrame = defaultdict(dict)
+        file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', 'PupilFrame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
+        if len(file) != 1:
+            print(len(file), ' pupil frames found...')
+        with pd.HDFStore(file[0]) as hdf:
+            k = hdf.keys()
+        for run in k:
+            sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
+        sl.ChoiceEpochs()
+        sl.SwitchEpochs()
+        del sl.PupilFrame
+        sl.CleanEpochs(epoch='Switch')
+        sl.LinregVoxel()
+        sl.Output(dir='Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+
+Example II (run only GLM):
+
+    def execute(sub, ses, environment):
+        sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
+        sl.BehavFrames()
+        sl.LinregVoxel()
+        sl.Output(dir='Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+
+Comments:
+1. In the "Output" method of "SubjectLevel" i specify an ouput directory.
+2. I once preprocessed pupil data manually. Thus I do not include this step in workflows,
+    but rather reimport the preprocessed pupil data into the workflow
+
+
+
+"Submit" function takes subject as integer and environment (e.g. submit(17, 'CLimag'))
+and runs execute for all sessions for the subject.
+'''
+
+# Nested dictionary with subjects, sessions and completed runs
 spec_subs = {1: {2: [4, 5, 6, 7], 3: [4, 5, 6]},
              2: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
              3: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
@@ -232,28 +283,13 @@ class SubjectLevel(object):
             elif name == 'DesignMatrix':
                 for session in attribute.keys():
                     for task in attribute[session].keys():
-                        attribute[session][task].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.format(name, self.subject, session)), key=task)
+                        attribute[session][task].to_hdf(join(output_dir,
+                                                             '{0}_{1}_{2}.hdf'.format(name, self.subject, session)), key=task)
 
 
 def execute(sub, ses, environment):
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
     sl.BehavFrames()
-    # sl.RoiExtract()
-    '''
-    sl.PupilFrame = defaultdict(dict)
-    file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', 'PupilFrame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
-    if len(file) != 1:
-        print(len(file), ' pupil frames found...')
-    with pd.HDFStore(file[0]) as hdf:
-        k = hdf.keys()
-    for run in k:
-        sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
-    # sl.ChoiceEpochs()
-    sl.SwitchEpochs()
-    del sl.PupilFrame
-
-    sl.CleanEpochs(epoch='Switch')
-    '''
     sl.LinregVoxel()
     sl.Output(dir='Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
 
@@ -277,15 +313,3 @@ def submit(sub, env='Hummel'):
         for ses in [2, 3]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
                      memory=40, nodes=1, tasks=2, name='memorial_queue')
-
-
-'''
-sl.PupilFrame = defaultdict(dict)
-file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes', '*Frame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
-if len(file) != 1:
-    print(len(file), ' pupil frames found...')
-with pd.HDFStore(file[0]) as hdf:
-    k = hdf.keys()
-for run in k:
-    sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
-'''

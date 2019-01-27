@@ -9,8 +9,7 @@ import subprocess
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.linear_model import LinearRegression
 import nibabel as nib
-
-from decim import slurm_submit as slu
+from decim.adjuvant import slurm_submit as slu
 from joblib import Memory
 if expanduser('~') == '/home/faty014':
     cachedir = expanduser('/work/faty014/joblib_cache')
@@ -18,6 +17,36 @@ else:
     cachedir = expanduser('~/joblib_cache')
 slu.mkdir_p(cachedir)
 memory = Memory(cachedir=cachedir, verbose=0)
+
+'''
+This script ca be used independently for....
+
+1) Just doing nuissance regression of CompCor regressors
+    a) Load CompCor confounds
+    b) Load preprocessed niftis
+    c) Run regression and subtract
+    d) Save "denoised" niftis
+
+    Example:
+    RE = EPI('sub-17', 'ses-2', 'inference_run-4', flex_dir)
+    RE.denoise(save=True)
+
+2) Extract brainstem ROI time series from nifti voxel data.
+    a) load preprocessed EPIs ("load_epi")
+    b) optionally warp brainstem atlases to subject space using the bash script
+            'warp_masks_MNI_to_T1w_subject_space.sh' ("warp_atlases")
+    c) load warped brainstem ROI masks ("load_mask")
+    d) resample to affine & shape of EPI ("resample_mask")
+    e) apply masks to EPI and average using the voxel weights ("brainstem")
+
+3) Extract cortical surface ROI time series
+    a) load surface data for both hemispheres ("cortical")
+    b) average per Glasser surface label ("cortical")
+
+To combine steps 3 and 4, use function "execute"
+
+
+'''
 
 
 class EPI(object):
@@ -37,19 +66,27 @@ class EPI(object):
             'CIT168': {2: 'NAc', 6: 'SNc', 10: 'VTA'}
         }
 
-    def denoise(self):
+    def denoise(self, save=False):
         '''
         Regress voxeldata to CompCor nuisance regressors & Subtract predicted noise.
 
         INPUT: confound.tsv & nifti file
         OUTPUT: _denoise.nii nifti file in preprocessed directory & pandas.csv.
         '''
-        confounds = pd.read_table(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
-                                       '{0}_{1}_task-{2}_bold_confounds.tsv'.format(self.subject, self.session, self.run)))
+        confounds = pd.read_table(join(self.flex_dir, 'fmri',
+                                       'completed_preprocessed', self.subject,
+                                       'fmriprep', self.subject,
+                                       self.session, 'func',
+                                       '{0}_{1}_task-{2}_bold_confounds.tsv'.
+                                       format(self.subject, self.session,
+                                              self.run)))
         confounds = confounds[['tCompCor00', 'tCompCor01', 'tCompCor02',
                                'tCompCor03', 'tCompCor04', 'tCompCor05']]
-        nifti = nib.load(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
-                              '{0}_{1}_task-{2}_bold_space-T1w_preproc.nii.gz'.format(self.subject, self.session, self.run)))
+        nifti = nib.load(join(self.flex_dir, 'fmri', 'completed_preprocessed',
+                              self.subject, 'fmriprep', self.subject,
+                              self.session, 'func',
+                              '{0}_{1}_task-{2}_bold_space-T1w_preproc.nii.gz'.
+                              format(self.subject, self.session, self.run)))
         shape = nifti.get_data().shape
         data = nifti.get_data()
         d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.shape[-1])])
@@ -58,26 +95,37 @@ class EPI(object):
         predict = linreg.predict(confounds)
         df = pd.DataFrame(linreg.coef_, columns=confounds.columns)
         df['r2_score'] = r2_score(d2, predict, multioutput='raw_values')
-        df['mean_squared_error'] = mean_squared_error(d2, predict, multioutput='raw_values')
+        df['mean_squared_error'] = mean_squared_error(d2, predict,
+                                                      multioutput='raw_values')
         df['intercept'] = linreg.intercept_
         noise = predict - linreg.intercept_
         denoise = d2 - noise
-        new_shape = np.stack([denoise[i, :].reshape(shape[0:3]) for i in range(denoise.shape[0])], -1)
+        new_shape = np.stack([denoise[i, :].
+                              reshape(shape[0:3]) for i in range(denoise.shape[0])], -1)
         new_image = nib.Nifti1Image(new_shape, affine=nifti.affine)
-        '''
-        new_image.to_filename(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
-                                   '{0}_{1}_task-{2}_bold_space-T1w_preproc_denoise.nii.gz'.format(self.subject, self.session, self.run)))
-        '''
+        if save is True:
+            new_image.to_filename(join(self.flex_dir, 'fmri',
+                                       'completed_preprocessed', self.subject,
+                                       'fmriprep', self.subject, self.session,
+                                       'func',
+                                       '{0}_{1}_task-{2}_bold_space-T1w_preproc_denoise.nii.gz'.format(self.subject, self.session, self.run)))
         return new_image
 
     def load_epi(self, denoise='_denoise'):
         '''
         Find and load EPI-files.
+
+        - Argument:
+            a) use denoised data? (default yes, if no --> '')
         '''
-        file = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject, self.session, 'func',
-                         '*{0}*space-T1w_preproc{1}.nii.gz'.format(self.run, denoise)))
+        file = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
+                         self.subject, 'fmriprep', self.subject,
+                         self.session, 'func',
+                         '*{0}*space-T1w_preproc{1}.nii.gz'.
+                         format(self.run, denoise)))
         if len(file) > 1:
-            print('More than one EPI found for ', self.subject, self.session, self.run)
+            print('More than one EPI found for ', self.subject,
+                  self.session, self.run)
         else:
             try:
                 self.EPI = image.load_img(file)
@@ -87,7 +135,8 @@ class EPI(object):
 
     def warp_atlases(self):
         atlas_dir = join(self.flex_dir, 'fmri', 'atlases')
-        subprocess.call('warp_masks_MNI_to_T1w_subject_space.sh {0} {1}'.format(self.subject, atlas_dir))
+        subprocess.call('warp_masks_MNI_to_T1w_subject_space.sh {0} {1}'.
+                        format(self.subject, atlas_dir))
 
     def load_mask(self):
         '''
@@ -113,8 +162,10 @@ class EPI(object):
         self.resampled_masks = {}
         epi_img = self.EPI
         for key, value in self.masks.items():
-            self.resampled_masks[key] = image.resample_img(value, epi_img.affine,
-                                                           target_shape=epi_img.get_data().shape[0:3])
+            self.resampled_masks[key] = image.resample_img(value,
+                                                           epi_img.affine,
+                                                           target_shape=epi_img.
+                                                           get_data().shape[0:3])
 
     def mask(self):
         '''
@@ -123,7 +174,8 @@ class EPI(object):
         self.epi_masked = {}
         self.weights = {}
         for key, resampled_mask in self.resampled_masks.items():
-            thresh = image.new_img_like(resampled_mask, resampled_mask.get_data() > 0.01)
+            thresh = image.new_img_like(resampled_mask,
+                                        resampled_mask.get_data() > 0.01)
             self.epi_masked[key] = masking.apply_mask(self.EPI, thresh)
             self.weights[key] = masking.apply_mask(resampled_mask, thresh)
 
@@ -150,24 +202,28 @@ class EPI(object):
 
     def cortical(self):
         '''
-        INPUT: surface annotaions & functional file per run in subject space (fsnative)
-        --> Z-score per vertex and average across vertices per annotation label.
-        OUTPUT: DF w/ labels as columns & timpoints as rows
+        Loads surface annotation and voxel data in surface subject space (fsnative)
+        - Output: DF w/ labels as columns & timpoints as rows
         '''
         hemispheres = []
         for hemisphere, hemi in zip(['lh', 'rh'], ['L', 'R']):
-            annot_path = join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject,
-                              'freesurfer', self.subject, 'label', '{0}.HCPMMP1.annot'.format(hemisphere))
-            hemi_func_path = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed', self.subject, 'fmriprep', self.subject,
-                                       self.session, 'func', '*{0}*fsnative.{1}.func.gii'.format(self.run, hemi)))[0]
+            annot_path = join(self.flex_dir, 'fmri',
+                              'completed_preprocessed', self.subject,
+                              'freesurfer', self.subject,
+                              'label', '{0}.HCPMMP1.annot'.format(hemisphere))
+            hemi_func_path = glob(join(self.flex_dir, 'fmri',
+                                       'completed_preprocessed', self.subject,
+                                       'fmriprep', self.subject,
+                                       self.session, 'func',
+                                       '*{0}*fsnative.{1}.func.gii'.
+                                       format(self.run, hemi)))[0]
             annot = ni.freesurfer.io.read_annot(annot_path)
             labels = annot[2]
             labels = [i.astype('str') for i in labels]
             affiliation = annot[0]
             surf = surface.load_surf_data(hemi_func_path)
             surf_df = pd.DataFrame(surf).T
-            # z-score per vertex
-            surf_df = (surf_df - surf_df.mean()) / surf_df.std()
+            surf_df = (surf_df - surf_df.mean()) / surf_df.std()                # z-score per vertex
             surf_df = surf_df.T
             surf_df['label_index'] = affiliation
             df = surf_df.groupby('label_index').mean().T
@@ -179,7 +235,7 @@ class EPI(object):
 
 
 @memory.cache
-def execute(subject, session, run, flex_dir, atlas_warp=False, denoise=True):
+def execute(subject, session, run, flex_dir, atlas_warp=False, denoise=False):
     RE = EPI(subject, session, run, flex_dir)
     if denoise is False:
         RE.load_epi(denoise='')
@@ -193,6 +249,3 @@ def execute(subject, session, run, flex_dir, atlas_warp=False, denoise=True):
     RE.brainstem()
     RE.cortical()
     return RE.brainstem_weighted, RE.cortical
-
-
-'bla'

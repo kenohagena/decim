@@ -1,10 +1,8 @@
 import pandas as pd
 import numpy as np
-from decim import glaze_model as gm
+from decim.adjuvant import glaze_model as gm
 from os.path import join, expanduser
-from scipy.interpolate import interp1d
-from decim import slurm_submit as slu
-import matplotlib.pyplot as plt
+from decim.adjuvant import slurm_submit as slu
 from joblib import Memory
 if expanduser('~') == '/home/faty014':
     cachedir = expanduser('/work/faty014/joblib_cache')
@@ -12,33 +10,49 @@ else:
     cachedir = expanduser('~/joblib_cache')
 slu.mkdir_p(cachedir)
 memory = Memory(cachedir=cachedir, verbose=0)
+
+
 '''
-INPUT: Behavioral data from .tsv files in BIDS-Format
-OUTPUT: Pandas data frame with the following columns
-    - event: point / choice onset / response / stimulus onset
-    - onset: time of event
-    - value: either point location or choice
-    - belief: Glaze Belief
-    - gen_side: active distribution
-    - obj belief
-    - stim_id
-    - rule response
+This script loads and computes behavioral data per subject, session and run:
 
-To execute, make sure to set:
-    - bids_mr: where is the raw data? up-to-date version?
-    - outpath: where to store the output DFs?
-    - summary: summary-file of stan-fits
-    - subject-loop, session-loop
+1. Load data from raw BIDS directory (using script glaze_model)
+2. Retrieve fitted H from summary file
+3. Compute Glaze belief, LLR, psi, surprise (using script glaze_model)
+4. Restructure in the following format:
+    - rows: timepoints
+    - columns:
+        a) event (point / choice onset / response / stimulus onset)
+        b) onset (time of event)
+        c) value of event (point location or choice)
+        d) Glaze belief, LLR, surprise
+        e) gen_side (currently active distribution)
+        g) stimulus (-1 --> vertical, 1 --> horizontal, 0 --> no stimulus)
+        h) stimulus_off (dummy-coded when grating stimulus disappears)
+        i) response (-1 --> left, 1 --> right, 0 --> no response)
+        j) rule_response (-1 --> vertical-left (A), 1 --> vertical-right (B))
+        k) switch (belief right-to-left --> 1, belief left-to-right --> -1)
+        l) reward
 
 
-codings:
-    - stimulus: -1 --> vertical, 1 --> horizontal
-    - rule: -1 --> vertical-left (A), 1 --> vertical-right (B)
-    - response: -1 --> left, 1 --> right
+EXAMPLE:
+
+behav_df = execute(subject='sub-17', session='ses-2',
+run='inference_run-4', task='inference', flex_dir='/Volumes/flxrl/FLEXRULE/',
+summary=pd.read_csv('/Volumes/flxrl/FLEXRULE/behavior/bids_stan_fits/summary_stan_fits.csv'))
+
 '''
 
 
 class BehavDataframe(object):
+    '''
+    Inititialize
+
+    - Arguments:
+        a) subject (e.g. 'sub-17')
+        b) session (e.g. 'ses-2')
+        c) run (e.g. 'inference_run-4')
+        d) Flexrule directory
+    '''
 
     def __init__(self, subject, session, run, flex_dir):
         self.subject = subject
@@ -47,12 +61,12 @@ class BehavDataframe(object):
         self.bids_path = join(flex_dir, 'raw', 'bids_mr_v1.2')
 
     def inference(self, summary):
-        logs = gm.load_logs_bids(self.subject, self.session, self.bids_path)
+        logs = gm.load_logs_bids(self.subject, self.session, self.bids_path)    # Load data from raw directory
         df = logs[self.run]
-        H = summary.loc[(summary.subject == self.subject) &
+        H = summary.loc[(summary.subject == self.subject) &                     # Retrieve fitted H
                         (summary.session == self.session)].hmode.values[0]
         df['belief'], psi, df['LLR'], df['surprise'] =\
-            gm.belief(df, H=H, ident='event')
+            gm.belief(df, H=H, ident='event')                                   # Compute belief, LLR, surprise
         df = df.loc[df.event.isin(['GL_TRIAL_LOCATION', 'GL_TRIAL_GENSIDE',
                                    'GL_TRIAL_STIM_ID', 'CHOICE_TRIAL_ONSET',
                                    'CHOICE_TRIAL_STIMOFF', 'CHOICE_TRIAL_RESP',
@@ -67,11 +81,11 @@ class BehavDataframe(object):
         df.gen_side = df.gen_side.fillna(method='ffill')
         df['stimulus'] = df.loc[df.event == 'GL_TRIAL_STIM_ID'].\
             set_index(df.loc[df.event == 'CHOICE_TRIAL_ONSET'].index).\
-            value.astype('float') * (-2) + 1                                    # horiz -> -1 | vert -> +1
+            value.astype('float') * (-2) + 1                                    # stimulus coding: horiz -> -1 | vert -> +1
         df['stimulus_off'] = df.event == 'CHOICE_TRIAL_STIMOFF'
         df['rule_resp'] = df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP'].\
             set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).\
-            value.astype('float') * 2 - 1                                       # vertical-left (A) --> -1 | --> vertical-right (B) --> 1
+            value.astype('float') * 2 - 1                                       # rule_reponse coding: vertical-left (A) --> -1 | vertical-right (B) --> 1
         df['reward'] = df.loc[df.event == 'GL_TRIAL_REWARD'].\
             set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).\
             value.astype('float')
@@ -88,14 +102,14 @@ class BehavDataframe(object):
                         'trial_id', 'reward', 'rt', 'surprise']]
         df = df.reset_index(drop=True)
         asign = np.sign(df.belief.values)
-        signchange = (np.roll(asign, 1) - asign)
+        signchange = (np.roll(asign, 1) - asign)                                # switch direction coding: from left to right --> -1 | from right to left --> +1
         signchange[0] = 0
         df['switch'] = signchange / 2
         df['point'] = df.event == 'GL_TRIAL_LOCATION'
         df['response'] = df.event == 'CHOICE_TRIAL_RESP'
         df.loc[df.response == True, 'response'] =\
             df.loc[df.response == True, 'value'].\
-            astype(float) * 2 - 1                                               # left -> -1 | right -> +1
+            astype(float) * 2 - 1                                               # response coding: left -> -1 | right -> +1
         df.onset = df.onset.astype(float)
         df = df.sort_values(by='onset')
         self.BehavDataframe = df
@@ -126,10 +140,9 @@ class BehavDataframe(object):
                 value.values.astype(float).mean() < 1:
             df['stimulus'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].\
                 value.astype('float') * (-2) + 1
-        #df.stimulus = df.stimulus.fillna(method='ffill', limit=4)
         df['response'] = df.event == 'CHOICE_TRIAL_RESP'
         df.loc[df.response == True, 'response'] =\
-            df.loc[df.response == True, 'value'].astype(float) * 2 - 1          # left -> -1 | right -> +1
+            df.loc[df.response == True, 'value'].astype(float) * 2 - 1          # response coding: left -> -1 | right -> +1
         df.loc[(df.event == 'CHOICE_TRIAL_RESP'), 'rule_resp'] =\
             -np.abs(df.loc[(df.event == 'CHOICE_TRIAL_RESP')].stimulus +
                     df.loc[(df.event == 'CHOICE_TRIAL_RESP')].response) + 1
@@ -143,12 +156,12 @@ class BehavDataframe(object):
 
         df['switch'] = np.append([0], np.diff(df.rewarded_rule.values)) / 2
 
-        try:                                                                    # Sanity check I
+        try:                                                                    # Sanity check I (in instructed rule runs, all switches should occur when rewarded rule stimulus is shown)
             assert all(df.loc[df.switch != 0, 'event'] == 'REWARDED_RULE_STIM')
         except AssertionError:
             print('''AssertionError:
                 Some switches do NOT coincide with rewarded rule stimulus''')
-        try:                                                                    # Sanity check II
+        try:                                                                    # Sanity check II (subject should have performance rates near 100%)
             assert df.loc[df.event == 'CHOICE_TRIAL_RESP'].reward.mean() > .8
         except AssertionError:
             print('AssertionError: Performance in instructed run at {}'.
@@ -158,20 +171,25 @@ class BehavDataframe(object):
 
 
 #@memory.cache
-def execute(subject, session, run, type, flex_dir, summary):
+def execute(subject, session, run, task, flex_dir, summary):
+    '''
+    Execute this script.
+
+    - Arguments;
+        a) subject (e.g. 'sub-17')
+        b) session (e.g. 'ses-2')
+        c) run (e.g. 'inference_run-4')
+        d) task ('inference' or "instructed")
+        e) Flexrule directory
+        f) summary file with fitted hazard rates
+            (only important when running for task == 'inference')
+
+    - Output: pd.DataFrame with behavior
+    '''
     summary = summary
     bd = BehavDataframe(subject, session, run, flex_dir)
-    if type == 'inference':
+    if task == 'inference':
         bd.inference(summary=summary)
-    elif type == 'instructed':
+    elif task == 'instructed':
         bd.instructed()
     return bd.BehavDataframe
-
-
-'''
-b = BehavDataframe('sub-19', 'ses-3', 'inference_run-4', '/Volumes/flxrl/FLEXRULE')
-b.inference(pd.read_csv('/Volumes/flxrl/FLEXRULE/behavior/bids_stan_fits/summary_stan_fits.csv'))
-# b.instructed()
-f = fmri_align(b.BehavDataframe, 'inference', fast=True)
-print(f.stimulus_rr_horiz.mean())
-'''

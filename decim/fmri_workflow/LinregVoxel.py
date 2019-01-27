@@ -11,19 +11,22 @@ from scipy.interpolate import interp1d
 
 
 '''
-Use script in two steps:
-
-FIRST: Voxel Regressions & Vol2 Surf
-    --> per subject & session
-
-SECOND: Concatenate and average magnitude and lateralization
-    --> for all
+Script to run GLM
+1. Build behvavioral design matrix
+    a) import behavioral pd.DataFrame
+    b) build matrix using patsy formula
+    c) convolve with HRf
+    d) downsample
+2. Concat runs of session
+3. Run GLM
+4. vol_2_surf
+5. Return as nifti and as surface and design matrix
 '''
 
 
 def hrf(t):
     '''
-    A hemodynamic response function
+    Compute hemodynamic response function
     '''
     h = t ** 8.6 * np.exp(-t / 0.547)
     h = np.concatenate((h * 0, h))
@@ -32,7 +35,7 @@ def hrf(t):
 
 def make_bold(evidence, dt=0.25):
     '''
-    Convolve with haemodynamic response function.
+    Convolve with hemodynamic response function.
     '''
     t = np.arange(0, 20, dt)
     return np.convolve(evidence, hrf(t), 'same')
@@ -59,6 +62,18 @@ def regular(df, target='16ms'):
 
 #@memory.cache
 class VoxelSubject(object):
+    '''
+    Initialize.
+
+    - Arguments:
+        a) subject
+        b) session
+        c) runs (multiple?)
+        d) Flexrule directory
+        e) BehavDataFrame
+        f) task
+    '''
+
     def __init__(self, subject, session, runs, flex_dir, BehavDataframe, task):
         self.subject = subject
         self.session = session
@@ -69,35 +84,44 @@ class VoxelSubject(object):
         self.surface_textures = defaultdict(dict)
         self.task = task
 
-    def design_matrix(self, behav):
+    def design_matrix(self, behav, bfill_rule_resp=False, ffill_stimulus=False,
+                      export_desmat_bf_conv=False):
         '''
         Make design matrix per block using Patsy
         Dummy code categorical variables.
+
+        - Arguments:
+            a) behavioral pd.DataFrame
+            b) rule reponse as boxcar stimulus - response?
+            c) stimulus boxcar onset - offset?
+            d) export designmatrix before convolution with hrf?
         '''
         print('load glm data...')
         continuous = behav.loc[:, ['belief', 'LLR', 'surprise', 'onset']]       # Split into categorical and numerical regressors
         categorical = behav.loc[:, ['response', 'stimulus', 'switch',
                                     'rule_resp', 'event']]
-
-        # categorical.rule_resp = categorical.rule_resp.fillna(method='bfill',
-        #                                                     limit=1)          # bfill rule_resp at onset of stimulus
+        if bfill_rule_resp is True:
+            categorical.rule_resp = categorical.rule_resp.fillna(method='bfill',
+                                                                 limit=1)       # bfill rule_resp at onset of stimulus
+            try:                                                                # Then, sanity check I
+                assert all(categorical.loc[categorical.event ==
+                                           'CHOICE_TRIAL_ONSET'].rule_resp.values ==
+                           categorical.loc[categorical.event ==
+                                           'CHOICE_TRIAL_RESP'].rule_resp.values)
+            except AssertionError:
+                print('''Assertion Error:
+                    Error in bfilling rule response values from response
+                    to stimulus''')
         categorical.rule_resp = categorical.rule_resp.fillna(0.)
-        try:                                                                    # Sanity check I
-            assert all(categorical.loc[categorical.event ==
-                                       'CHOICE_TRIAL_ONSET'].rule_resp.values ==
-                       categorical.loc[categorical.event ==
-                                       'CHOICE_TRIAL_RESP'].rule_resp.values)
-        except AssertionError:
-            print('''Assertion Error:
-                Error in bfilling rule response values from response
-                to sitmulus''')
         combined = pd.concat([categorical, continuous], axis=1)
         combined = combined.set_index((combined.onset.values * 1000).
                                       astype(int)).drop('onset', axis=1)
         combined = combined.\
             reindex(pd.Index(np.arange(0, combined.index[-1] + 15000, 1)))
         combined = combined.fillna(method='ffill', limit=99)
-        #combined.stimulus = combined.stimulus.fillna(method='ffill', limit=1900)  # stimulus lasts until offset
+        if ffill_stimulus is True:
+            combined.stimulus = combined.stimulus.fillna(method='ffill',
+                                                         limit=1900)            # stimulus lasts until offset --> boxcar regressor
         combined = combined.loc[np.arange(combined.index[0],
                                           combined.index[-1], 100)]
         combined.loc[0] = 0
@@ -114,8 +138,7 @@ class VoxelSubject(object):
         combined.rule_resp = combined.rule_resp.\
             map({-1: 'A', 1: 'B', 0: 'none'})
 
-        # build design matrix using patsy formulas
-        s = ['none', 'vertical', 'horizontal']
+        s = ['none', 'vertical', 'horizontal']                                  # levels for patsy formula formulator
         b = ['none', 'left', 'right']
         r = ['none', 'A', 'B']
         if self.task == 'instructed':
@@ -128,12 +151,14 @@ class VoxelSubject(object):
                 C(stimulus, levels=s) + C(response, levels=b)''', data=combined)
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
                           design_info.column_names, index=combined.index)
-        # dm.to_hdf('/Users/kenohagena/Desktop/design_matrix.hdf', key=self.task)# for checking the design matrix before convolution
+        if export_desmat_bf_conv is True:
+            dm.to_hdf('/Users/kenohagena/Desktop/design_matrix.hdf',
+                      key=self.task)                                            # for checking the design matrix before convolution
 
         for column in dm.columns:
             print('Align ', column)
-            dm[column] = make_bold(dm[column].values, dt=.1)
-        dm = regular(dm, target='1900ms')
+            dm[column] = make_bold(dm[column].values, dt=.1)                    # convolve with hrf
+        dm = regular(dm, target='1900ms')                                       # resample to EPI frequency
         dm.loc[pd.Timedelta(0)] = 0
         dm = dm.sort_index()
         return dm.drop('Intercept', axis=1)
@@ -141,6 +166,9 @@ class VoxelSubject(object):
     def concat_runs(self, denoise=False):
         '''
         Concatenate design matrices per session.
+
+        - Argument:
+            a) use denoised nifti?
         '''
         session_nifti = []
         session_behav = []
@@ -182,17 +210,19 @@ class VoxelSubject(object):
         self.session_nifti = session_nifti
         self.session_behav = session_behav
 
-    def glm(self):
+    def glm(self, z_score_behav=True):
         '''
         Run GLM on design matrices.
-        Z-score voxels and behavioral regressors.
+
+        - Arguments:
+            a) z_score behavior?
         '''
         voxels = self.session_nifti
         behav = self.session_behav
-        # z-scoring
-        voxels = (voxels - voxels.mean()) / voxels.std()
+        voxels = (voxels - voxels.mean()) / voxels.std()                        # normalize voxels
         voxels = voxels.fillna(0)                                               # because if voxels have std == 0 --> NaNs introduced
-        behav = (behav - behav.mean()) / behav.std()
+        if z_score_behav is True:                                               # normalize behavior
+            behav = (behav - behav.mean()) / behav.std()
         self.DesignMatrix = behav
         linreg = LinearRegression()
         print('fit', self.task)
@@ -210,8 +240,8 @@ class VoxelSubject(object):
             new_shape = np.stack([reg_result[i, :].
                                   reshape(self.nifti_shape[0:3])
                                   for i in range(reg_result.shape[0])], -1)
-            new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine)
-            self.voxel_regressions[parameter] = new_image
+            new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine)    # make 4D nifti with regression result per parameter
+            self.voxel_regressions[parameter] = new_image                       # fourth dimension contains coefficient, r_square, intercept, mean squared error
 
     def vol_2surf(self, radius=.3):
         '''
