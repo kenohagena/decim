@@ -225,12 +225,11 @@ class PupilFrame(object):
         '''
 
         array = self.pupil_frame['pa_{}'.format(self.pupilside)] < 100          # detects blinks by absolute pupil diameter threshold
-        array = self.small_fragments(array, crit_frags=crit_frags)              # moreover, sets small fragments to NaN
+        array = self.small_fragments(array, threshhold=crit_frags)              # moreover, sets small fragments to NaN
         pupil_interpld =\
             self.interpol(array=array,
-                          pupil=self.pupil_frame['pa_{}'.
-                                                 format(self.pupilside)],
-                          margin=250)                                           # interpolate detected blinks and small fragments linearly
+                          orig_pupil=self.pupil_frame['pa_{}'.
+                                                      format(self.pupilside)])  # interpolate detected blinks and small fragments linearly
         self.pupil_frame['interpol'] = pupil_interpld
 
     def man_deblink(self):
@@ -276,9 +275,9 @@ class PupilFrame(object):
             pf['blink'] = pf['pa_{}'.format(self.pupilside)] < 100
             pf.loc[dirty, 'blink'] = True
             pf.loc[clean, 'blink'] = False
-            interpolated = self.interpol(source=pf['blink'],
-                                         pupil=pf['pa_{}'.
-                                                  format(self.pupilside)])      # interpolate
+            interpolated = self.interpol(array=pf['blink'],
+                                         orig_pupil=pf['pa_{}'.
+                                                       format(self.pupilside)])  # interpolate
             pf['man_deblink'] = interpolated
             plot(compare=True)
             valid = input('valid? yes/no ')

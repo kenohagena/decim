@@ -7,14 +7,18 @@ from multiprocessing import Pool
 import pystan
 from decim.adjuvant import glaze_model as gl
 from os.path import join
+from glob import glob
 import datetime
 from decim.adjuvant import slurm_submit as slu
+from decim.adjuvant import statmisc
+
 
 '''
 Extract and format behavioral data per subject and session
 and do parameter fits using Stan model.
 
 Set options at the beginning of script, than use "submit"
+Submit function works with HUMMEL cluster.
 '''
 
 
@@ -76,7 +80,16 @@ def stan_data_control(subject, session, path, swap=False):
     return data
 
 
-def fit_session(subject, session):
+def fit_session(subject, session, bids_mr=bids_mr, flex_dir=flex_dir):
+    '''
+    Fit Glaze model for subject and session using Stan.
+
+    - Arguments:
+        a) subject (just number)
+        b) session (just number)
+        c) directory of raw BIDS data set
+        d) output directory
+    '''
     try:
         data = stan_data_control(subject, session, bids_mr)
         model_file = decim.get_data('stan_models/inv_glaze_b_fixgen_var.stan')
@@ -92,8 +105,8 @@ def fit_session(subject, session):
         out_dir = join(flex_dir, 'Stan_Fits_{0}'.format(datetime.datetime.now().
                                                         strftime("%Y-%m-%d")))
         slu.mkdir_p(out_dir)
-        d.to_hdf(join(out_dir, 'Sub-{0}_stanfit.hdf'.
-                      format(subject)), key=session)
+        d.to_hdf(join(out_dir, 'sub-{0}_stanfit.hdf'.
+                      format(subject)), key='ses-{}'.format(session))
     except RuntimeError:
         print("No file found for subject {0}, session {1}".
               format(subject, session))
@@ -115,3 +128,25 @@ def submit():
     for chunk in grouper(keys(), 6):
         slu.pmap(par_execute, chunk, walltime='2:00:00',
                  memory=60, nodes=1, tasks=16, name='bids_stan')
+
+
+def concatenate(input_dir):
+    '''
+    Concatenate fitted parameters for sessions and subjects. Compute mode and confidence intervals.
+    Return dictionary.
+    '''
+    summary = []
+    files = glob(join(input_dir, '.hdf'))
+    for file in files:
+        for key in file.keys():
+            s = pd.read_hdf(file, key=key)
+            dr = {'vmode': statmisc.mode(s.V.values, 50, decimals=False),
+                  'vupper': statmisc.hdi(s.V.values)[1],
+                  'vlower': statmisc.hdi(s.V.values)[0],
+                  'hmode': statmisc.mode(s.H.values, 50, decimals=False),
+                  'hupper': statmisc.hdi(s.H.values)[1],
+                  'hlower': statmisc.hdi(s.H.values)[0],
+                  'subject': file[:5], 'session': key}
+            summary.append(dr)
+    summary = pd.DataFrame(summary)
+    summary.to_csv(join(input_dir, 'summary_stan_fits.csv'))
