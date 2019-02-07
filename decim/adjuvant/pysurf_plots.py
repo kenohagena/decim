@@ -92,7 +92,6 @@ def concat(SJ_dir, task):
         aparc_file = join('/Volumes/flxrl/FLEXRULE/fmri/completed_preprocessed/',
                           subject, 'freesurfer', subject, 'label',
                           '{}.HCPMMP1.annot'.format(hemis[hemi]))
-        print(aparc_file)
         try:
             labels, ctab, names = nib.freesurfer.read_annot(aparc_file)
         except FileNotFoundError:
@@ -102,7 +101,7 @@ def concat(SJ_dir, task):
                         'SurfaceTxt_sub-{0}_ses-{1}_{2}_{3}.hdf'.
                         format(sub, ses, param, hemi))
             parameter = mapping[param]
-            print(task, parameter, subject, ses)
+            # print(task, parameter, subject, ses)                              # uncomment for debug
             session = 'ses-{}'.format(ses)
             try:
                 df = pd.read_hdf(file, key=task)
@@ -170,7 +169,7 @@ def surface_glm_data(df, lateral_params, marker='coef_', output='t_stat'):
                                        {'{}'.format(lateral_param):
                                         '{}_right'.format(lateral_param)}})
             lat = pd.concat([lat, lat_opp], ignore_index=True)
-        print(lat.parameter.unique())
+        # print(lat.parameter.unique())                                         # uncomment for debug
         lat = lat.groupby(['parameter'], group_keys=False).\
             apply(lateralize).reset_index()                                     # per parameter apply laterlization function
         lat = lat.groupby(['names', 'subject']).\
@@ -189,9 +188,8 @@ def surface_data(SJ_dir, lateral_params, task, exclude=['sub-11', 'sub-20']):
     out_dir = join(SJ_dir, 'GroupLevel')
     slu.mkdir_p(out_dir)
     grouped = concat(SJ_dir, task)
-    print(grouped.subject.unique())
     grouped = grouped.loc[~grouped.subject.isin(exclude)]
-    print(grouped.subject.unique())
+    # print(grouped.subject.unique())
     t_stat = surface_glm_data(grouped, lateral_params, output='t_stat')
     p_vals = surface_glm_data(grouped, lateral_params, output='p_val')
     t_stat.to_hdf(join(out_dir, 'Surface_{}.hdf'
