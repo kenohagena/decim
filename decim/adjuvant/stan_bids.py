@@ -25,7 +25,7 @@ Submit function works with HUMMEL cluster.
 # SET OPTIONS
 bids_mr = '/work/faty014/FLEXRULE/raw/bids_mr_v1.2/'
 flex_dir = '/work/faty014/FLEXRULE'
-subjects = [1, 2]  # , 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22
+subjects = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
 sessions = [1, 2, 3]
 
 
@@ -41,7 +41,6 @@ def stan_data_control(sub, ses, path, swap=False):
 
     Takes integer subject, integer session and filepath.
     '''
-    print('stan_data_control')
     lp = [0]
     logs = gl.load_logs_bids('sub-{}'.format(sub), 'ses-{}'.format(ses), path)
     df = pd.concat(logs)
@@ -82,7 +81,6 @@ def stan_data_control(sub, ses, path, swap=False):
 
 
 def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
-    print('fit_session', sub, ses)
     '''
     Fit Glaze model for subject and session using Stan.
 
@@ -123,13 +121,12 @@ def grouper(iterable, n, fillvalue=None):
 def par_execute(chunk):
     # print(ii, len(chunk))
     chunk = [arg for arg in chunk if arg is not None]
-    print(chunk)
     with Pool(6) as p:
         p.starmap(fit_session, chunk)
 
 
 def submit():
-    for chunk in grouper(keys(), 6):
+    for chunk in grouper(keys(), 6):                                            # more than 6 crashes the node
         slu.pmap(par_execute, chunk, walltime='2:00:00',
                  memory=58, nodes=1, tasks=16, name='bids_stan')
 
