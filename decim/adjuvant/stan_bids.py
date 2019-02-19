@@ -83,6 +83,7 @@ def stan_data_control(sub, ses, path, swap=False):
 
 def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
     print('fit_session', sub, ses)
+    print(flex_dir)
     '''
     Fit Glaze model for subject and session using Stan.
 
