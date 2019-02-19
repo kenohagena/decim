@@ -70,7 +70,7 @@ def stan_data_control(sub, ses, path, swap=False):
     data = {
         'I': dec_count,                                                         # number of decisions
         'N': point_count,                                                       # number of point samples
-        'obs_decisions': decisions.values,#.astype(int),                          # decisions (0 or 1)
+        'obs_decisions': decisions.values.astype(int),                          # decisions (0 or 1)
         'x': points.values,                                                     # sample values
         'obs_idx': dec_indices,                                                 # indices of decisions
         'B': len(logs),                                                         # number of total samples
