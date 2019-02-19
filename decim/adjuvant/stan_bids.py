@@ -128,7 +128,7 @@ def par_execute(chunk):
 def submit():
     for chunk in grouper(keys(), 6):                                            # more than 6 crashes the node
         slu.pmap(par_execute, chunk, walltime='2:00:00',
-                 memory=58, nodes=1, tasks=16, name='bids_stan')
+                 memory=60, nodes=1, tasks=16, name='bids_stan')
 
 
 def concatenate(input_dir):
