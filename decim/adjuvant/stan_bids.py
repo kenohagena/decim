@@ -25,7 +25,7 @@ Submit function works with HUMMEL cluster.
 # SET OPTIONS
 bids_mr = '/work/faty014/bids_mr_v1.1/'
 flex_dir = '/work/faty014/FLEXRULE'
-subjects = [1, 2] #, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22
+subjects = [1, 2]  # , 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22
 sessions = [1, 2, 3]
 
 
@@ -121,6 +121,7 @@ def grouper(iterable, n, fillvalue=None):
 def par_execute(chunk):
     # print(ii, len(chunk))
     chunk = [arg for arg in chunk if arg is not None]
+    print(chunk)
     with Pool(6) as p:
         p.starmap(fit_session, chunk)
 
