@@ -70,7 +70,7 @@ def stan_data_control(sub, ses, path, swap=False):
     data = {
         'I': dec_count,                                                         # number of decisions
         'N': point_count,                                                       # number of point samples
-        'obs_decisions': decisions.values,                                      # decisions (0 or 1)
+        'obs_decisions': decisions.values#.astype(int),                          # decisions (0 or 1)
         'x': points.values,                                                     # sample values
         'obs_idx': dec_indices,                                                 # indices of decisions
         'B': len(logs),                                                         # number of total samples
@@ -108,9 +108,9 @@ def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
         print(out_dir)
         d.to_hdf(join(out_dir, 'sub-{0}_stanfit.hdf'.
                       format(sub)), key='ses-{}'.format(ses))
-    except RuntimeError:
+    except RuntimeError as e:
         print("No file found for subject {0}, session {1}, path {2}".
-              format(sub, ses, bids_mr))
+              format(sub, ses, bids_mr), e)
 
 
 def grouper(iterable, n, fillvalue=None):
