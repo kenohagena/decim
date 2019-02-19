@@ -23,7 +23,7 @@ Submit function works with HUMMEL cluster.
 
 
 # SET OPTIONS
-bids_mr = '/work/faty014/FLEXRULE/raw/bids_mr_v1.2/'
+bids_mr = '/work/faty014/FLEXRULE/raw/bids_mr_v1.2'
 flex_dir = '/work/faty014/FLEXRULE'
 subjects = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
 sessions = [1, 2, 3]
@@ -109,8 +109,8 @@ def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
         d.to_hdf(join(out_dir, 'sub-{0}_stanfit.hdf'.
                       format(sub)), key='ses-{}'.format(ses))
     except RuntimeError:
-        print("No file found for subject {0}, session {1}".
-              format(sub, ses))
+        print("No file found for subject {0}, session {1}, path {2}".
+              format(sub, ses, bids_mr))
 
 
 def grouper(iterable, n, fillvalue=None):
