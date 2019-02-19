@@ -83,7 +83,6 @@ def stan_data_control(sub, ses, path, swap=False):
 
 def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
     print('fit_session', sub, ses)
-    # print(flex_dir)
     '''
     Fit Glaze model for subject and session using Stan.
 
@@ -113,7 +112,7 @@ def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
                       format(sub)), key='ses-{}'.format(ses))
     except RuntimeError:
         print("No file found for subject {0}, session {1}".
-              format(sub, ses))
+              format(sub, flex_dir))
 
 
 def grouper(iterable, n, fillvalue=None):
