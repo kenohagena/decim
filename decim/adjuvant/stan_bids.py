@@ -25,7 +25,7 @@ Submit function works with HUMMEL cluster.
 # SET OPTIONS
 bids_mr = '/work/faty014/bids_mr_v1.1/'
 flex_dir = '/work/faty014/FLEXRULE'
-subjects = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+subjects = [1, 2] #, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22
 sessions = [1, 2, 3]
 
 
@@ -105,6 +105,7 @@ def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
         out_dir = join(flex_dir, 'Stan_Fits_{0}'.format(datetime.datetime.now().
                                                         strftime("%Y-%m-%d")))
         slu.mkdir_p(out_dir)
+        print(out_dir)
         d.to_hdf(join(out_dir, 'sub-{0}_stanfit.hdf'.
                       format(sub)), key='ses-{}'.format(ses))
     except RuntimeError:
@@ -127,7 +128,7 @@ def par_execute(chunk):
 def submit():
     for chunk in grouper(keys(), 6):
         slu.pmap(par_execute, chunk, walltime='2:00:00',
-                 memory=60, nodes=1, tasks=16, name='bids_stan')
+                 memory=58, nodes=1, tasks=16, name='bids_stan')
 
 
 def concatenate(input_dir):
