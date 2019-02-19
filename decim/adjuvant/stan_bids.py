@@ -41,6 +41,7 @@ def stan_data_control(sub, ses, path, swap=False):
 
     Takes integer subject, integer session and filepath.
     '''
+    print('stan_data_control')
     lp = [0]
     logs = gl.load_logs_bids('sub-{}'.format(sub), 'ses-{}'.format(ses), path)
     df = pd.concat(logs)
@@ -81,6 +82,7 @@ def stan_data_control(sub, ses, path, swap=False):
 
 
 def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
+    print('fit_session')
     '''
     Fit Glaze model for subject and session using Stan.
 
