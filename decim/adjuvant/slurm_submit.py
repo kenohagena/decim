@@ -27,7 +27,7 @@ def submit(walltime, memory, tmpdir, logdir, workdir, script, name,
 #SBATCH --mem={memory}GB
 #SBATCH --partition=std
 #SBATCH --mail-user=kenohagena@gmail.com
-#SBATCH --mail-type=NONE
+#SBATCH --mail-type=ALL
 #SBATCH --error=/work/faty014/cluster/slurm_%j.out
 #SBATCH --output=/work/faty014/cluster/slurm_%j.err
 
