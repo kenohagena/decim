@@ -25,7 +25,7 @@ Submit function works with HUMMEL cluster.
 # SET OPTIONS
 bids_mr = '/work/faty014/bids_mr_v1.1/'
 flex_dir = '/work/faty014/FLEXRULE'
-subjects = [1, 2]
+subjects = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
 sessions = [1, 2, 3]
 
 
@@ -35,14 +35,14 @@ def keys():
             yield(subject, session)
 
 
-def stan_data_control(subject, session, path, swap=False):
+def stan_data_control(sub, ses, path, swap=False):
     '''
     Returns dictionary with data that fits requirement of stan model.
 
-    Takes subject, session and filepath.
+    Takes integer subject, integer session and filepath.
     '''
     lp = [0]
-    logs = gl.load_logs_bids(subject, session, path)
+    logs = gl.load_logs_bids('sub-{}'.format(sub), 'ses-{}'.format(ses), path)
     df = pd.concat(logs)
     lp = [0]
     for key, value in logs.items():
@@ -80,7 +80,7 @@ def stan_data_control(subject, session, path, swap=False):
     return data
 
 
-def fit_session(subject, session, bids_mr=bids_mr, flex_dir=flex_dir):
+def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
     '''
     Fit Glaze model for subject and session using Stan.
 
@@ -91,7 +91,7 @@ def fit_session(subject, session, bids_mr=bids_mr, flex_dir=flex_dir):
         d) output directory
     '''
     try:
-        data = stan_data_control(subject, session, bids_mr)
+        data = stan_data_control(sub, ses, bids_mr)
         model_file = decim.get_data('stan_models/inv_glaze_b_fixgen_var.stan')
         compilefile = join(flex_dir, 'inv_glaze_b_fixgen_var_compiled.stan')
         try:                                                                    # reduce memory load by only compiling the model once at the beginning
@@ -106,10 +106,10 @@ def fit_session(subject, session, bids_mr=bids_mr, flex_dir=flex_dir):
                                                         strftime("%Y-%m-%d")))
         slu.mkdir_p(out_dir)
         d.to_hdf(join(out_dir, 'sub-{0}_stanfit.hdf'.
-                      format(subject)), key='ses-{}'.format(session))
+                      format(sub)), key='ses-{}'.format(ses))
     except RuntimeError:
         print("No file found for subject {0}, session {1}".
-              format(subject, session))
+              format(sub, ses))
 
 
 def grouper(iterable, n, fillvalue=None):
