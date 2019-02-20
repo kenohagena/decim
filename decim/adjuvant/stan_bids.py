@@ -25,7 +25,7 @@ Submit function works with HUMMEL cluster.
 # SET OPTIONS
 bids_mr = '/work/faty014/FLEXRULE/raw/bids_mr_v1.2'
 flex_dir = '/work/faty014/FLEXRULE'
-subjects = [1, 2]
+subjects = np.array(range(1, 23))
 sessions = [1, 2, 3]
 
 
