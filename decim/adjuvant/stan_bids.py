@@ -1,4 +1,5 @@
 import decim
+import h5py
 import pandas as pd
 import numpy as np
 import pickle
@@ -139,15 +140,17 @@ def concatenate(input_dir):
     summary = []
     files = glob(join(input_dir, '.hdf'))
     for file in files:
-        for key in file.keys():
-            s = pd.read_hdf(file, key=key)
-            dr = {'vmode': statmisc.mode(s.V.values, 50, decimals=False),
-                  'vupper': statmisc.hdi(s.V.values)[1],
-                  'vlower': statmisc.hdi(s.V.values)[0],
-                  'hmode': statmisc.mode(s.H.values, 50, decimals=False),
-                  'hupper': statmisc.hdi(s.H.values)[1],
-                  'hlower': statmisc.hdi(s.H.values)[0],
-                  'subject': file[:5], 'session': key}
-            summary.append(dr)
+        with h5py.File(file, 'r') as f:
+            for key in f.keys():
+                s = pd.read_hdf(file, key=key)
+                dr = {'vmode': statmisc.mode(s.V.values, 50, decimals=False),
+                      'vupper': statmisc.hdi(s.V.values)[1],
+                      'vlower': statmisc.hdi(s.V.values)[0],
+                      'hmode': statmisc.mode(s.H.values, 50, decimals=False),
+                      'hupper': statmisc.hdi(s.H.values)[1],
+                      'hlower': statmisc.hdi(s.H.values)[0],
+                      'subject': file[file.find('sub'):file.find('_stan')],
+                      'session': key}
+                summary.append(dr)
     summary = pd.DataFrame(summary)
     summary.to_csv(join(input_dir, 'summary_stan_fits.csv'))
