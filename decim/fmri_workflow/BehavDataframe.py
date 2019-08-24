@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from decim.fmri_workflow import LinregVoxel
 from decim.adjuvant import glaze_model as gm
 from os.path import join, expanduser
 from decim.adjuvant import slurm_submit as slu
@@ -133,7 +134,7 @@ class BehavDataframe(object):
         df.rewarded_rule = df.rewarded_rule.fillna(method='ffill') * 2 - 1
 
         if df.loc[df.event == 'CHOICE_TRIAL_ONSET'].\
-                value.values.astype(float).mean() > 1:                          # In some subjects grating ID is decoded with 0 / 1 in others with 2 /1
+                value.values.astype(float).mean() > 1:                          # In some subjects grating ID is encoded with 0 / 1 in others with 2 /1
             df['stimulus'] = df.loc[df.event == 'CHOICE_TRIAL_ONSET'].\
                 value.astype('float') * (2) - 3
         elif df.loc[df.event == 'CHOICE_TRIAL_ONSET'].\
@@ -144,8 +145,8 @@ class BehavDataframe(object):
         df.loc[df.response == True, 'response'] =\
             df.loc[df.response == True, 'value'].astype(float) * 2 - 1          # response coding: left -> -1 | right -> +1
         df.loc[(df.event == 'CHOICE_TRIAL_RESP'), 'rule_resp'] =\
-            -np.abs(df.loc[(df.event == 'CHOICE_TRIAL_RESP')].stimulus +
-                    df.loc[(df.event == 'CHOICE_TRIAL_RESP')].response) + 1
+            -np.abs(df.loc[(df.event == 'CHOICE_TRIAL_ONSET')].stimulus.values +
+                    df.loc[(df.event == 'CHOICE_TRIAL_RESP')].response.values) + 1
         df.loc[(df.event == 'CHOICE_TRIAL_RESP'), 'reward'] =\
             df.loc[(df.event == 'CHOICE_TRIAL_RESP')].rule_resp ==\
             df.loc[(df.event == 'CHOICE_TRIAL_RESP')].rewarded_rule
@@ -170,8 +171,33 @@ class BehavDataframe(object):
         self.BehavDataframe = df
 
 
+def realign_to_TR(behav, convolve_hrf=False, task='instructed'):
+    if task == 'inference':
+        dm = behav.loc[:, ['belief', 'onset']]
+    elif task == 'instructed':
+        dm = behav.loc[:, ['rewarded_rule', 'onset']]
+    dm = dm.set_index((dm.onset.values * 1000).
+                      astype(int)).drop('onset', axis=1)
+    dm = dm.reindex(pd.Index(np.arange(0, dm.index[-1] + 15000, 1)))
+    dm = dm.fillna(method='ffill', limit=99)
+
+    dm = dm.loc[np.arange(dm.index[0],
+                          dm.index[-1], 100)]
+    dm.loc[0] = 0
+    dm = dm.fillna(method='ffill')
+    if convolve_hrf is True:
+        for column in dm.columns:
+            print('Align ', column)
+            dm[column] = LinregVoxel.make_bold(dm[column].values, dt=.1)
+
+    dm = LinregVoxel.regular(dm, target='1900ms')
+    dm.loc[pd.Timedelta(0)] = 0
+    dm = dm.sort_index()
+    return dm
+
+
 #@memory.cache
-def execute(subject, session, run, task, flex_dir, summary):
+def execute(subject, session, run, task, flex_dir, summary, belief_TR=False):
     '''
     Execute this script.
 
@@ -192,4 +218,17 @@ def execute(subject, session, run, task, flex_dir, summary):
         bd.inference(summary=summary)
     elif task == 'instructed':
         bd.instructed()
+    if belief_TR is True:
+        bd.BehavDataframe = realign_to_TR(bd.BehavDataframe, task=task)
     return bd.BehavDataframe
+
+
+'''
+flex_dir = '/Volumes/flxrl/FLEXRULE'
+subject = 'sub-17'
+session = 'ses-3'
+run = 'instructed_run-7'
+task = 'instructed'
+summary = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv')
+print(execute(subject, session, run, task, flex_dir, summary, belief_TR=False).head())
+'''

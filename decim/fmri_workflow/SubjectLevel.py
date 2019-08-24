@@ -148,7 +148,7 @@ class SubjectLevel(object):
                                              self.flex_dir, manual)
                     self.PupilFrame[session][run] = pupil_frame
 
-    def BehavFrames(self):
+    def BehavFrames(self, belief_TR=False):
         '''
         First Level
         OUTPUT: BehavFrames
@@ -161,7 +161,7 @@ class SubjectLevel(object):
                 try:
                     behavior_frame = bd.execute(self.subject, session,
                                                 run, task, self.flex_dir,
-                                                self.summary)
+                                                self.summary, belief_TR=belief_TR)
                     self.BehavFrame[session][run] = behavior_frame
                 except RuntimeError:
                     print('Runtimeerror for', self.subject, session, run)
@@ -289,9 +289,9 @@ class SubjectLevel(object):
 
 def execute(sub, ses, environment):
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
-    sl.BehavFrames()
-    sl.LinregVoxel()
-    sl.Output(dir='Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+    sl.BehavFrames(belief_TR=True)
+    # sl.LinregVoxel()
+    sl.Output(dir='Belief_TR_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
 
 
 def par_execute(keys):
@@ -312,4 +312,4 @@ def submit(sub, env='Hummel'):
     elif env == 'Climag':
         for ses in [2, 3]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
-                     memory=40, nodes=1, tasks=2, name='memorial_queue')
+                     memory=40, nodes=1, tasks=2, name='queue')
