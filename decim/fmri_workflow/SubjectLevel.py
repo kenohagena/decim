@@ -293,7 +293,7 @@ def execute(sub, ses, environment):
     sl.BehavFrames()
     sl.RoiExtract()
     sl.PupilFrame = defaultdict(dict)
-    file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes_manual', 'PupilFrame_{0}_ses-{1}.hdf'.format(sl.sub, ses)))
+    file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes_manual', 'PupilFrame_sub-{0}_ses-{1}.hdf'.format(sl.sub, ses)))
     if len(file) != 1:
         print(len(file), ' pupil frames found...')
     with pd.HDFStore(file[0]) as hdf:
@@ -327,3 +327,6 @@ def submit(sub, env='Hummel'):
         for ses in [2, 3]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
                      memory=40, nodes=1, tasks=2, name='queue')
+
+
+
