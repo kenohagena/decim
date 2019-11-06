@@ -102,7 +102,6 @@ class Choiceframe(object):
             blink_mean.append(df.loc[np.arange(switch - 500, switch + 1500),
                                      'blink'].mean())                           # Mean artifact during 2 most important seconds
         pupil_swl = pd.DataFrame(pupil_swl)
-        # print(pupil_swl)
         baseline = np.matrix((pupil_swl.loc[:, 0:1000].mean(axis=1))).T
         pupil_swl = pd.DataFrame(np.matrix(pupil_swl) -
                                  baseline)
@@ -171,7 +170,9 @@ class Choiceframe(object):
                             self.pupil_parameters,
                             self.switch_behavior,
                             self.point_kernels], axis=1)
+        print(master.head(), master.index, master.shape)
         master = master.set_index([master.behavior.parameters.onset])
+        print(master.head(), master.index, master.shape)
         singles = []
         for key, frame in self.roi_epochs.items():
             frame.columns = pd.MultiIndex.from_product([['fmri'], [key],
