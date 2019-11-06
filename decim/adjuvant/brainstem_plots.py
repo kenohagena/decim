@@ -34,7 +34,7 @@ FIRST: Extract brainstem Rois and weight them
 def extract_brainstem(sub, flex_dir, GLM_run, task):
     '''
     '''
-    cit = pd.read_table(join(flex_dir, 'fmri', 'atlases', 'original_atlases',
+    cit = pd.read_table(join(flex_dir, 'fmri', 'atlases',
                              'CIT168_RL_Subcortical_Nuclei',
                              'CIT168_Reinf_Learn_v1/labels.txt'),
                         sep='  ', header=None)
@@ -220,7 +220,7 @@ def hummel_submit(GLM_run):
 
 def climag_submit(GLM_run):
     flex_dir = '/home/khagena/FLEXRULE'
-    for sub in range(1, 23):
+    for sub in range(1, 2):
         for task in ['inference', 'instructed']:
             pbs.pmap(extract_brainstem, [(sub, flex_dir, GLM_run, task)],
                      walltime='1:00:00', memory=15, nodes=1, tasks=1,
