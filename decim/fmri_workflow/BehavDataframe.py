@@ -152,7 +152,7 @@ class BehavDataframe(object):
             df.loc[(df.event == 'CHOICE_TRIAL_RESP')].rewarded_rule
 
         df = df.loc[:, ['onset', 'event', 'rt', 'rewarded_rule', 'response',
-                        'stimulus', 'stimulus_off', 'rule_resp', 'reward']].\
+                        'stimulus', 'stimulus_off', 'rule_resp', 'reward', 'value']].\
             reset_index(drop=True)
 
         df['switch'] = np.append([0], np.diff(df.rewarded_rule.values)) / 2
