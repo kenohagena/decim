@@ -131,8 +131,7 @@ class Choiceframe(object):
         target = roi.resample(freq).mean().index
         roi = pd.concat([fa.interp(dt, roi[c], target) for c in roi.columns],
                         axis=1)
-        behav = self.switch_behavior
-        onsets = behav.onset.values
+        onsets = self.switch_behavior.onset.values
         evoked_run = defaultdict(list)
         bl = pd.Timedelta(basel, unit='ms')
         te = pd.Timedelta(te, unit='ms')
@@ -150,7 +149,7 @@ class Choiceframe(object):
 
     def merge(self):
         '''
-        Merge everything. And Save.
+        Merge everything
         '''
         self.pupil_switch_lock.columns =\
             pd.MultiIndex.from_product([['pupil'], ['switch_lock'],
@@ -180,6 +179,7 @@ class Choiceframe(object):
                                                        names=['source', 'type', 'name'])
             singles.append(frame)
         fmri = pd.concat(singles, axis=1)
+        print(fmri.head(), fmri.shape, master.index, fmri.index)
         self.master = pd.merge(fmri.set_index(master.index, drop=True).reset_index(),
                                master.reset_index())
 
