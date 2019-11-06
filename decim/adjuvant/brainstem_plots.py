@@ -218,13 +218,13 @@ def hummel_submit(GLM_run):
              memory=60, nodes=1, tasks=16, name='brainstem_coefs')
 
 
-def climag_submit(GLM_run):
+def climag_submit(GLM_run, subrange):
     flex_dir = '/home/khagena/FLEXRULE'
-    for sub in range(1, 2):
+    for sub in subrange:
         for task in ['inference', 'instructed']:
             pbs.pmap(extract_brainstem, [(sub, flex_dir, GLM_run, task)],
                      walltime='1:00:00', memory=15, nodes=1, tasks=1,
-                     name='bs_coefs_{}'.format(sub))
+                     name='coefs_{0}_{1}'.format(sub, task))
 
 
 '''
