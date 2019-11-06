@@ -166,13 +166,16 @@ class Choiceframe(object):
             pd.MultiIndex.from_product([['behavior'], ['points'],
                                         range(self.point_kernels.shape[1])],
                                        names=['source', 'type', 'name'])
+        print(self.pupil_switch_lock.shape,
+              self.pupil_parameters.shape,
+              self.switch_behavior.shape,
+              self.point_kernels.shape)
         master = pd.concat([self.pupil_switch_lock,
                             self.pupil_parameters,
                             self.switch_behavior,
                             self.point_kernels], axis=1)
         print(master.head(), master.index, master.shape)
         master = master.set_index([master.behavior.parameters.onset])
-        print(master.head(), master.index, master.shape)
         singles = []
         for key, frame in self.roi_epochs.items():
             frame.columns = pd.MultiIndex.from_product([['fmri'], [key],
