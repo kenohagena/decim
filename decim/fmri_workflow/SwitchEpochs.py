@@ -85,7 +85,7 @@ class Choiceframe(object):
                                            'CHOICE_TRIAL_ONSET'].time.values
         difference = pupil_onsets / 1000 - behav_onsets                         # Pupil and behavioral data have different time logs
         assert difference.std() < 0.05                                          # Sanity Check I: Transformation between both time scales works
-        swo_behav = df.loc[df.switch != 0].onset.values                         # Switch time points extracted from behavioral data
+        swo_behav = df.loc[df.switch == True].onset.values                         # Switch time points extracted from behavioral data
         swo_pupil = (swo_behav + difference.mean()) * 1000                      # Time points transformed to pupil time scale
         sw_indices = self.PupilFrame.loc[self.PupilFrame.time.
                                          isin(swo_pupil.
@@ -174,7 +174,6 @@ class Choiceframe(object):
                             self.pupil_parameters,
                             self.switch_behavior,
                             self.point_kernels], axis=1)
-        print(master.head(), master.index, master.shape)
         master = master.set_index([master.behavior.parameters.onset])
         singles = []
         for key, frame in self.roi_epochs.items():
@@ -183,7 +182,6 @@ class Choiceframe(object):
                                                        names=['source', 'type', 'name'])
             singles.append(frame)
         fmri = pd.concat(singles, axis=1)
-        print(fmri.head(), fmri.shape, master.index, fmri.index)
         self.master = pd.merge(fmri.set_index(master.index, drop=True).reset_index(),
                                master.reset_index())
 
