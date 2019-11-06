@@ -44,11 +44,11 @@ class Choiceframe(object):
 
     def choice_behavior(self):
         df = self.BehavFrame
-        switches = pd.DataFrame({'onset': df.loc[df.switch != 0].
+        switches = pd.DataFrame({'onset': df.loc[df.switch == True].
                                  onset.values,
-                                 'direction': df.loc[df.switch != 0].
+                                 'direction': df.loc[df.switch == True].
                                  switch.values,
-                                 'switch_index': df.loc[df.switch != 0].
+                                 'switch_index': df.loc[df.switch == True].
                                  index.values})
         self.switch_behavior = switches
 
