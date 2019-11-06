@@ -166,10 +166,6 @@ class Choiceframe(object):
             pd.MultiIndex.from_product([['behavior'], ['points'],
                                         range(self.point_kernels.shape[1])],
                                        names=['source', 'type', 'name'])
-        print(self.pupil_switch_lock.shape,
-              self.pupil_parameters.shape,
-              self.switch_behavior.shape,
-              self.point_kernels.shape)
         master = pd.concat([self.pupil_switch_lock,
                             self.pupil_parameters,
                             self.switch_behavior,

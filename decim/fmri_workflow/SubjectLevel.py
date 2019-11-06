@@ -196,7 +196,6 @@ class SubjectLevel(object):
         for session, runs in self.session_runs.items():
             for run, task in runs.items():
                 print('Do switch epochs', self.subject, session, run)
-                print(self.PupilFrame[session][run])
                 self.SwitchEpochs[session][run] =\
                     se.execute(self.subject, session,
                                run, task, self.flex_dir,
@@ -301,10 +300,10 @@ def execute(sub, ses, environment):
     for run in k:
         sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
     sl.ChoiceEpochs()
-    sl.SwitchEpochs()
+    # sl.SwitchEpochs()
     del sl.PupilFrame
     sl.CleanEpochs(epoch='Choice')
-    sl.CleanEpochs(epoch='Switch')
+    # sl.CleanEpochs(epoch='Switch')
     sl.Output(dir='Sublevel_AllEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
 
 
@@ -327,6 +326,3 @@ def submit(sub, env='Hummel'):
         for ses in [2, 3]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
                      memory=40, nodes=1, tasks=2, name='queue')
-
-
-
