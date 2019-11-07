@@ -123,6 +123,7 @@ class EPI(object):
                          self.session, 'func',
                          '*{0}*space-T1w_preproc{1}.nii.gz'.
                          format(self.run, denoise)))
+        print(file, 'loaded')  # keep to avoid that CompCor is applied unnoticed
         if len(file) > 1:
             print('More than one EPI found for ', self.subject,
                   self.session, self.run)

@@ -299,11 +299,11 @@ def execute(sub, ses, environment):
         k = hdf.keys()
     for run in k:
         sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
-    sl.ChoiceEpochs()
-    #sl.SwitchEpochs()
+    #sl.ChoiceEpochs()
+    sl.SwitchEpochs()
     del sl.PupilFrame
-    sl.CleanEpochs(epoch='Choice')
-    #sl.CleanEpochs(epoch='Switch')
+    #sl.CleanEpochs(epoch='Choice')
+    sl.CleanEpochs(epoch='Switch')
     sl.Output(dir='Workflow/Sublevel_SwitchEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
 
 
