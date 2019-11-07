@@ -167,7 +167,7 @@ class SubjectLevel(object):
                     print('Runtimeerror for', self.subject, session, run)
                     self.BehavFrame[session][run] = None
 
-    def RoiExtract(self, denoise=True):
+    def RoiExtract(self, denoise=False):
         '''
         '''
         self.CortRois = defaultdict(dict)
@@ -290,7 +290,7 @@ def execute(sub, ses, environment):
 
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
     sl.BehavFrames()
-    sl.RoiExtract()
+    sl.RoiExtract(denoise=False)
     sl.PupilFrame = defaultdict(dict)
     file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes_manual', 'PupilFrame_sub-{0}_ses-{1}.hdf'.format(sl.sub, ses)))
     if len(file) != 1:
@@ -299,11 +299,11 @@ def execute(sub, ses, environment):
         k = hdf.keys()
     for run in k:
         sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
-    #sl.ChoiceEpochs()
-    sl.SwitchEpochs()
+    sl.ChoiceEpochs()
+    #sl.SwitchEpochs()
     del sl.PupilFrame
-    #sl.CleanEpochs(epoch='Choice')
-    sl.CleanEpochs(epoch='Switch')
+    sl.CleanEpochs(epoch='Choice')
+    #sl.CleanEpochs(epoch='Switch')
     sl.Output(dir='Workflow/Sublevel_SwitchEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
 
 
