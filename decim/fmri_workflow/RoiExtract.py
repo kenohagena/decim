@@ -235,7 +235,7 @@ class EPI(object):
         self.cortical = cortical_rois
 
 
-@memory.cache
+#@memory.cache
 def execute(subject, session, run, flex_dir, atlas_warp=False, denoise=False):
     RE = EPI(subject, session, run, flex_dir)
     if denoise is False:
