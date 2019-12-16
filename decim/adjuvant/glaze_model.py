@@ -3,6 +3,7 @@ import pandas as pd
 from glob import glob
 from os.path import join
 from scipy.stats import norm
+import math
 
 '''
 This script contains two functions, which are assessed by other scripts.
@@ -80,6 +81,15 @@ def murphy_surprise(psi, llr):
     return surprise
 
 
+def pcp(loc, ln_prev, H, e_right=0.5, e_left=-0.5, sigma=1):
+    p_left = 1 / (math.exp(ln_prev) + 1)
+    p_right = 1 - p_left
+    pcp = H * (norm.pdf(loc, e_right, sigma) * p_left + norm.pdf(loc, e_left, sigma) * p_right) /\
+        (H * (norm.pdf(loc, e_right, sigma) * p_left + norm.pdf(loc, e_left, sigma) * p_right) +
+         (1 - H) * (norm.pdf(loc, e_right, sigma) * p_right + norm.pdf(loc, e_left, sigma) * p_left))
+    return pcp
+
+
 def belief(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='message'):
     """
     Computes Glaze belief, LLR, psi and Murphy surprise.
@@ -98,14 +108,16 @@ def belief(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='message')
             .astype(float))
     belief = 0 * locs.values
     psi = 0 * locs.values
+    pcp_surprise = 0 * locs.values
     for i, value in enumerate(locs):
         if i == 0:
             belief[i] = LLR(value, sigma=gen_var)
         else:
             belief[i] = prior(belief[i - 1], H) + LLR(value, sigma=gen_var)
             psi[i] = prior(belief[i - 1], H)
-    surprise = murphy_surprise(psi, LLR(locs.values))
-    return pd.Series(belief, index=locs.index), pd.Series(psi, index=locs.index), pd.Series(LLR(locs.values), index=locs.index), pd.Series(surprise, index=locs.index)
+            pcp_surprise[i] = pcp(value, belief[i - 1], H)
+    #surprise = murphy_surprise(psi, LLR(locs.values))
+    return pd.Series(belief, index=locs.index), pd.Series(psi, index=locs.index), pd.Series(LLR(locs.values), index=locs.index), pd.Series(pcp_surprise, index=locs.index)
 
 
 __version__ = '4.0.1'
