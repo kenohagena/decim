@@ -47,6 +47,7 @@ class Choiceframe(object):
         Choose 'switch' or 'sample' as mode in order to construct epochs for switches or every sample
         '''
         df = self.BehavFrame
+        print(df)
         if mode == 'switch':
             onsets = pd.DataFrame({'onset': df.loc[df.switch == True].
                                    onset.values,
