@@ -156,6 +156,7 @@ class SubjectLevel(object):
         print('Do behavior ', self.subject)
         self.BehavFrame = defaultdict(dict)
         for session, runs in self.session_runs.items():
+
             for run, task in runs.items():
                 print('Do behav ', self.subject, session, run)
                 try:
@@ -191,7 +192,7 @@ class SubjectLevel(object):
                                self.PupilFrame[session][run],
                                self.BrainstemRois[session][run])
 
-    def SwitchEpochs(self):
+    def SwitchEpochs(self, mode):
         self.SwitchEpochs = defaultdict(dict)
         for session, runs in self.session_runs.items():
             for run, task in runs.items():
@@ -201,7 +202,7 @@ class SubjectLevel(object):
                                run, task, self.flex_dir,
                                self.BehavFrame[session][run],
                                self.PupilFrame[session][run],
-                               self.BrainstemRois[session][run])
+                               self.BrainstemRois[session][run], mode=mode)
 
     def CleanEpochs(self, epoch='Choice'):
         '''
@@ -287,7 +288,7 @@ class SubjectLevel(object):
 
 
 def execute(sub, ses, environment):
-
+    '''
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
     sl.BehavFrames()
     sl.LinregVoxel()
@@ -304,13 +305,13 @@ def execute(sub, ses, environment):
         k = hdf.keys()
     for run in k:
         sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
-    sl.ChoiceEpochs()
-    #sl.SwitchEpochs()
+    #sl.ChoiceEpochs()
+    sl.SwitchEpochs(mode='sample')
     del sl.PupilFrame
     #sl.CleanEpochs(epoch='Choice')
-    #sl.CleanEpochs(epoch='Switch')
-    sl.Output(dir='Workflow/Sublevel_ChoiceEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
-    '''
+    sl.CleanEpochs(epoch='Switch')
+    sl.Output(dir='Workflow/Sublevel_SampleEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+
 
 
 def par_execute(keys):

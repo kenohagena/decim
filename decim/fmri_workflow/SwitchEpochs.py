@@ -42,15 +42,32 @@ class Choiceframe(object):
         self.PupilFrame = PupilFrame
         self.BrainstemRois = BrainstemRois
 
-    def choice_behavior(self):
+    def choice_behavior(self, mode='switch'):
+        '''
+        Choose 'switch' or 'sample' as mode in order to construct epochs for switches or every sample
+        '''
         df = self.BehavFrame
-        switches = pd.DataFrame({'onset': df.loc[df.switch == True].
-                                 onset.values,
-                                 'direction': df.loc[df.switch == True].
-                                 switch.values,
-                                 'switch_index': df.loc[df.switch == True].
-                                 index.values})
-        self.switch_behavior = switches
+        if mode == 'switch':
+            onsets = pd.DataFrame({'onset': df.loc[df.switch == True].
+                                   onset.values,
+                                   'direction': df.loc[df.switch == True].
+                                   switch.values,
+                                   'switch_index': df.loc[df.switch == True].
+                                   index.values})
+        elif mode == 'sample':
+            onsets = pd.DataFrame({'onset': df.loc[(df.event == 'GL_TRIAL_LOCATION') &
+                                                   (df.onset < (df.onset.max() - 12)) &
+                                                   (df.onset > 4)].onset.values,
+                                   'surprise': df.loc[(df.event == 'GL_TRIAL_LOCATION') &
+                                                      (df.onset < (df.onset.max() - 12)) &
+                                                      (df.onset > 4)].surprise.values,
+                                   'index': df.loc[(df.event == 'GL_TRIAL_LOCATION') &
+                                                   (df.onset < (df.onset.max() - 12)) &
+                                                   (df.onset > 4)].index.values,
+                                   'point_location': df.loc[(df.event == 'GL_TRIAL_LOCATION') &
+                                                            (df.onset < (df.onset.max() - 12)) &
+                                                            (df.onset > 4)].value.values})
+        self.switch_behavior = onsets
 
     def points(self):
         '''
@@ -183,7 +200,7 @@ class Choiceframe(object):
 
 
 def execute(subject, session, run, task, flex_dir,
-            BehavFrame, PupilFrame, BrainstemRois):
+            BehavFrame, PupilFrame, BrainstemRois, mode='switch'):
     '''
     Execute per subject, session, task and run.
 
@@ -195,10 +212,10 @@ def execute(subject, session, run, task, flex_dir,
     '''
     c = Choiceframe(subject, session, run, flex_dir,
                     BehavFrame, PupilFrame, BrainstemRois)
-    c.choice_behavior()
-    if task == 'inference':
+    c.choice_behavior(mode=mode)
+    if (task == 'inference') & (mode == 'switch'):
         c.points()
-    elif task == 'instructed':
+    else:
         c.point_kernels = pd.DataFrame(np.zeros((c.switch_behavior.shape[0], 11)))
     c.choice_pupil()
     c.fmri_epochs()
