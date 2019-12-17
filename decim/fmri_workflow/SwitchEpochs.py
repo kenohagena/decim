@@ -49,16 +49,17 @@ class Choiceframe(object):
         df = self.BehavFrame
         print(df)
         if mode == 'switch':
-            onsets = pd.DataFrame({'onset': df.loc[df.switch == True].
-                                   onset.values,
+            self.onsets = df.loc[df.switch == True].onset.values
+            onsets = pd.DataFrame({'onset': self.onsets,
                                    'direction': df.loc[df.switch == True].
                                    switch.values,
                                    'switch_index': df.loc[df.switch == True].
                                    index.values})
         elif mode == 'sample':
-            onsets = pd.DataFrame({'onset': df.loc[(df.event == 'GL_TRIAL_LOCATION') &
-                                                   (df.onset < (df.onset.max() - 12)) &
-                                                   (df.onset > 4)].onset.values,
+            self.onsets = df.loc[(df.event == 'GL_TRIAL_LOCATION') &
+                                 (df.onset < (df.onset.max() - 12)) &
+                                 (df.onset > 4)].onset.values
+            onsets = pd.DataFrame({'onset': self.onsets,
                                    'surprise': df.loc[(df.event == 'GL_TRIAL_LOCATION') &
                                                       (df.onset < (df.onset.max() - 12)) &
                                                       (df.onset > 4)].surprise.values,
@@ -103,7 +104,7 @@ class Choiceframe(object):
                                            'CHOICE_TRIAL_ONSET'].time.values
         difference = pupil_onsets / 1000 - behav_onsets                         # Pupil and behavioral data have different time logs
         assert difference.std() < 0.05                                          # Sanity Check I: Transformation between both time scales works
-        swo_behav = df.loc[df.switch == True].onset.values                         # Switch time points extracted from behavioral data
+        swo_behav = self.onsets                                                 # Switch time points extracted from behavioral data
         swo_pupil = (swo_behav + difference.mean()) * 1000                      # Time points transformed to pupil time scale
         sw_indices = self.PupilFrame.loc[self.PupilFrame.time.
                                          isin(swo_pupil.
