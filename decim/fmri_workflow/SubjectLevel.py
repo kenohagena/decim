@@ -294,7 +294,7 @@ def execute(sub, ses, environment):
     sl.LinregVoxel()
     sl.Output(dir='Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
     '''
-    sl = SubjectLevel(sub, ses_runs={ses: [4]}, environment=environment)  # just inferencefrom
+    sl = SubjectLevel(sub, ses_runs={ses: [4, 5, 6]}, environment=environment)  # just inferencefrom
     sl.BehavFrames()
     sl.RoiExtract(denoise=False)
     sl.PupilFrame = defaultdict(dict)
