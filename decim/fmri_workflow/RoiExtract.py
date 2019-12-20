@@ -66,75 +66,35 @@ class EPI(object):
             'CIT168': {2: 'NAc', 6: 'SNc', 10: 'VTA'}
         }
 
-    def denoise(self, save=False):
-        '''
-        Regress voxeldata to CompCor nuisance regressors & Subtract predicted noise.
-
-        INPUT: confound.tsv & nifti file
-        OUTPUT: _denoise.nii nifti file in preprocessed directory & pandas.csv.
-        '''
-        confounds = pd.read_table(join(self.flex_dir, 'fmri',
-                                       'completed_preprocessed', self.subject,
-                                       'fmriprep', self.subject,
-                                       self.session, 'func',
-                                       '{0}_{1}_task-{2}_bold_confounds.tsv'.
-                                       format(self.subject, self.session,
-                                              self.run)))
-        confounds = confounds[['tCompCor00', 'tCompCor01', 'tCompCor02',
-                               'tCompCor03', 'tCompCor04', 'tCompCor05']]
-        nifti = nib.load(join(self.flex_dir, 'fmri', 'completed_preprocessed',
-                              self.subject, 'fmriprep', self.subject,
-                              self.session, 'func',
-                              '{0}_{1}_task-{2}_bold_space-T1w_preproc.nii.gz'.
-                              format(self.subject, self.session, self.run)))
-        shape = nifti.get_data().shape
-        data = nifti.get_data()
-        d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.shape[-1])])
-        linreg = LinearRegression(n_jobs=1, normalize=False)
-        linreg.fit(confounds, d2)
-        predict = linreg.predict(confounds)
-        df = pd.DataFrame(linreg.coef_, columns=confounds.columns)
-        df['r2_score'] = r2_score(d2, predict, multioutput='raw_values')
-        df['mean_squared_error'] = mean_squared_error(d2, predict,
-                                                      multioutput='raw_values')
-        df['intercept'] = linreg.intercept_
-        noise = predict - linreg.intercept_
-        denoise = d2 - noise
-        new_shape = np.stack([denoise[i, :].
-                              reshape(shape[0:3]) for i in range(denoise.shape[0])], -1)
-        new_image = nib.Nifti1Image(new_shape, affine=nifti.affine)
-        if save is True:
-            new_image.to_filename(join(self.flex_dir, 'fmri',
-                                       'completed_preprocessed', self.subject,
-                                       'fmriprep', self.subject, self.session,
-                                       'func',
-                                       '{0}_{1}_task-{2}_bold_space-T1w_preproc_denoise.nii.gz'.format(self.subject, self.session, self.run)))
-        return new_image
-
-    def load_epi(self, denoise='_denoise'):
+    def load_epi(self):
         '''
         Find and load EPI-files.
 
         - Argument:
             a) use denoised data? (default yes, if no --> '')
         '''
+        if self.input == 'mni_retroicor':
+            file_identifier = 'retroicor'
+        elif self.input == 'T1w':
+            file_identifier = 'space-T1w_preproc'
         file = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
                          self.subject, 'fmriprep', self.subject,
                          self.session, 'func',
-                         '*{0}*space-T1w_preproc{1}.nii.gz'.
-                         format(self.run, denoise)))
+                         '*{0}*{1}*.nii.gz'.
+                         format(self.run, file_identifier)))
+
         print(file, 'loaded')  # keep to avoid that CompCor is applied unnoticed
-        if len(file) > 1:
-            print('More than one EPI found for ', self.subject,
+        if len(file) != 1:
+            print('{0} EPIs found for '.format(len(file)), self.subject,
                   self.session, self.run)
         else:
-            try:
-                self.EPI = image.load_img(file)
-            except TypeError:  # no img found
-                print('CompCor denoising first...')
-                self.EPI = self.denoise()
+            self.EPI = image.load_img(file)
 
     def warp_atlases(self):
+        '''
+        Warp atlases to subject T1w space
+        Has to be done only once...
+        '''
         atlas_dir = join(self.flex_dir, 'fmri', 'atlases')
         subprocess.call('warp_masks_MNI_to_T1w_subject_space.sh {0} {1}'.
                         format(self.subject, atlas_dir))
@@ -147,7 +107,10 @@ class EPI(object):
         Outerkey: substring to identify atlas, innerkey: frame within that 4D Nifty, value: name of that ROI.
         '''
         self.masks = {}
-        mask_dir = join(self.flex_dir, 'fmri', 'atlases', self.subject)
+        if self.input == 'mni_retroicor':
+            mask_dir = join(self.flex_dir, 'fmri', 'atlases')
+        elif self.input == 'T1w':
+            mask_dir = join(self.flex_dir, 'fmri', 'atlases', self.subject)
         for atlas, rois in self.atlases.items():
             mask = glob(join(mask_dir, '*{}*'.format(atlas)))
             if atlas == 'CIT168':
@@ -201,7 +164,7 @@ class EPI(object):
             weighted_averages[key] = weighted.flatten()
         self.brainstem_weighted = pd.DataFrame(weighted_averages)
 
-    def cortical(self):
+    def cortical(self):  # does not work for retroicor yet
         '''
         Loads surface annotation and voxel data in surface subject space (fsnative)
         - Output: DF w/ labels as columns & timpoints as rows
@@ -236,17 +199,17 @@ class EPI(object):
 
 
 #@memory.cache
-def execute(subject, session, run, flex_dir, atlas_warp=False, denoise=False):
+def execute(subject, session, run, flex_dir,
+            atlas_warp=False, input='mni_retroicor'):
     RE = EPI(subject, session, run, flex_dir)
-    if denoise is False:
-        RE.load_epi(denoise='')
-    else:
-        RE.load_epi()
+    RE.input = input
+    RE.load_epi()
     if atlas_warp is True:
-        RE.warp_atlases()
+        RE.warp_atlases()                                                       # has to be done only once
     RE.load_mask()
     RE.resample_masks()
     RE.mask()
     RE.brainstem()
-    RE.cortical()
+    # RE.cortical()
+    RE.cortical = 0
     return RE.brainstem_weighted, RE.cortical
