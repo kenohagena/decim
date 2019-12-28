@@ -113,6 +113,7 @@ class EPI(object):
             mask_dir = join(self.flex_dir, 'fmri', 'atlases', self.subject)
         for atlas, rois in self.atlases.items():
             mask = glob(join(mask_dir, '*{}*'.format(atlas)))
+            print(mask)
             if atlas == 'CIT168':
                 for index, roi in rois.items():
                     self.masks[roi] = image.index_img(mask[0], index)
