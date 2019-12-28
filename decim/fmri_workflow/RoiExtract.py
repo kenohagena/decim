@@ -212,5 +212,5 @@ def execute(subject, session, run, flex_dir,
     RE.mask()
     RE.brainstem()
     # RE.cortical()
-    RE.cortical = 0
+    RE.cortical = pd.DataFrame([0])
     return RE.brainstem_weighted, RE.cortical

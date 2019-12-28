@@ -310,7 +310,7 @@ def execute(sub, ses, environment):
     del sl.PupilFrame
     # sl.CleanEpochs(epoch='Choice')
     sl.CleanEpochs(epoch='Switch')
-    sl.Output(dir='Workflow/Sublevel_SampleEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+    sl.Output(dir='Workflow/Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
 
 
 def par_execute(keys):
