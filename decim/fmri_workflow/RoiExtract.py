@@ -108,7 +108,7 @@ class EPI(object):
         '''
         self.masks = {}
         if self.input_nifti == 'mni_retroicor':
-            mask_dir = join(self.flex_dir, 'fmri', 'atlases')
+            mask_dir = join(self.flex_dir, 'fmri', 'atlases', 'selected')
         elif self.input_nifti == 'T1w':
             mask_dir = join(self.flex_dir, 'fmri', 'atlases', self.subject)
         for atlas, rois in self.atlases.items():
