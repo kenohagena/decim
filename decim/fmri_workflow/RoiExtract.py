@@ -73,9 +73,9 @@ class EPI(object):
         - Argument:
             a) use denoised data? (default yes, if no --> '')
         '''
-        if self.input == 'mni_retroicor':
+        if self.input_nifti == 'mni_retroicor':
             file_identifier = 'retroicor'
-        elif self.input == 'T1w':
+        elif self.input_nifti == 'T1w':
             file_identifier = 'space-T1w_preproc'
         file = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
                          self.subject, 'fmriprep', self.subject,
@@ -107,9 +107,9 @@ class EPI(object):
         Outerkey: substring to identify atlas, innerkey: frame within that 4D Nifty, value: name of that ROI.
         '''
         self.masks = {}
-        if self.input == 'mni_retroicor':
+        if self.input_nifti == 'mni_retroicor':
             mask_dir = join(self.flex_dir, 'fmri', 'atlases')
-        elif self.input == 'T1w':
+        elif self.input_nifti == 'T1w':
             mask_dir = join(self.flex_dir, 'fmri', 'atlases', self.subject)
         for atlas, rois in self.atlases.items():
             mask = glob(join(mask_dir, '*{}*'.format(atlas)))
@@ -200,9 +200,9 @@ class EPI(object):
 
 #@memory.cache
 def execute(subject, session, run, flex_dir,
-            atlas_warp=False, input='mni_retroicor'):
+            atlas_warp=False, input_nifti='mni_retroicor'):
     RE = EPI(subject, session, run, flex_dir)
-    RE.input = input
+    RE.input_nifti = input_nifti
     RE.load_epi()
     if atlas_warp is True:
         RE.warp_atlases()                                                       # has to be done only once
