@@ -168,7 +168,7 @@ class SubjectLevel(object):
                     print('Runtimeerror for', self.subject, session, run)
                     self.BehavFrame[session][run] = None
 
-    def RoiExtract(self, denoise=False):
+    def RoiExtract(self, input='mni_retroicor'):
         '''
         '''
         self.CortRois = defaultdict(dict)
@@ -178,7 +178,7 @@ class SubjectLevel(object):
                 print('Do roi extract', self.subject, session, run)
                 self.BrainstemRois[session][run], self.CortRois[session][run] =\
                     re.execute(self.subject, session, run,
-                               self.flex_dir, denoise=denoise)
+                               self.flex_dir, input=input)
 
     def ChoiceEpochs(self):
         self.ChoiceEpochs = defaultdict(dict)
@@ -296,7 +296,7 @@ def execute(sub, ses, environment):
     '''
     sl = SubjectLevel(sub, ses_runs={ses: [4, 5, 6]}, environment=environment)  # just inferencefrom
     sl.BehavFrames()
-    sl.RoiExtract(denoise=False)
+    sl.RoiExtract(input=input)
     sl.PupilFrame = defaultdict(dict)
     file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes_manual', 'PupilFrame_sub-{0}_ses-{1}.hdf'.format(sl.sub, ses)))
     if len(file) != 1:
