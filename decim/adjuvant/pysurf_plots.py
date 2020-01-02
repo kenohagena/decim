@@ -338,7 +338,7 @@ def roi_names_param(parameter, task, correlation, in_dir):
 
 # USAGE OF THIS SCRIPT
 
-glm_run = 'Sublevel_GLM_Climag_2018-12-21'                                      # Specify where the GLM results are
+glm_run = 'Sublevel_GLM_Climag_2019-12-16'                                      # Specify where the GLM results are
 # 1. Make t- and p-maps
 
 '''
@@ -348,14 +348,14 @@ surface_data(join('/Volumes/flxrl/FLEXRULE/Workflow/', glm_run),
              ['response', 'belief', 'switch', 'LLR'], 'inference')
 '''
 # 2. Do plotting
-'''
+
 for task in ['instructed', 'inference']:
     in_dir = join('/Volumes/flxrl/FLEXRULE/Workflow', glm_run, 'GroupLevel')
     cols = pd.read_hdf(join('/Volumes/flxrl/FLEXRULE/Workflow', glm_run, 'GroupLevel',
                             'Surface_{}.hdf'.format(task)), key='t_statistic').columns
     for param in cols:
         montage_plot(param, in_dir=in_dir, task=task, fdr_correct=True)
-'''
+
 # 3. Miscellaneous functions
 '''
 roi_names_param('response_left_multi', 'inference', 'neg')

@@ -53,7 +53,7 @@ def extract_brainstem(sub, flex_dir, GLM_run, task):
             if a == 'CIT168_MNI':                                               # Subcortical atlas has a 4D structure
                 for i in range(16):
                     atlasdata = atlas.get_data()[:, :, :, i] /\
-                        atlas.get_data()[:, :, :, i].sum()                      # nromalize weights
+                        atlas.get_data()[:, :, :, i].sum()                      # normalize weights
                     coef_ = np.multiply(nifti.get_data()[:, :, :, 0],
                                         atlasdata[:, :, :]).sum()               # matrix product: nifti x weights
                     l_coef_.append({'subject': subject,
