@@ -1,10 +1,12 @@
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
 import pandas as pd
+from glob import glob
 from os.path import join
 import nibabel as nib
 from sklearn.linear_model import LinearRegression
 from nilearn.surface import vol_to_surf
+from nilearn import datasets
 from collections import defaultdict
 from patsy import dmatrix
 from scipy.interpolate import interp1d
@@ -163,7 +165,7 @@ class VoxelSubject(object):
         dm = dm.sort_index()
         return dm.drop('Intercept', axis=1)
 
-    def concat_runs(self, denoise=False):
+    def concat_runs(self):
         '''
         Concatenate design matrices per session.
 
@@ -174,23 +176,23 @@ class VoxelSubject(object):
         session_behav = []
         for run in self.runs:
             behav = self.design_matrix(self.BehavDataframe[run])
-            nifti_str = 'bold_space-T1w_preproc'
-            if denoise is True:
-                nifti = nib.load(join(self.flex_dir, 'fmri',
-                                      'completed_preprocessed', self.subject,
-                                      'fmriprep', self.subject,
-                                      self.session, 'func',
-                                      '{0}_{1}_task-{2}_{3}_denoise.nii.gz'.
-                                      format(self.subject, self.session,
-                                             run, nifti_str)))
+            if self.input_nifti == 'mni_retroicor':
+                file_identifier = 'retroicor'
+            elif self.input_nifti == 'T1w':
+                file_identifier = 'space-T1w_preproc'
+            files = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
+                              self.subject, 'fmriprep', self.subject,
+                              self.session, 'func',
+                              '{0}_{1}_task-{2}_*{3}*.nii.gz'.
+                              format(self.subject, self.session, run,
+                                     file_identifier)))
+            if len(files) == 1:
+                nifti = nib.load(files[0])
             else:
-                nifti = nib.load(join(self.flex_dir, 'fmri',
-                                      'completed_preprocessed', self.subject,
-                                      'fmriprep', self.subject,
-                                      self.session, 'func',
-                                      '{0}_{1}_task-{2}_{3}.nii.gz'.
-                                      format(self.subject, self.session,
-                                             run, nifti_str)))
+                print('{1} niftis found for {0}, {2}, {3}'.format(self.subject,
+                                                                  len(files),
+                                                                  self.session,
+                                                                  run))
 
             self.nifti_shape = nifti.get_data().shape
             self.nifti_affine = nifti.affine
@@ -243,10 +245,10 @@ class VoxelSubject(object):
             new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine)    # make 4D nifti with regression result per parameter
             self.voxel_regressions[parameter] = new_image                       # fourth dimension contains coefficient, r_square, intercept, mean squared error
 
-    def vol_2surf(self, radius=.3):
+    def vol_2surf(self):
         '''
-        From subject voxels to subject surface.
-        Use nilearn.vol_to_surf funcionality
+        Extract surface data (subject surface) from subject-specific T1w-nifti
+        Uses nilearn.vol_to_surf: https://nilearn.github.io/modules/generated/nilearn.surface.vol_to_surf.html
         '''
         for param, img in self.voxel_regressions.items():
             for hemisphere in ['L', 'R']:
@@ -255,25 +257,42 @@ class VoxelSubject(object):
                             'fmriprep', self.subject, 'anat',
                             '{0}_T1w_pial.{1}.surf.gii'.
                             format(self.subject, hemisphere))
-                surface = vol_to_surf(img, pial, radius=radius, kind='line')
+                surface = vol_to_surf(img, pial, radius=.3, kind='line')
                 self.surface_textures[param][hemisphere] =\
                     pd.DataFrame(surface, columns=['coef_', 'intercept_',
                                                    'r2_score',
                                                    'mean_squared_error'])
 
+    def mni_to_fsaverage(self):
+        '''
+        Extract surface data (fsaverage) from MNI152-nifti
+        Uses nilearn.vol_to_surf: https://nilearn.github.io/modules/generated/nilearn.surface.vol_to_surf.html
+        '''
+        fs_average = datasets.fetch_surf_fsaverage()
+        for param, img in self.voxel_regressions.items():
+            for hemisphere, hemi in {'L': 'left', 'R': 'right'}.items():
+                surface = vol_to_surf(img, fs_average['pial_{}'.format(hemi)], radius=.3, kind='line')
+                self.surface_textures[param][hemisphere] =\
+                    pd.DataFrame(surface, columns=['coef_', 'intercept_',
+                                                   'r2_score',
+                                                   'mean_squared_error'])
 
 #@memory.cache
+
+
 def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     v = VoxelSubject(subject, session, runs, flex_dir, BehavDataframe, task)
-    v.concat_runs(denoise=False)
+    v.input_nifti = 'mni_retroicor'                                         # set input-identifier variable ('T1w' or 'mni_retroicor')
+    v.concat_runs()
     v.glm()
-    v.vol_2surf()
+    # v.vol_2surf()                                                         # use when working with T1w-subject space niftis (fmriprep pipeline)
+    v.mni_to_fsaverage()                                                    # use when working with MNI-space niftis (Rudys retroicor pipeline)
     return v.voxel_regressions, v.surface_textures, v.DesignMatrix
 
 
 '''
 from decim.fmri_workflow import BehavDataframe as bd
-behav = bd.execute('sub-3', 'ses-2', 'instructed_run-7', 'instructed', '/Volumes/flxrl/FLEXRULE', pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv'))
-s = VoxelSubject('sub-3', 'ses-2', ['instructed_run-7'], '/Volumes/flxrl/FLEXRULE', behav, 'instructed')
+behav = bd.execute('sub-3', 'ses-2', 'inference_run-4', 'inference', '/Volumes/flxrl/FLEXRULE', pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv'))
+s = lv.VoxelSubject('sub-3', 'ses-2', ['inference_run-4'], '/Volumes/flxrl/FLEXRULE', behav, 'inference')
 s.design_matrix(behav)
 '''

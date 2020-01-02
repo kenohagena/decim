@@ -288,13 +288,13 @@ class SubjectLevel(object):
 
 
 def execute(sub, ses, environment):
-    '''
+
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
     sl.BehavFrames()
     sl.LinregVoxel()
     sl.Output(dir='Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
     '''
-    sl = SubjectLevel(sub, ses_runs={ses: [4, 5, 6]}, environment=environment)  # just inferencefrom
+    sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)  # {ses: [4, 5, 6]} to only run inference
     sl.BehavFrames()
     sl.RoiExtract(input_nifti='mni_retroicor')
     sl.PupilFrame = defaultdict(dict)
@@ -311,6 +311,7 @@ def execute(sub, ses, environment):
     # sl.CleanEpochs(epoch='Choice')
     sl.CleanEpochs(epoch='Switch')
     sl.Output(dir='Workflow/Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+    '''
 
 
 def par_execute(keys):
