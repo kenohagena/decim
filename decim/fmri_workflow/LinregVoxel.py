@@ -268,7 +268,7 @@ class VoxelSubject(object):
         Extract surface data (fsaverage) from MNI152-nifti
         Uses nilearn.vol_to_surf: https://nilearn.github.io/modules/generated/nilearn.surface.vol_to_surf.html
         '''
-        fs_average = datasets.fetch_surf_fsaverage()
+        fs_average = datasets.fetch_surf_fsaverage(mesh='fsaverage')
         for param, img in self.voxel_regressions.items():
             for hemisphere, hemi in {'L': 'left', 'R': 'right'}.items():
                 surface = vol_to_surf(img, fs_average['pial_{}'.format(hemi)], radius=.3, kind='line')
