@@ -288,7 +288,7 @@ class SubjectLevel(object):
 
 
 def execute(sub, ses, environment):
-
+    '''
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
     sl.BehavFrames()
     sl.LinregVoxel()
@@ -305,13 +305,12 @@ def execute(sub, ses, environment):
         k = hdf.keys()
     for run in k:
         sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
-    # sl.ChoiceEpochs()
-    sl.SwitchEpochs(mode='sample')
+    sl.ChoiceEpochs()
+    #sl.SwitchEpochs(mode='sample')
     del sl.PupilFrame
-    # sl.CleanEpochs(epoch='Choice')
-    sl.CleanEpochs(epoch='Switch')
-    sl.Output(dir='Workflow/Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
-    '''
+    sl.CleanEpochs(epoch='Choice')
+    #sl.CleanEpochs(epoch='Switch')
+    sl.Output(dir='Workflow/Sublevel_ChoiceEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
 
 
 def par_execute(keys):
