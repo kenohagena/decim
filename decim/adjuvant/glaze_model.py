@@ -48,9 +48,16 @@ def load_logs_bids(subject, session, base_path, run='inference'):
             'No log file found for this block: %s, %s' %
             (subject, session))
     if run == 'inference':
-        return {file[-26:-11]: pd.read_table(file) for file in files}
+        log_dictionary = {file[-26:-11]: pd.read_table(file) for file in files}
     elif run == 'instructed':
-        return {file[-27:-11]: pd.read_csv(file) for file in files}
+        log_dictionary = {file[-27:-11]: pd.read_csv(file) for file in files}
+    if (subject == 'sub-6') & (session == 'ses-2'):                                 # sub-6 clearly misunderstoode the rules in ses-2, inf_run-4....
+        run = 'inference_run-4'
+        log_dictionary[run].loc[log_dictionary[run].event == 'CHOICE_TRIAL_RESP', 'value'] =\
+            -log_dictionary[run].loc[log_dictionary[run].event == 'CHOICE_TRIAL_RESP'].value.astype(float).values + 1
+        log_dictionary[run].loc[log_dictionary[run].event == 'GL_TRIAL_REWARD', 'value'] =\
+            -log_dictionary[run].loc[log_dictionary[run].event == 'GL_TRIAL_REWARD'].value.astype(float).values + 1
+    return log_dictionary
 
 
 def LLR(value, e1=0.5, e2=-0.5, sigma=1):
