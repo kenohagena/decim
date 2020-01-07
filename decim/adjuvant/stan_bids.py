@@ -131,6 +131,9 @@ def submit():
     for chunk in grouper(keys(), 6):                                            # more than 6 crashes the node
         slu.pmap(par_execute, chunk, walltime='2:00:00',
                  memory=60, nodes=1, tasks=16, name='bids_stan')
+def submit_single(sub):
+    slu.pmap(fit_session, sub, walltime='2:00:00',
+                 memory=60, nodes=1, tasks=16, name='bids_stan_sinlge')
 
 
 def concatenate(input_dir):
@@ -139,7 +142,7 @@ def concatenate(input_dir):
     Return dictionary.
     '''
     summary = []
-    files = glob(join(input_dir, '.hdf'))
+    files = glob(join(input_dir, '*.hdf'))
     for file in files:
         with h5py.File(file, 'r') as f:
             for key in f.keys():
@@ -155,6 +158,5 @@ def concatenate(input_dir):
                 summary.append(dr)
     summary = pd.DataFrame(summary)
     summary.to_csv(join(input_dir, 'summary_stan_fits.csv'))
-
 
 __version__ = '1.0.1'
