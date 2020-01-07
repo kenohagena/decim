@@ -51,7 +51,7 @@ def load_logs_bids(subject, session, base_path, run='inference'):
         log_dictionary = {file[-26:-11]: pd.read_table(file) for file in files}
     elif run == 'instructed':
         log_dictionary = {file[-27:-11]: pd.read_csv(file) for file in files}
-    if (subject == 'sub-6') & (session == 'ses-2'):                                 # sub-6 clearly misunderstoode the rules in ses-2, inf_run-4....
+    if (subject == 'sub-6') & (session == 'ses-2') & (run == 'inference'):                                 # sub-6 clearly misunderstoode the rules in ses-2, inf_run-4....
         run = 'inference_run-4'
         log_dictionary[run].loc[log_dictionary[run].event == 'CHOICE_TRIAL_RESP', 'value'] =\
             -log_dictionary[run].loc[log_dictionary[run].event == 'CHOICE_TRIAL_RESP'].value.astype(float).values + 1
@@ -158,3 +158,5 @@ mean RT
 4.0.1
 -reduced to basic functionality
 '''
+
+load_logs_bids('sub-6', 'ses-2', '/Volumes/flxrl/FLEXRULE/raw/bids_mr_v1.2')
