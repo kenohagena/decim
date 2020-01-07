@@ -135,7 +135,7 @@ def submit():
 
 def submit_single(sub, ses):
     print(__version__)
-    slu.pmap(fit_session, [sub, ses], walltime='2:00:00',
+    slu.pmap(fit_session, sub, ses, walltime='2:00:00',
              memory=60, nodes=1, tasks=16, name='bids_stan_sinlge')
 
 
