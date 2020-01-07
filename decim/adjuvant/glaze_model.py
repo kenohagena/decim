@@ -158,5 +158,3 @@ mean RT
 4.0.1
 -reduced to basic functionality
 '''
-
-load_logs_bids('sub-6', 'ses-2', '/Volumes/flxrl/FLEXRULE/raw/bids_mr_v1.2')
