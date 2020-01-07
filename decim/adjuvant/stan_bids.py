@@ -107,7 +107,7 @@ def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
                                                         strftime("%Y-%m-%d")))
         slu.mkdir_p(out_dir)
         print(out_dir)
-        d.to_hdf(join(out_dir, 'sub-{0}_stanfit.hdf'.
+        d.to_hdf(join(out_dir, 'new', 'sub-{0}_stanfit.hdf'.
                       format(sub)), key='ses-{}'.format(ses))
     except RuntimeError as e:
         print("No file found for subject {0}, session {1}, path {2}".
