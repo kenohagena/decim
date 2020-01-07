@@ -288,7 +288,7 @@ class SubjectLevel(object):
 
 
 def execute(sub, ses, environment):
-
+    '''
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
     sl.BehavFrames()
     sl.LinregVoxel()
@@ -311,7 +311,7 @@ def execute(sub, ses, environment):
     sl.CleanEpochs(epoch='Choice')
     #sl.CleanEpochs(epoch='Switch')
     sl.Output(dir='Workflow/Sublevel_ChoiceEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
-    '''
+
 
 def par_execute(keys):
     with Pool(2) as p:
