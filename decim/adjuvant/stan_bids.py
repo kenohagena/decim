@@ -131,10 +131,12 @@ def submit():
     for chunk in grouper(keys(), 6):                                            # more than 6 crashes the node
         slu.pmap(par_execute, chunk, walltime='2:00:00',
                  memory=60, nodes=1, tasks=16, name='bids_stan')
-def submit_single(sub):
+
+
+def submit_single(sub, ses):
     print(__version__)
-    slu.pmap(fit_session, sub, walltime='2:00:00',
-                 memory=60, nodes=1, tasks=16, name='bids_stan_sinlge')
+    slu.pmap(fit_session, (sub, ses), walltime='2:00:00',
+             memory=60, nodes=1, tasks=16, name='bids_stan_sinlge')
 
 
 def concatenate(input_dir):
@@ -159,5 +161,6 @@ def concatenate(input_dir):
                 summary.append(dr)
     summary = pd.DataFrame(summary)
     summary.to_csv(join(input_dir, 'summary_stan_fits.csv'))
+
 
 __version__ = '1.0.2'
