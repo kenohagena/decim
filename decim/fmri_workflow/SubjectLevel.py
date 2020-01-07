@@ -288,11 +288,11 @@ class SubjectLevel(object):
 
 
 def execute(sub, ses, environment):
-    '''
+
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
     sl.BehavFrames()
     sl.LinregVoxel()
-    sl.Output(dir='Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+    sl.Output(dir='Workflow/Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
     '''
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)  # {ses: [4, 5, 6]} to only run inference
     sl.BehavFrames()
@@ -311,6 +311,7 @@ def execute(sub, ses, environment):
     # sl.CleanEpochs(epoch='Choice')
     sl.CleanEpochs(epoch='Switch')
     sl.Output(dir='Workflow/Sublevel_ChoiceEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+    '''
 
 
 def par_execute(keys):
@@ -331,4 +332,4 @@ def submit(sub, env='Climag'):
     elif env == 'Climag':
         for ses in [2, 3]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
-                     memory=40, nodes=1, tasks=2, name='queue')
+                     memory=40, nodes=1, tasks=2, name='fcsp_sub-{}'.format(sub))
