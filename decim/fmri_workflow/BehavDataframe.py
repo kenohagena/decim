@@ -61,13 +61,15 @@ class BehavDataframe(object):
         self.run = run
         self.bids_path = join(flex_dir, 'raw', 'bids_mr_v1.2')
 
-    def inference(self, summary):
+    def inference(self, summary, Hs=[]):
         logs = gm.load_logs_bids(self.subject, self.session, self.bids_path)    # Load data from raw directory
         df = logs[self.run]
         H = summary.loc[(summary.subject == self.subject) &                     # Retrieve fitted H
                         (summary.session == self.session)].hmode.values[0]
         df['belief'], psi, df['LLR'], df['surprise'] =\
             gm.belief(df, H=H, ident='event')                                   # Compute belief, LLR, surprise
+        for different_H in Hs:
+            df['belief_{}'.format(different_H)] = gm.belief(df, H=different_H, ident='event')
         df = df.loc[df.event.isin(['GL_TRIAL_LOCATION', 'GL_TRIAL_GENSIDE',
                                    'GL_TRIAL_STIM_ID', 'CHOICE_TRIAL_ONSET',
                                    'CHOICE_TRIAL_STIMOFF', 'CHOICE_TRIAL_RESP',
@@ -97,10 +99,12 @@ class BehavDataframe(object):
                                    'CHOICE_TRIAL_ONSET',
                                    'CHOICE_TRIAL_STIMOFF',
                                    'CHOICE_TRIAL_RESP'])]
-        df = df.loc[:, ['onset', 'event', 'value',
-                        'belief', 'LLR', 'gen_side',
-                        'stimulus', 'stimulus_off', 'rule_resp',
-                        'trial_id', 'reward', 'rt', 'surprise']]
+        cols = ['onset', 'event', 'value',
+                'belief', 'LLR', 'gen_side',
+                'stimulus', 'stimulus_off', 'rule_resp',
+                'trial_id', 'reward', 'rt', 'surprise'] +\
+            ['belief_{}'.format(different_H) for different_H in Hs]
+        df = df.loc[:, cols]
         df = df.reset_index(drop=True)
         asign = np.sign(df.belief.values)
         signchange = (np.roll(asign, 1) - asign)                                # switch direction coding: from left to right --> -1 | from right to left --> +1
