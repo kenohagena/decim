@@ -69,7 +69,7 @@ class BehavDataframe(object):
         df['belief'], psi, df['LLR'], df['surprise'] =\
             gm.belief(df, H=H, ident='event')                                   # Compute belief, LLR, surprise
         for different_H in Hs:
-            df['belief_{}'.format(different_H)] = gm.belief(df, H=different_H, ident='event')
+            df['belief_{}'.format(different_H)] = gm.belief(df, H=different_H, ident='event')[0]
         df = df.loc[df.event.isin(['GL_TRIAL_LOCATION', 'GL_TRIAL_GENSIDE',
                                    'GL_TRIAL_STIM_ID', 'CHOICE_TRIAL_ONSET',
                                    'CHOICE_TRIAL_STIMOFF', 'CHOICE_TRIAL_RESP',
