@@ -219,7 +219,7 @@ def execute(subject, session, run, task, flex_dir, summary, belief_TR=False):
     summary = summary
     bd = BehavDataframe(subject, session, run, flex_dir)
     if task == 'inference':
-        bd.inference(summary=summary)
+        bd.inference(summary=summary, Hs=[0, .5, .014])
     elif task == 'instructed':
         bd.instructed()
     if belief_TR is True:
