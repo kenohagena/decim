@@ -75,6 +75,8 @@ def prior(b_prior, H):
     """
     Returns weighted prior belief given blief at time t-1 and hazard rate H.
     """
+    if H == 0:
+        H = 0.0000000000000001                                      # quick&dirty: avoid divide by 0 error
     psi = b_prior + np.log((1 - H) / H + np.exp(-b_prior)) - \
         np.log((1 - H) / H + np.exp(b_prior))
     return psi
@@ -158,3 +160,5 @@ mean RT
 4.0.1
 -reduced to basic functionality
 '''
+
+print(prior(1, 0))
