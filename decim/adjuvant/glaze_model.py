@@ -99,7 +99,7 @@ def pcp(loc, ln_prev, H, e_right=0.5, e_left=-0.5, sigma=1):
     return pcp
 
 
-def belief(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='message'):
+def belief(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='message', reset_firsts=[]):
     """
     Computes Glaze belief, LLR, psi and Murphy surprise.
 
@@ -107,7 +107,7 @@ def belief(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='message')
         a) pd.DataFrame with behavior (Output of load_logs_bids)
         b) subjective hazard rate H of subject
         c) generative variance in the Glaze model
-        d) message value in the behavioral pd.DataFrame that marks new point
+        d) message value in the behavioral pd.DataFrame that marks new point ('event' in inference runs)
         e) column name of message values in behavioral pd.DataFrame
 
     -Output: Glaze belief, LLR, psi, surprise all as pd.Series
@@ -118,14 +118,18 @@ def belief(df, H, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='message')
     belief = 0 * locs.values
     psi = 0 * locs.values
     pcp_surprise = 0 * locs.values
-    for i, value in enumerate(locs):
+    for i, value in enumerate(zip(locs.values, locs.index)):
         if i == 0:
-            belief[i] = LLR(value, sigma=gen_var)
+            belief[i] = LLR(value[0], sigma=gen_var)
         else:
-            belief[i] = prior(belief[i - 1], H) + LLR(value, sigma=gen_var)
-            psi[i] = prior(belief[i - 1], H)
-            pcp_surprise[i] = pcp(value, belief[i - 1], H)
-    #surprise = murphy_surprise(psi, LLR(locs.values))
+            if value[1] in reset_firsts:
+                print('reset_belief')
+                belief[i] = LLR(value[0], sigma=gen_var)
+            else:
+                belief[i] = prior(belief[i - 1], H) + LLR(value[0], sigma=gen_var)
+                psi[i] = prior(belief[i - 1], H)
+                pcp_surprise[i] = pcp(value[0], belief[i - 1], H)
+    # surprise = murphy_surprise(psi, LLR(locs.values))
     return pd.Series(belief, index=locs.index), pd.Series(psi, index=locs.index), pd.Series(LLR(locs.values), index=locs.index), pd.Series(pcp_surprise, index=locs.index)
 
 
@@ -160,5 +164,7 @@ mean RT
 4.0.1
 -reduced to basic functionality
 '''
-
-print(prior(1, 0))
+'''
+df = load_logs_bids('sub-17', 'ses-2', '/Volumes/flxrl/FLEXRULE/raw/bids_mr_v1.2')['inference_run-4']
+print(belief(df, 0, ident='event')[0].mean())
+'''

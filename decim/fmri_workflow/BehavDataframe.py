@@ -75,6 +75,14 @@ class BehavDataframe(object):
                                    'CHOICE_TRIAL_STIMOFF', 'CHOICE_TRIAL_RESP',
                                    'CHOICE_TRIAL_RULE_RESP', 'GL_TRIAL_START',
                                    'GL_TRIAL_REWARD', 'CHOICE_TRIAL_RT'])]
+        if 0 in Hs:
+            df.loc[df.event == 'GL_TRIAL_LOCATION', 'first_sample'] = 0
+            df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP', 'first_sample'] = 1
+            df.loc[df.index[0], 'first_sample'] = 1
+            df.first_sample = np.roll(df.first_sample.fillna(method='ffill').values, 1)
+            firsts = df.loc[(df.event == 'GL_TRIAL_LOCATION') & (df.first_sample == 1)].index.values
+            df['belief_reset'] = gm.belief(df, H=0, ident='event', reset_firsts=firsts)
+
         df = df.reset_index()
         df = df.replace('n/a', np.nan)
         df['trial_id'] = df.loc[df.event == 'GL_TRIAL_START'].value.astype(int)
