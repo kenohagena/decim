@@ -81,7 +81,7 @@ class BehavDataframe(object):
             df.loc[df.index[0], 'first_sample'] = 1
             df.first_sample = np.roll(df.first_sample.fillna(method='ffill').values, 1)
             firsts = df.loc[(df.event == 'GL_TRIAL_LOCATION') & (df.first_sample == 1)].index.values
-            df['belief_reset'] = gm.belief(df, H=0, ident='event', reset_firsts=firsts)[0]
+            df.loc[:, 'belief_reset'] = gm.belief(df, H=0, ident='event', reset_firsts=firsts)[0]
 
         df = df.reset_index()
         df = df.replace('n/a', np.nan)
@@ -111,7 +111,7 @@ class BehavDataframe(object):
                 'belief', 'LLR', 'gen_side',
                 'stimulus', 'stimulus_off', 'rule_resp',
                 'trial_id', 'reward', 'rt', 'surprise'] +\
-            ['belief_{}'.format(different_H) for different_H in Hs]
+            ['belief_{}'.format(different_H) for different_H in Hs + ['reset']]
         df = df.loc[:, cols]
         df = df.reset_index(drop=True)
         asign = np.sign(df.belief.values)
