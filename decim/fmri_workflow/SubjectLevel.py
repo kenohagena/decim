@@ -291,8 +291,8 @@ def execute(sub, ses, environment):
 
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
     sl.BehavFrames()
-    #sl.LinregVoxel()
-    sl.Output(dir='Workflow/Sublevel_Behav_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+    sl.LinregVoxel()
+    sl.Output(dir='Workflow/Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
     '''
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)  # {ses: [4, 5, 6]} to only run inference
     sl.BehavFrames()
@@ -312,6 +312,7 @@ def execute(sub, ses, environment):
     sl.CleanEpochs(epoch='Switch')
     sl.Output(dir='Workflow/Sublevel_SwitchEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
     '''
+
 
 def par_execute(keys):
     with Pool(2) as p:

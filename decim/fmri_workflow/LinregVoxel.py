@@ -139,10 +139,13 @@ class VoxelSubject(object):
             map({-1: 'left', 1: 'right', 0: 'none'})
         combined.rule_resp = combined.rule_resp.\
             map({-1: 'A', 1: 'B', 0: 'none'})
-
+        combined.loc[:, 'response_'] = combined.response + combined.rule_resp
+        combined = combined.replace({'response_': {'nonenone': 'none'}})
+        print(combined.loc[combined.response_ != 'none'])
         s = ['none', 'vertical', 'horizontal']                                  # levels for patsy formula formulator
         b = ['none', 'left', 'right']
         r = ['none', 'A', 'B']
+        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB']
         if self.task == 'instructed':
             design_matrix = dmatrix('''switch + np.abs(switch) +
                             C(stimulus, levels=s) + C(response, levels=b)''',
@@ -150,7 +153,7 @@ class VoxelSubject(object):
         elif self.task == 'inference':
             design_matrix = dmatrix('''belief + np.abs(belief) + switch +
                 np.abs(switch) + LLR + np.abs(LLR)+ surprise +
-                C(stimulus, levels=s) + C(response, levels=b)''', data=combined)
+                C(response_, levels=t)''', data=combined)
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
                           design_info.column_names, index=combined.index)
         if export_desmat_bf_conv is True:
@@ -277,22 +280,21 @@ class VoxelSubject(object):
                                                    'r2_score',
                                                    'mean_squared_error'])
 
+
 #@memory.cache
-
-
 def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     v = VoxelSubject(subject, session, runs, flex_dir, BehavDataframe, task)
-    v.input_nifti = 'mni_retroicor'                                         # set input-identifier variable ('T1w' or 'mni_retroicor')
+    v.input_nifti = 'T1w'                                                    # set input-identifier variable ('T1w' or 'mni_retroicor')
     v.concat_runs()
     v.glm()
-    # v.vol_2surf()                                                         # use when working with T1w-subject space niftis (fmriprep pipeline)
-    v.mni_to_fsaverage()                                                    # use when working with MNI-space niftis (Rudys retroicor pipeline)
+    v.vol_2surf()                                                            # use when working with T1w-subject space niftis (fmriprep pipeline)
+    #v.mni_to_fsaverage()                                                    # use when working with MNI-space niftis (Rudys retroicor pipeline)
     return v.voxel_regressions, v.surface_textures, v.DesignMatrix
 
 
 '''
 from decim.fmri_workflow import BehavDataframe as bd
 behav = bd.execute('sub-3', 'ses-2', 'inference_run-4', 'inference', '/Volumes/flxrl/FLEXRULE', pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv'))
-s = lv.VoxelSubject('sub-3', 'ses-2', ['inference_run-4'], '/Volumes/flxrl/FLEXRULE', behav, 'inference')
-s.design_matrix(behav)
+s = VoxelSubject('sub-3', 'ses-2', ['inference_run-4'], '/Volumes/flxrl/FLEXRULE', behav, 'inference')
+print(s.design_matrix(behav).columns)
 '''
