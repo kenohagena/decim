@@ -80,7 +80,7 @@ class EPI(object):
         file = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
                          self.subject, 'fmriprep', self.subject,
                          self.session, 'func',
-                         '*{0}*{1}*.nii.gz'.
+                         '*{0}*{1}*nii.gz'.
                          format(self.run, file_identifier)))
 
         print(file, 'loaded')  # keep to avoid that CompCor is applied unnoticed

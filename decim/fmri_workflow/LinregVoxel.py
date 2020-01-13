@@ -186,7 +186,7 @@ class VoxelSubject(object):
             files = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
                               self.subject, 'fmriprep', self.subject,
                               self.session, 'func',
-                              '{0}_{1}_task-{2}_*{3}*.nii.gz'.
+                              '{0}_{1}_task-{2}_*{3}*nii.gz'.
                               format(self.subject, self.session, run,
                                      file_identifier)))
             if len(files) == 1:
