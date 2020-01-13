@@ -76,7 +76,7 @@ class EPI(object):
         if self.input_nifti == 'mni_retroicor':
             file_identifier = 'retroicor'
         elif self.input_nifti == 'T1w':
-            file_identifier = 'space-T1w_preproc'
+            file_identifier = 'space-T1w_preproc.'
         file = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
                          self.subject, 'fmriprep', self.subject,
                          self.session, 'func',
