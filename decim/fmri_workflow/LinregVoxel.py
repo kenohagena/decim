@@ -10,7 +10,7 @@ from nilearn import datasets
 from collections import defaultdict
 from patsy import dmatrix
 from scipy.interpolate import interp1d
-
+import matplotlib.pyplot as plt
 
 '''
 Script to run GLM
@@ -141,23 +141,28 @@ class VoxelSubject(object):
             map({-1: 'A', 1: 'B', 0: 'none'})
         combined.loc[:, 'response_'] = combined.response + combined.rule_resp
         combined = combined.replace({'response_': {'nonenone': 'none'}})
-        print(combined.loc[combined.response_ != 'none'])
+        indices = np.array([])
+        for i, value in enumerate(combined.loc[combined.stimulus != 'none'].index.values):
+            indices = np.append(indices, np.arange(value, combined.loc[combined.response != 'none'].index.values[i], 100))
+        combined.loc[:, 'choice'] = combined.index.isin(indices)
+        combined.loc[:, 'choice_box'] = combined.loc[:, 'response_']
+        combined = combined.replace({'choice_box': {'none': np.nan}})
+        combined.choice_box = combined.choice_box.fillna(method='backfill').fillna('none')
+        combined.loc[combined.choice == False, 'choice_box'] = 'none'
+
         s = ['none', 'vertical', 'horizontal']                                  # levels for patsy formula formulator
         b = ['none', 'left', 'right']
         r = ['none', 'A', 'B']
         t = ['none', 'leftA', 'leftB', 'rightA', 'rightB']
         if self.task == 'instructed':
             design_matrix = dmatrix('''switch + np.abs(switch) +
-                            C(response_, levels=t)''',
+                            C(choice_box, levels=t)''',
                                     data=combined)
         elif self.task == 'inference':
             design_matrix = dmatrix('''belief + np.abs(belief) + LLR + np.abs(LLR)+ surprise +
-                C(response_, levels=t)''', data=combined)
+                C(choice_box, levels=t)''', data=combined)
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
                           design_info.column_names, index=combined.index)
-        if export_desmat_bf_conv is True:
-            dm.to_hdf('/Users/kenohagena/Desktop/design_matrix.hdf',
-                      key=self.task)                                            # for checking the design matrix before convolution
 
         for column in dm.columns:
             print('Align ', column)
@@ -260,10 +265,9 @@ class VoxelSubject(object):
                             '{0}_T1w_pial.{1}.surf.gii'.
                             format(self.subject, hemisphere))
                 surface = vol_to_surf(img, pial, radius=.3, kind='line')
-                self.surface_textures[param][hemisphere] =\
-                    pd.DataFrame(surface, columns=['coef_', 'intercept_',
-                                                   'r2_score',
-                                                   'mean_squared_error'])
+                self.surface_textures[param][hemisphere] = pd.DataFrame(surface, columns=['coef_', 'intercept_',
+                                                                                          'r2_score',
+                                                                                          'mean_squared_error'])
 
     def mni_to_fsaverage(self):
         '''
@@ -274,10 +278,9 @@ class VoxelSubject(object):
         for param, img in self.voxel_regressions.items():
             for hemisphere, hemi in {'L': 'left', 'R': 'right'}.items():
                 surface = vol_to_surf(img, fs_average['pial_{}'.format(hemi)], radius=.3, kind='line')
-                self.surface_textures[param][hemisphere] =\
-                    pd.DataFrame(surface, columns=['coef_', 'intercept_',
-                                                   'r2_score',
-                                                   'mean_squared_error'])
+                self.surface_textures[param][hemisphere] = pd.DataFrame(surface, columns=['coef_', 'intercept_',
+                                                                                          'r2_score',
+                                                                                          'mean_squared_error'])
 
 
 #@memory.cache
@@ -287,13 +290,12 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     v.concat_runs()
     v.glm()
     v.vol_2surf()                                                            # use when working with T1w-subject space niftis (fmriprep pipeline)
-    #v.mni_to_fsaverage()                                                    # use when working with MNI-space niftis (Rudys retroicor pipeline)
+    # v.mni_to_fsaverage()                                                    # use when working with MNI-space niftis (Rudys retroicor pipeline)
     return v.voxel_regressions, v.surface_textures, v.DesignMatrix
 
 
 '''
-from decim.fmri_workflow import BehavDataframe as bd
-behav = bd.execute('sub-3', 'ses-2', 'inference_run-4', 'inference', '/Volumes/flxrl/FLEXRULE', pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv'))
+behav = pd.read_hdf('/Users/kenohagena/flexrule/test_behav_17-13-4.hdf', key='test')
 s = VoxelSubject('sub-3', 'ses-2', ['inference_run-4'], '/Volumes/flxrl/FLEXRULE', behav, 'inference')
 print(s.design_matrix(behav).columns)
 '''

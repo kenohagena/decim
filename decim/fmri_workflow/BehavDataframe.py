@@ -60,9 +60,10 @@ class BehavDataframe(object):
         self.session = session
         self.run = run
         self.bids_path = join(flex_dir, 'raw', 'bids_mr_v1.2')
+        self.flex_dir = flex_dir
 
     def inference(self, summary, Hs=[]):
-        logs = gm.load_logs_bids(self.subject, self.session, self.bids_path)    # Load data from raw directory
+        logs = gm.load_logs_bids(self.subject, self.session, self.flex_dir)    # Load data from raw directory
         df = logs[self.run]
         H = summary.loc[(summary.subject == self.subject) &                     # Retrieve fitted H
                         (summary.session == self.session)].hmode.values[0]
