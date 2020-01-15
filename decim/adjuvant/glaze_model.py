@@ -168,3 +168,5 @@ mean RT
 df = load_logs_bids('sub-17', 'ses-2', '/Volumes/flxrl/FLEXRULE/raw/bids_mr_v1.2')['inference_run-4']
 print(belief(df, 0, ident='event')[0].mean())
 '''
+
+load_logs_bids('sub-17', 'ses-3', '/Users/kenohagena/Desktop')

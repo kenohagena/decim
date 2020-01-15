@@ -47,7 +47,11 @@ mapping = {'C(stimulus, levels=s)[T.vertical]': 'stimulus_vertical',
            'belief': 'belief',
            'np.abs(belief)': 'abs_belief', 'switch': 'switch',
            'np.abs(switch)': 'abs_switch', 'LLR': 'LLR', 'np.abs(LLR)': 'abs_LLR',
-           'surprise': 'surprise'}
+           'surprise': 'surprise',
+           'C(response_, levels=t)[T.leftA]': 'response_left_rule_resp_A',
+           'C(response_, levels=t)[T.leftB]': 'response_left_rule_resp_B',
+           'C(response_, levels=t)[T.rightA]': 'response_right_rule_resp_A',
+           'C(response_, levels=t)[T.rightB]': 'response_right_rule_resp_B'}
 
 '''
 First: Get data
@@ -88,10 +92,12 @@ def concat(SJ_dir, task):
                                 key=task)                                       # load 'random' DesignMatrix to have the regressor names
     dfs = []
     for sub, hemi in product(range(1, 23), hemis.keys()):
+        print(sub)
         subject = 'sub-{}'.format(sub)
-        aparc_file = join('/Volumes/flxrl/FLEXRULE/fmri/completed_preprocessed/',
+        aparc_file = join('/Users/kenohagena/flexrule/fmri/only_aparc/completed_preprocessed/',
                           subject, 'freesurfer', subject, 'label',
-                          '{}.HCPMMP1.annot'.format(hemis[hemi]))
+                          '{}.HCPMMP1.annot'.format(hemis[hemi]))  # for fs average replace subject through 'fsaverage'
+
         try:
             labels, ctab, names = nib.freesurfer.read_annot(aparc_file)
         except FileNotFoundError:
@@ -101,29 +107,31 @@ def concat(SJ_dir, task):
                         'SurfaceTxt_sub-{0}_ses-{1}_{2}_{3}.hdf'.
                         format(sub, ses, param, hemi))
             parameter = mapping[param]
-            # print(task, parameter, subject, ses)                              # uncomment for debug
             session = 'ses-{}'.format(ses)
             try:
                 df = pd.read_hdf(file, key=task)
+                print(labels.shape)
+                print(df)
+                try:
+                    assert len(df) == len(labels)
+                except AssertionError:
+                    print('len(df) does not match len(labels)')
+                df['labs'] = labels
+                str_names = [str(i) for i in names]
+                str_names = [i[2:-1] if i == "b'???'" else i[4:-1]
+                             for i in str_names]
+                grouped = df.groupby('labs').mean().reset_index()
+                grouped['names'] = str_names
+                grouped['parameter'] = parameter
+                grouped['subject'] = subject
+                grouped['session'] = session
+                grouped['hemisphere'] = hemi
+                dfs.append(grouped)
             except (FileNotFoundError, KeyError) as e:
                 print('No file found for {0}, {1}, {2}, {3}'.
                       format(subject, session, parameter, hemi))
                 continue
-            try:
-                assert len(df) == len(labels)
-            except AssertionError:
-                print('len(df) does not match len(labels)')
-            df['labs'] = labels
-            str_names = [str(i) for i in names]
-            str_names = [i[2:-1] if i == "b'???'" else i[4:-1]
-                         for i in str_names]
-            grouped = df.groupby('labs').mean().reset_index()
-            grouped['names'] = str_names
-            grouped['parameter'] = parameter
-            grouped['subject'] = subject
-            grouped['session'] = session
-            grouped['hemisphere'] = hemi
-            dfs.append(grouped)
+
     df = pd.concat(dfs, ignore_index=True)
     return df
 
@@ -149,6 +157,7 @@ def surface_glm_data(df, lateral_params, marker='coef_', output='t_stat'):
         agg(lambda x: ttest(x, 0)[p_or_t]).reset_index()                        # t-test across across subjects
     mag = mag.groupby(['parameter', 'names']).mean().reset_index()              # average across hemispheres
     mag = mag.pivot(columns='parameter', index='names', values=marker)
+    '''
     for lateral_param in lateral_params:
         if lateral_param[:8] == 'response':
             lat = ses_mean.loc[ses_mean.parameter.isin(['response_left',
@@ -177,6 +186,7 @@ def surface_glm_data(df, lateral_params, marker='coef_', output='t_stat'):
         lat = lat.groupby(['names']).agg(lambda x: ttest(x, 0)[p_or_t]).\
             reset_index()                                                       # t-test acorss subjects
         mag['{}_lat'.format(lateral_param)] = lat[marker].values
+    '''
     return mag
 
 
@@ -189,6 +199,7 @@ def surface_data(SJ_dir, lateral_params, task, exclude=['sub-11', 'sub-20']):
     slu.mkdir_p(out_dir)
     grouped = concat(SJ_dir, task)
     grouped = grouped.loc[~grouped.subject.isin(exclude)]
+    grouped = grouped.loc[~((grouped.subject == 'sub-19') & (grouped.session == 'ses-2'))]
     # print(grouped.subject.unique())
     t_stat = surface_glm_data(grouped, lateral_params, output='t_stat')
     p_vals = surface_glm_data(grouped, lateral_params, output='p_val')
@@ -207,10 +218,8 @@ def get_data(task, in_dir):
     '''
     Get data from .hdf files with p-values and t-statistic
     '''
-    glasser_labels = join('/Volumes/flxrl/FLEXRULE/fmri/completed_preprocessed/',
-                          'sub-10/freesurfer/fsaverage/label/lh.HCPMMP1.annot')
-    glasser_labels_comb = join('/Volumes/flxrl/FLEXRULE/fmri/completed_preprocessed/',
-                               'sub-10/freesurfer/fsaverage/label/lh.HCPMMP1_combined.annot')
+    glasser_labels = join('/Users/kenohagena/flexrule/fmri/only_aparc/label/lh.HCPMMP1.annot')
+    glasser_labels_comb = join('/Users/kenohagena/flexrule/fmri/only_aparc/label/lh.HCPMMP1_combined.annot')
     labels, ctab, names = nib.freesurfer.read_annot(glasser_labels)
     labels_comb, ctab, names_combined = nib.freesurfer.\
         read_annot(glasser_labels_comb)
@@ -218,7 +227,7 @@ def get_data(task, in_dir):
     str_names = [str(i) for i in names]
     str_names = [i[2:-1] if i == "b'???'" else i[4:-1] for i in str_names]
     full_to_comb = pd.DataFrame({'full': labels,
-                                 'combined': labels_comb}).\
+                                 'combined': labels_comb}).astype(int).\
         groupby('full').mean().reset_index()
     combined = np.array(str_names_comb)[full_to_comb.combined.
                                         astype(int).values]
@@ -337,27 +346,26 @@ def roi_names_param(parameter, task, correlation, in_dir):
 
 
 # USAGE OF THIS SCRIPT
-
-glm_run = 'Sublevel_GLM_Climag_2019-12-16'                                      # Specify where the GLM results are
+glm_run = 'Sublevel_GLM_Climag_2020-01-15'                                      # Specify where the GLM results are
 # 1. Make t- and p-maps
 
-'''
-surface_data(join('/Volumes/flxrl/FLEXRULE/Workflow/', glm_run),
+surface_data(join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run),
              ['response', 'switch'], 'instructed')
-surface_data(join('/Volumes/flxrl/FLEXRULE/Workflow/', glm_run),
+surface_data(join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run),
              ['response', 'belief', 'switch', 'LLR'], 'inference')
-'''
 # 2. Do plotting
 
+
 for task in ['instructed', 'inference']:
-    in_dir = join('/Volumes/flxrl/FLEXRULE/Workflow', glm_run, 'GroupLevel')
-    cols = pd.read_hdf(join('/Volumes/flxrl/FLEXRULE/Workflow', glm_run, 'GroupLevel',
+    in_dir = join('//Users/kenohagena/flexrule/fmri/analyses/', glm_run, 'GroupLevel')
+    cols = pd.read_hdf(join(in_dir,
                             'Surface_{}.hdf'.format(task)), key='t_statistic').columns
     for param in cols:
         montage_plot(param, in_dir=in_dir, task=task, fdr_correct=True)
-
-# 3. Miscellaneous functions
 '''
+# 3. Miscellaneous functions
 roi_names_param('response_left_multi', 'inference', 'neg')
 plot_single_roi('AAIC_ROI')
 '''
+#get_data(task='inference', in_dir='/Volumes/flxrl/FLEXRULE/Workflow/Sublevel_GLM_Climag_2020-01-03/GroupLevel')
+# montage_plot('surprise', in_dir='/Volumes/flxrl/FLEXRULE/Workflow/Sublevel_GLM_Climag_2020-01-03/GroupLevel', task='inference', fdr_correct=False)
