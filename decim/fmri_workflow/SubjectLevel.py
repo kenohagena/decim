@@ -332,4 +332,4 @@ def submit(sub, env='Climag'):
     elif env == 'Climag':
         for ses in [2, 3]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
-                     memory=40, nodes=1, tasks=2, name='rickventure_sub-{}'.format(sub))
+                     memory=40, nodes=1, tasks=2, name='subversive_message_sub-{}'.format(sub))
