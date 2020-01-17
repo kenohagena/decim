@@ -86,8 +86,7 @@ class VoxelSubject(object):
         self.surface_textures = defaultdict(dict)
         self.task = task
 
-    def design_matrix(self, behav, bfill_rule_resp=False, ffill_stimulus=False,
-                      export_desmat_bf_conv=False):
+    def design_matrix(self, behav):
         '''
         Make design matrix per block using Patsy
         Dummy code categorical variables.
@@ -99,31 +98,16 @@ class VoxelSubject(object):
             d) export designmatrix before convolution with hrf?
         '''
         print('load glm data...')
-        continuous = behav.loc[:, ['belief', 'LLR', 'surprise', 'onset']]       # Split into categorical and numerical regressors
-        categorical = behav.loc[:, ['response', 'stimulus', 'switch',
-                                    'rule_resp', 'event']]
-        if bfill_rule_resp is True:
-            categorical.rule_resp = categorical.rule_resp.fillna(method='bfill',
-                                                                 limit=1)       # bfill rule_resp at onset of stimulus
-            try:                                                                # Then, sanity check I
-                assert all(categorical.loc[categorical.event ==
-                                           'CHOICE_TRIAL_ONSET'].rule_resp.values ==
-                           categorical.loc[categorical.event ==
-                                           'CHOICE_TRIAL_RESP'].rule_resp.values)
-            except AssertionError:
-                print('''Assertion Error:
-                    Error in bfilling rule response values from response
-                    to stimulus''')
-        categorical.rule_resp = categorical.rule_resp.fillna(0.)
-        combined = pd.concat([categorical, continuous], axis=1)
+        combined = behav.loc[:, ['response', 'stimulus', 'switch',
+                                 'rule_resp', 'event', 'belief',
+                                 'LLR', 'surprise', 'onset']]
+        combined.rule_resp = combined.rule_resp.fillna(0.)
+        combined.response = combined.response.fillna('missed')                  # NaNs at this point are only missed/wrong chosen answers
         combined = combined.set_index((combined.onset.values * 1000).
                                       astype(int)).drop('onset', axis=1)
         combined = combined.\
             reindex(pd.Index(np.arange(0, combined.index[-1] + 15000, 1)))
         combined = combined.fillna(method='ffill', limit=99)
-        if ffill_stimulus is True:
-            combined.stimulus = combined.stimulus.fillna(method='ffill',
-                                                         limit=1900)            # stimulus lasts until offset --> boxcar regressor
         combined = combined.loc[np.arange(combined.index[0],
                                           combined.index[-1], 100)]
         combined.loc[0] = 0
@@ -132,15 +116,14 @@ class VoxelSubject(object):
             combined.loc[:, ['stimulus', 'response', 'switch',
                              'rule_resp', 'surprise', 'LLR']].fillna(0)
         combined.belief = combined.belief.fillna(method='ffill')
-
         combined.stimulus = combined.stimulus.\
             map({-1: 'vertical', 1: 'horizontal', 0: 'none'})
         combined.response = combined.response.\
-            map({-1: 'left', 1: 'right', 0: 'none'})
+            map({-1: 'left', 1: 'right', 0: 'none', 'missed': 'missed'})
         combined.rule_resp = combined.rule_resp.\
             map({-1: 'A', 1: 'B', 0: 'none'})
         combined.loc[:, 'response_'] = combined.response + combined.rule_resp
-        combined = combined.replace({'response_': {'nonenone': 'none'}})
+        combined = combined.replace({'response_': {'nonenone': 'none', 'missednone': 'missed'}})
         indices = np.array([])
         for i, value in enumerate(combined.loc[combined.stimulus != 'none'].index.values):
             indices = np.append(indices, np.arange(value, combined.loc[combined.response != 'none'].index.values[i], 100))
@@ -153,7 +136,7 @@ class VoxelSubject(object):
         s = ['none', 'vertical', 'horizontal']                                  # levels for patsy formula formulator
         b = ['none', 'left', 'right']
         r = ['none', 'A', 'B']
-        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB']
+        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB', 'missed']
         if self.task == 'instructed':
             design_matrix = dmatrix('''switch + np.abs(switch) +
                             C(choice_box, levels=t)''',
@@ -297,5 +280,5 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
 '''
 behav = pd.read_hdf('/Users/kenohagena/flexrule/test_behav_17-13-4.hdf', key='test')
 s = VoxelSubject('sub-3', 'ses-2', ['inference_run-4'], '/Volumes/flxrl/FLEXRULE', behav, 'inference')
-print(s.design_matrix(behav).columns)
+print(s.design_matrix(behav).head())
 '''
