@@ -136,14 +136,14 @@ class VoxelSubject(object):
         s = ['none', 'vertical', 'horizontal']                                  # levels for patsy formula formulator
         b = ['none', 'left', 'right']
         r = ['none', 'A', 'B']
-        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB', 'missed']
+        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB']#, 'missed']
         if self.task == 'instructed':
             design_matrix = dmatrix('''switch + np.abs(switch) +
-                            C(choice_box, levels=t)''',
+                            C(response_, levels=t)''',
                                     data=combined)
         elif self.task == 'inference':
             design_matrix = dmatrix('''belief + np.abs(belief) + LLR + np.abs(LLR)+ surprise +
-                C(choice_box, levels=t)''', data=combined)
+                C(response_, levels=t)''', data=combined)
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
                           design_info.column_names, index=combined.index)
 
