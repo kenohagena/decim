@@ -102,7 +102,7 @@ class VoxelSubject(object):
                                  'rule_resp', 'event', 'belief',
                                  'LLR', 'surprise', 'onset']]
         combined.rule_resp = combined.rule_resp.fillna(0.)
-        combined.response = combined.response.fillna('missed')                  # NaNs at this point are only missed/wrong chosen answers
+        #combined.response = combined.response.fillna('missed')                  # NaNs at this point are only missed/wrong chosen answers. Only when boxcar sitmulus
         combined = combined.set_index((combined.onset.values * 1000).
                                       astype(int)).drop('onset', axis=1)
         combined = combined.\
