@@ -92,14 +92,11 @@ class VoxelSubject(object):
                                  'rule_resp', 'event', 'belief',
                                  'LLR', 'surprise', 'onset']]
         combined.rule_resp = combined.rule_resp.fillna(0.)
-        combined.response = combined.response.fillna('missed')                  # NaNs at this point are only missed/wrong chosen answers. Only when boxcar sitmulus
+        #combined.response = combined.response.fillna('missed')                  # NaNs at this point are only missed/wrong chosen answers. Only when boxcar sitmulus
         combined = combined.set_index((combined.onset.values * 1000).
                                       astype(int)).drop('onset', axis=1)
         combined = combined.\
             reindex(pd.Index(np.arange(0, combined.index[-1] + 15000, 1)))
-        #combined = combined.fillna(method='ffill', limit=99)
-        # combined = combined.loc[np.arange(combined.index[0],
-        #                                  combined.index[-1], 100)]
         combined.loc[0] = 0
         combined.loc[:, ['stimulus', 'response', 'switch',
                          'rule_resp', 'surprise', 'LLR']] =\
@@ -114,7 +111,7 @@ class VoxelSubject(object):
             map({-1: 'A', 1: 'B', 0: 'none'})
         combined.loc[:, 'response_'] = combined.response + combined.rule_resp
         combined = combined.replace({'response_': {'nonenone': 'none', 'missednone': 'missed'}})
-
+        '''
         indices = np.array([])
         for i, value in enumerate(combined.loc[combined.stimulus != 'none'].index.values):
             indices = np.append(indices, np.arange(value, combined.loc[combined.response != 'none'].index.values[i], 100))
@@ -124,17 +121,18 @@ class VoxelSubject(object):
         combined = combined.replace({'choice_box': {'none': np.nan}})
         combined.choice_box = combined.choice_box.fillna(method='backfill').fillna('none')
         combined.loc[combined.choice == False, 'choice_box'] = 'none'
+        '''
         s = ['none', 'vertical', 'horizontal']                                  # levels for patsy formula formulator
         b = ['none', 'left', 'right']
         r = ['none', 'A', 'B']
-        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB', 'missed']
+        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB']#, 'missed']
         if self.task == 'instructed':
             design_matrix = dmatrix('''switch + np.abs(switch) +
-                            C(choice_box, levels=t)''',
+                            C(response_, levels=t)''',
                                     data=combined)
         elif self.task == 'inference':
             design_matrix = dmatrix('''belief + np.abs(belief) + LLR + np.abs(LLR)+ surprise +
-                C(choice_box, levels=t)''', data=combined)
+                C(response_, levels=t)''', data=combined)
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
                           design_info.column_names, index=combined.index)
         for column in dm.columns:
@@ -266,6 +264,7 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     v.vol_2surf()                                                            # use when working with T1w-subject space niftis (fmriprep pipeline)
     # v.mni_to_fsaverage()                                                    # use when working with MNI-space niftis (Rudys retroicor pipeline)
     return v.voxel_regressions, v.surface_textures, v.DesignMatrix
+
 
 '''
 behav = pd.read_hdf('/Users/kenohagena/flexrule/test_behav_6-2-7.hdf', key='test')
