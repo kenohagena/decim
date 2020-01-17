@@ -10,7 +10,7 @@ from nilearn import datasets
 from collections import defaultdict
 from patsy import dmatrix
 from scipy.interpolate import interp1d
-#import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 '''
 Script to run GLM
@@ -107,9 +107,9 @@ class VoxelSubject(object):
                                       astype(int)).drop('onset', axis=1)
         combined = combined.\
             reindex(pd.Index(np.arange(0, combined.index[-1] + 15000, 1)))
-        combined = combined.fillna(method='ffill', limit=99)
-        combined = combined.loc[np.arange(combined.index[0],
-                                          combined.index[-1], 100)]
+        #combined = combined.fillna(method='ffill', limit=99)
+        # combined = combined.loc[np.arange(combined.index[0],
+        #                                  combined.index[-1], 100)]
         combined.loc[0] = 0
         combined.loc[:, ['stimulus', 'response', 'switch',
                          'rule_resp', 'surprise', 'LLR']] =\
@@ -215,7 +215,7 @@ class VoxelSubject(object):
         voxels = voxels.fillna(0)                                               # because if voxels have std == 0 --> NaNs introduced
         if z_score_behav is True:                                               # normalize behavior
             behav = (behav - behav.mean()) / behav.std()
-            behav=behav.fillna(0)                                               # missed-reponse regressor can have std=0 --> NaNs introduced
+            behav = behav.fillna(0)                                               # missed-reponse regressor can have std=0 --> NaNs introduced
         self.DesignMatrix = behav
         linreg = LinearRegression()
         print('fit', self.task)
@@ -277,11 +277,11 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     # v.mni_to_fsaverage()                                                    # use when working with MNI-space niftis (Rudys retroicor pipeline)
     return v.voxel_regressions, v.surface_textures, v.DesignMatrix
 
-'''
+
 behav = pd.read_hdf('/Users/kenohagena/flexrule/test_behav_6-2-7.hdf', key='test')
 s = VoxelSubject('sub-3', 'ses-2', ['inference_run-4'], '/Volumes/flxrl/FLEXRULE', behav, 'inference')
-print(s.design_matrix(behav)['C(choice_box, levels=t)[T.missed]'].unique())
-
+print(s.design_matrix(behav).shape)
+'''
 
 from decim.fmri_workflow import BehavDataframe as bd
 behav = bd.execute('sub-6', 'ses-2', 'instructed_run-7', 'instructed', '/Users/kenohagena/Desktop', pd.read_csv('/Users/kenohagena/flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv'))
