@@ -279,11 +279,11 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     # v.mni_to_fsaverage()                                                    # use when working with MNI-space niftis (Rudys retroicor pipeline)
     return v.voxel_regressions, v.surface_textures, v.DesignMatrix
 
-
+'''
 behav = pd.read_hdf('/Users/kenohagena/flexrule/test_behav_6-2-7.hdf', key='test')
 s = VoxelSubject('sub-3', 'ses-2', ['inference_run-4'], '/Volumes/flxrl/FLEXRULE', behav, 'inference')
 print(s.design_matrix(behav).shape)
-'''
+
 from decim.fmri_workflow import BehavDataframe as bd
 behav = bd.execute('sub-6', 'ses-2', 'instructed_run-7', 'instructed', '/Users/kenohagena/Desktop', pd.read_csv('/Users/kenohagena/flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv'))
 print(behav.response.unique())
