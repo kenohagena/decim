@@ -92,7 +92,7 @@ class VoxelSubject(object):
                                  'rule_resp', 'event', 'belief',
                                  'LLR', 'surprise', 'onset']]
         combined.rule_resp = combined.rule_resp.fillna(0.)
-        #combined.response = combined.response.fillna('missed')                  # NaNs at this point are only missed/wrong chosen answers. Only when boxcar sitmulus
+        # combined.response = combined.response.fillna('missed')                  # NaNs at this point are only missed/wrong chosen answers. Only when boxcar sitmulus
         combined = combined.set_index((combined.onset.values * 1000).
                                       astype(int)).drop('onset', axis=1)
         combined = combined.\
@@ -125,7 +125,7 @@ class VoxelSubject(object):
         s = ['none', 'vertical', 'horizontal']                                  # levels for patsy formula formulator
         b = ['none', 'left', 'right']
         r = ['none', 'A', 'B']
-        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB']#, 'missed']
+        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB']  # , 'missed']
         if self.task == 'instructed':
             design_matrix = dmatrix('''switch + np.abs(switch) +
                             C(response_, levels=t)''',
@@ -137,7 +137,7 @@ class VoxelSubject(object):
                           design_info.column_names, index=combined.index)
         for column in dm.columns:
             print('Align ', column)
-            dm[column] = make_bold(dm[column].values, dt=.1)                    # convolve with hrf
+            dm[column] = make_bold(dm[column].values, dt=.001)                    # convolve with hrf
         dm = regular(dm, target='1900ms')
         dm.loc[pd.Timedelta(0)] = 0
         dm = dm.sort_index()
