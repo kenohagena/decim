@@ -111,7 +111,7 @@ class VoxelSubject(object):
             map({-1: 'A', 1: 'B', 0: 'none'})
         combined.loc[:, 'response_'] = combined.response + combined.rule_resp
         combined = combined.replace({'response_': {'nonenone': 'none', 'missednone': 'missed'}})
-            indices = np.array([])
+        indices = np.array([])
         for i, value in enumerate(combined.loc[combined.stimulus != 'none'].index.values):
             indices = np.append(indices, np.arange(value, combined.loc[combined.response != 'none'].index.values[i], 100))
 
