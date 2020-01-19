@@ -92,7 +92,7 @@ class VoxelSubject(object):
                                  'rule_resp', 'event', 'belief',
                                  'LLR', 'surprise', 'onset']]
         combined.rule_resp = combined.rule_resp.fillna(0.)
-        # combined.response = combined.response.fillna('missed')                  # NaNs at this point are only missed/wrong chosen answers. Only when boxcar sitmulus
+        combined.response = combined.response.fillna('missed')                  # NaNs at this point are only missed/wrong chosen answers. Only when boxcar sitmulus
         combined = combined.set_index((combined.onset.values * 1000).
                                       astype(int)).drop('onset', axis=1)
         combined = combined.\
@@ -111,8 +111,7 @@ class VoxelSubject(object):
             map({-1: 'A', 1: 'B', 0: 'none'})
         combined.loc[:, 'response_'] = combined.response + combined.rule_resp
         combined = combined.replace({'response_': {'nonenone': 'none', 'missednone': 'missed'}})
-        '''
-        indices = np.array([])
+            indices = np.array([])
         for i, value in enumerate(combined.loc[combined.stimulus != 'none'].index.values):
             indices = np.append(indices, np.arange(value, combined.loc[combined.response != 'none'].index.values[i], 100))
 
@@ -121,11 +120,10 @@ class VoxelSubject(object):
         combined = combined.replace({'choice_box': {'none': np.nan}})
         combined.choice_box = combined.choice_box.fillna(method='backfill').fillna('none')
         combined.loc[combined.choice == False, 'choice_box'] = 'none'
-        '''
         s = ['none', 'vertical', 'horizontal']                                  # levels for patsy formula formulator
         b = ['none', 'left', 'right']
         r = ['none', 'A', 'B']
-        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB']  # , 'missed']
+        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB', 'missed']
         if self.task == 'instructed':
             design_matrix = dmatrix('''switch + np.abs(switch) +
                             C(response_, levels=t)''',
@@ -267,6 +265,7 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
 
 
 '''
+
 behav = pd.read_hdf('/Users/kenohagena/flexrule/test_behav_6-2-7.hdf', key='test')
 s = VoxelSubject('sub-3', 'ses-2', ['inference_run-4'], '/Volumes/flxrl/FLEXRULE', behav, 'inference')
 print(s.design_matrix(behav).shape)
