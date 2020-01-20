@@ -174,7 +174,7 @@ def execute(subject, session, run, task,
         - extracted brainstem ROI time series pd.DataFrame
     '''
     c = Choiceframe(subject, session, run, task,
-                    flex_dir, BehavFrame, PupilFrame, CortRois)
+                    flex_dir, BehavFrame, CortRois)
     c.choice_behavior()
     c.fmri_epochs()
     c.merge()
