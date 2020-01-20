@@ -302,6 +302,7 @@ def execute(sub, ses, environment):
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
     sl.BehavFrames()
     sl.RoiExtract(input_nifti='T1w')
+    sl.CortexEpochs()
     sl.Output(dir='Workflow/Sublevel_CortEpochs_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
     '''
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
