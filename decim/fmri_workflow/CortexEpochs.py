@@ -147,7 +147,7 @@ class Choiceframe(object):
             pd.MultiIndex.from_product([['behavior'], ['parameters'],
                                         self.choice_behavior.columns],
                                        names=['source', 'type', 'name'])
-
+        master = self.choice_behavior
         master = master.set_index([master.behavior.parameters.trial_id])
         singles = []
         for key, frame in self.roi_epochs.items():
