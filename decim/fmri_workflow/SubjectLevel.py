@@ -204,6 +204,17 @@ class SubjectLevel(object):
                                self.PupilFrame[session][run],
                                self.BrainstemRois[session][run], mode=mode)
 
+    def CortexEpochs(self):
+        self.CortexEpochs = defaultdict(dict)
+        for session, runs in self.session_runs.items():
+            for run, task in runs.items():
+                print('Do cort epochs', self.subject, session, run)
+                self.SwitchEpochs[session][run] =\
+                    se.execute(self.subject, session,
+                               run, task, self.flex_dir,
+                               self.BehavFrame[session][run],
+                               self.CortRois[session][run])
+
     def CleanEpochs(self, epoch='Choice'):
         '''
         Concatenate runs within a Session per task.
@@ -246,7 +257,7 @@ class SubjectLevel(object):
         slu.mkdir_p(output_dir)
         for name, attribute in self.__iter__():
             if name in ['BehavFrame', 'BehavAligned', 'PupilFrame',
-                        'CortRois', 'BrainstemRois', 'ChoiceEpochs']:
+                        'CortRois', 'BrainstemRois', 'ChoiceEpochs', 'CortexEpochs']:
                 for session in attribute.keys():
                     for run in attribute[session].keys():
                         print('Saving', name, session, run)
@@ -288,11 +299,16 @@ class SubjectLevel(object):
 
 
 def execute(sub, ses, environment):
-
+    sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
+    sl.BehavFrames()
+    sl.RoiExtract(input_nifti='T1w')
+    sl.Output(dir='Workflow/Sublevel_CortEpochs_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+    '''
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
     sl.BehavFrames()
     sl.LinregVoxel()
     sl.Output(dir='Workflow/Sublevel_GLM_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+    '''
     '''
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)  # {ses: [4, 5, 6]} to only run inference
     sl.BehavFrames()

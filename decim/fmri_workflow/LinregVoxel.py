@@ -83,9 +83,6 @@ class VoxelSubject(object):
 
         - Arguments:
             a) behavioral pd.DataFrame
-            b) rule reponse as boxcar stimulus - response?
-            c) stimulus boxcar onset - offset?
-            d) export designmatrix before convolution with hrf?
         '''
         print('load glm data...')
         combined = behav.loc[:, ['response', 'stimulus', 'switch',
