@@ -199,7 +199,7 @@ class EPI(object):
         self.cortical = cortical_rois
 
 
-#@memory.cache
+@memory.cache
 def execute(subject, session, run, flex_dir,
             atlas_warp=False, input_nifti='mni_retroicor'):
     RE = EPI(subject, session, run, flex_dir)

@@ -209,7 +209,7 @@ def realign_to_TR(behav, convolve_hrf=False, task='instructed'):
     return dm
 
 
-#@memory.cache
+@memory.cache
 def execute(subject, session, run, task, flex_dir, summary, belief_TR=False):
     '''
     Execute this script.
