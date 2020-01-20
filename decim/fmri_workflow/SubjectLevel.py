@@ -6,6 +6,7 @@ from decim.fmri_workflow import RoiExtract as re
 from decim.fmri_workflow import ChoiceEpochs as ce
 from decim.fmri_workflow import LinregVoxel as lv
 from decim.fmri_workflow import SwitchEpochs as se
+from decim.fmri_workflow import CortexEpochs as cort
 from decim.adjuvant import slurm_submit as slu
 from collections import defaultdict
 from os.path import join
@@ -210,10 +211,10 @@ class SubjectLevel(object):
             for run, task in runs.items():
                 print('Do cort epochs', self.subject, session, run)
                 self.SwitchEpochs[session][run] =\
-                    se.execute(self.subject, session,
-                               run, task, self.flex_dir,
-                               self.BehavFrame[session][run],
-                               self.CortRois[session][run])
+                    cort.execute(self.subject, session,
+                                 run, task, self.flex_dir,
+                                 self.BehavFrame[session][run],
+                                 self.CortRois[session][run])
 
     def CleanEpochs(self, epoch='Choice'):
         '''
