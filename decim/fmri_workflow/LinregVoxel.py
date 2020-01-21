@@ -106,9 +106,10 @@ class VoxelSubject(object):
             map({-1: 'left', 1: 'right', 0: 'none', 'missed': 'missed'})
         combined.rule_resp = combined.rule_resp.\
             map({-1: 'A', 1: 'B', 0: 'none'})
-        '''
+
         combined.loc[:, 'response_'] = combined.response + combined.rule_resp
         combined = combined.replace({'response_': {'nonenone': 'none', 'missednone': 'missed'}})
+        '''
         indices = np.array([])
         for i, value in enumerate(combined.loc[combined.stimulus != 'none'].index.values):
             indices = np.append(indices, np.arange(value, combined.loc[combined.response != 'none'].index.values[i], 100))
@@ -122,7 +123,7 @@ class VoxelSubject(object):
         s = ['none', 'vertical', 'horizontal']                                  # levels for patsy formula formulator
         b = ['none', 'left', 'right']
         r = ['none', 'A', 'B']
-        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB', 'missed']
+        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB']#, 'missed']
 
         # if self.task == 'instructed':
         #  design_matrix = dmatrix('''switch + np.abs(switch) +
@@ -131,7 +132,7 @@ class VoxelSubject(object):
         # elif self.task == 'inference':
         #    design_matrix = dmatrix('''belief + np.abs(belief) + LLR + np.abs(LLR)+ surprise +
         #        C(choice_box, levels=t)''', data=combined)
-        design_matrix = dmatrix('''C(response, levels=b)''', data=combined)
+        design_matrix = dmatrix('''C(response_, levels=t)''', data=combined)
 
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
                           design_info.column_names, index=combined.index)
