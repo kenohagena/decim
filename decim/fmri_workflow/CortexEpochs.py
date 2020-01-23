@@ -104,9 +104,9 @@ class Choiceframe(object):
         self.choice_behavior = choices
 
     def fmri_epochs(self, basel=2000, te=12000, freq='100ms',
-                    ROIs=[['L_RSC_ROI', 'L_POS2_ROI', 'L_PCV_ROI', 'L_7Pm_ROI', 'L_8BM_ROI', 'L_AVI_ROI',
-                           'L_IP2_ROI', 'L_IP1_ROI', 'L_FOP5_ROI', 'L_a32pr_ROI', 'R_RSC_ROI', 'R_POS2_ROI', 'R_PCV_ROI', 'R_7Pm_ROI', 'R_8BM_ROI', 'R_AVI_ROI',
-                           'R_IP2_ROI', 'R_IP1_ROI', 'R_FOP5_ROI', 'R_a32pr_ROI']]):
+                    ROIs=['L_RSC_ROI', 'L_POS2_ROI', 'L_PCV_ROI', 'L_7Pm_ROI', 'L_8BM_ROI', 'L_AVI_ROI',
+                          'L_IP2_ROI', 'L_IP1_ROI', 'L_FOP5_ROI', 'L_a32pr_ROI', 'R_RSC_ROI', 'R_POS2_ROI', 'R_PCV_ROI', 'R_7Pm_ROI', 'R_8BM_ROI', 'R_AVI_ROI',
+                          'R_IP2_ROI', 'R_IP1_ROI', 'R_FOP5_ROI', 'R_a32pr_ROI']):
         '''
         Loop through choice trial and extract fmri epochs for brainstem ROIs
 
