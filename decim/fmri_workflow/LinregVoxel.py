@@ -109,7 +109,7 @@ class VoxelSubject(object):
 
         combined.loc[:, 'response_'] = combined.response + combined.rule_resp
         combined = combined.replace({'response_': {'nonenone': 'none', 'missednone': 'missed'}})
-        '''
+
         indices = np.array([])
         for i, value in enumerate(combined.loc[combined.stimulus != 'none'].index.values):
             indices = np.append(indices, np.arange(value, combined.loc[combined.response != 'none'].index.values[i], 100))
@@ -119,20 +119,19 @@ class VoxelSubject(object):
         combined = combined.replace({'choice_box': {'none': np.nan}})
         combined.choice_box = combined.choice_box.fillna(method='backfill').fillna('none')
         combined.loc[combined.choice == False, 'choice_box'] = 'none'
-        '''
+
         s = ['none', 'vertical', 'horizontal']                                  # levels for patsy formula formulator
         b = ['none', 'left', 'right']
         r = ['none', 'A', 'B']
-        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB']  # , 'missed']
+        t = ['none', 'leftA', 'leftB', 'rightA', 'rightB', 'missed']
 
         if self.task == 'instructed':
             design_matrix = dmatrix('''switch + np.abs(switch) +
-                          C(response_, levels=t)''',
+                          C(choice_box, levels=t)''',
                                     data=combined)
         elif self.task == 'inference':
             design_matrix = dmatrix('''LLR + np.abs(LLR)+
-                C(response_, levels=t)''', data=combined)
-        #design_matrix = dmatrix('''C(response_, levels=t)''', data=combined)
+                C(choice_box, levels=t)''', data=combined)
 
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
                           design_info.column_names, index=combined.index)
@@ -159,6 +158,8 @@ class VoxelSubject(object):
                 file_identifier = 'retroicor'
             elif self.input_nifti == 'T1w':
                 file_identifier = 'space-T1w_preproc.'
+            elif self.input_nifti == 'mni':
+                file_identifier == 'space-MNI152NLin2009cAsym_preproc'
             files = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
                               self.subject, 'fmriprep', self.subject,
                               self.session, 'func',
@@ -259,11 +260,11 @@ class VoxelSubject(object):
 #@memory.cache
 def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     v = VoxelSubject(subject, session, runs, flex_dir, BehavDataframe, task)
-    v.input_nifti = 'T1w'                                                    # set input-identifier variable ('T1w' or 'mni_retroicor')
+    v.input_nifti = 'mni'                                                    # set input-identifier variable ('T1w', 'mni_retroicor', 'mni')
     v.concat_runs()
     v.glm()
-    v.vol_2surf()                                                            # use when working with T1w-subject space niftis (fmriprep pipeline)
-    # v.mni_to_fsaverage()                                                    # use when working with MNI-space niftis (Rudys retroicor pipeline)
+    #v.vol_2surf()                                                            # use when working with T1w-subject space niftis
+    v.mni_to_fsaverage()                                                    # use when working with MNI-space niftis
     return v.voxel_regressions, v.surface_textures, v.DesignMatrix
 
 
