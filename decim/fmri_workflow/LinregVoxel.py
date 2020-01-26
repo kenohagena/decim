@@ -159,7 +159,7 @@ class VoxelSubject(object):
             elif self.input_nifti == 'T1w':
                 file_identifier = 'space-T1w_preproc.'
             elif self.input_nifti == 'mni':
-                file_identifier == 'space-MNI152NLin2009cAsym_preproc'
+                file_identifier = 'space-MNI152NLin2009cAsym_preproc'
             files = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
                               self.subject, 'fmriprep', self.subject,
                               self.session, 'func',
