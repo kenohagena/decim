@@ -130,7 +130,7 @@ class VoxelSubject(object):
                           C(choice_box, levels=t)''',
                                     data=combined)
         elif self.task == 'inference':
-            design_matrix = dmatrix('''LLR + np.abs(LLR)+
+            design_matrix = dmatrix('''belief + np.abs(belief) + LLR + np.abs(LLR)+ surprise +
                 C(choice_box, levels=t)''', data=combined)
 
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
