@@ -27,12 +27,10 @@ def execute(h):
                         ses_mean.append(data)
                     except FileNotFoundError:
                         print('FileNotFoundError', subject, regressor, task, session)
-                    try:
-                        ses_mean = np.mean(np.concatenate(ses_mean, axis=3), axis=3)
-                        ses_mean = np.expand_dims(ses_mean, axis=3)
-                        t_test.append(ses_mean)
-                    except ValueError:
-                        print('no value for', subject, regressor, task)
+                    ses_mean = np.mean(np.concatenate(ses_mean, axis=3), axis=3)
+                    ses_mean = np.expand_dims(ses_mean, axis=3)
+                    t_test.append(ses_mean)
+
             t_test = np.concatenate(t_test, axis=3)
             t_stat = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[0], axis=3)
             p_vals = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[1], axis=3)
