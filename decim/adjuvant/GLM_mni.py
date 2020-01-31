@@ -14,7 +14,7 @@ def execute(h):
     slu.mkdir_p(out_dir)
 
     for task, regressors in {'instructed': ['np.abs(switch)'],
-                             'inference': ['np.abs(switch)', 'np.abs(LLR)', 'surprise']}.items():
+                             'inference': ['np.abs(belief)', 'np.abs(LLR)', 'surprise']}.items():
         for regressor in regressors:
             t_test = []
             for subject in subjects_include:
@@ -27,9 +27,12 @@ def execute(h):
                         ses_mean.append(data)
                     except FileNotFoundError:
                         print('FileNotFoundError', subject, regressor, task, session)
-                ses_mean = np.mean(np.concatenate(ses_mean, axis=3), axis=3)
-                ses_mean = np.expand_dims(ses_mean, axis=3)
-                t_test.append(ses_mean)
+                    try:
+                        ses_mean = np.mean(np.concatenate(ses_mean, axis=3), axis=3)
+                        ses_mean = np.expand_dims(ses_mean, axis=3)
+                        t_test.append(ses_mean)
+                    except ValueError:
+                        print('no value for', subject, regressor, task)
             t_test = np.concatenate(t_test, axis=3)
             t_stat = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[0], axis=3)
             p_vals = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[1], axis=3)
