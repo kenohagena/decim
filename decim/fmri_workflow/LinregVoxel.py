@@ -260,7 +260,7 @@ class VoxelSubject(object):
 #@memory.cache
 def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     v = VoxelSubject(subject, session, runs, flex_dir, BehavDataframe, task)
-    v.input_nifti = 'mni'                                                    # set input-identifier variable ('T1w', 'mni_retroicor', 'mni')
+    v.input_nifti = 'mni_retroicor'                                                    # set input-identifier variable ('T1w', 'mni_retroicor', 'mni')
     v.concat_runs()
     v.glm()
     # v.vol_2surf()                                                            # use when working with T1w-subject space niftis
