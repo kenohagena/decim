@@ -20,10 +20,13 @@ def execute(h):
             for subject in subjects_include:
                 ses_mean = []
                 for session in ['ses-2', 'ses-3']:
-                    nifti = nib.load(join(glm_run_path, subject, 'VoxelReg_{0}_{1}_{2}_{3}.nii.gz'.format(subject, session, regressor, task)))
-                    data = nifti.get_fdata()[:, :, :, 0]  # coef_
-                    data = np.expand_dims(data, axis=3)
-                    ses_mean.append(data)
+                    try:
+                        nifti = nib.load(join(glm_run_path, subject, 'VoxelReg_{0}_{1}_{2}_{3}.nii.gz'.format(subject, session, regressor, task)))
+                        data = nifti.get_fdata()[:, :, :, 0]  # coef_
+                        data = np.expand_dims(data, axis=3)
+                        ses_mean.append(data)
+                    except FileNotFoundError:
+                        print('FileNotFoundError', subject, regressor, task, session)
                 ses_mean = np.mean(np.concatenate(ses_mean, axis=3), axis=3)
                 ses_mean = np.expand_dims(ses_mean, axis=3)
                 t_test.append(ses_mean)
