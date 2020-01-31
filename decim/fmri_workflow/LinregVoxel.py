@@ -9,6 +9,9 @@ from nilearn.surface import vol_to_surf
 from nilearn import datasets
 from collections import defaultdict
 from patsy import dmatrix
+from nilearn.image import resample_img
+
+
 #from scipy.interpolate import interp1d
 '''
 Script to run GLM
@@ -168,6 +171,18 @@ class VoxelSubject(object):
                                      file_identifier)))
             if len(files) == 1:
                 nifti = nib.load(files[0])
+                if self.input_nifti == 'mni':
+                    brain_mask = join(self.flex_dir, 'fmri', 'completed_preprocessed',
+                                      self.subject, 'fmriprep', self.subject,
+                                      self.session, 'func',
+                                      '{0}_{1}_task-{2}_*MNI152NLin2009cAsym_brainmask*nii.gz'.
+                                      format(self.subject, self.session, run,
+                                             file_identifier))
+                    brain_mask = nib.load(brain_mask)
+                    brain_mask = resample_img(brain_mask, nifti.affine,
+                                              target_shape=nifti.shape[:3])
+                    nifti = nib.Nifti1Image(np.multiply(nifti.get_fdata().T, brain_mask.get_fdata()).T, nifti.affine)
+
             else:
                 print('{1} niftis found for {0}, {2}, {3}'.format(self.subject,
                                                                   len(files),
