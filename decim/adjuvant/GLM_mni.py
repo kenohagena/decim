@@ -31,8 +31,8 @@ def execute(h):
                 ses_mean = np.expand_dims(ses_mean, axis=3)
                 t_test.append(ses_mean)
             t_test = np.concatenate(t_test, axis=3)
-            t_stat = np.expand_dims(ttest_1samp(t_test, axis=3)[0], axis=3)
-            p_vals = np.expand_dims(ttest_1samp(t_test, axis=3)[1], axis=3)
+            t_stat = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[0], axis=3)
+            p_vals = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[1], axis=3)
             new_image = nib.Nifti1Image(np.concatenate([t_stat, p_vals], axis=3), affine=nifti.affine)
             new_image.to_filename(join(out_dir, '{0}_{1}.nii.gz'.format(regressor, task)))
 
@@ -65,8 +65,8 @@ def execute(h):
 
         for inp, reg in zip([t_test_avg, t_test_diff], ['response_average', 'response_diff']):
             t_test = np.concatenate(inp, axis=3)
-            t_stat = np.expand_dims(ttest_1samp(t_test, axis=3)[0], axis=3)
-            p_vals = np.expand_dims(ttest_1samp(t_test, axis=3)[1], axis=3)
+            t_stat = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[0], axis=3)
+            p_vals = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[1], axis=3)
             new_image = nib.Nifti1Image(np.concatenate([t_stat, p_vals], axis=3), affine=nifti.affine)
             new_image.to_filename(join(out_dir, '{0}_{1}.nii.gz'.format(reg, task)))
 
