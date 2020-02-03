@@ -172,12 +172,11 @@ class VoxelSubject(object):
             if len(files) == 1:
                 nifti = nib.load(files[0])
                 if self.input_nifti == 'mni':
-                    brain_mask = join(self.flex_dir, 'fmri', 'completed_preprocessed',
-                                      self.subject, 'fmriprep', self.subject,
-                                      self.session, 'func',
-                                      '{0}_{1}_task-{2}_*MNI152NLin2009cAsym_brainmask*nii.gz'.
-                                      format(self.subject, self.session, run,
-                                             file_identifier))
+                    brain_mask = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
+                                           self.subject, 'fmriprep', self.subject,
+                                           self.session, 'func',
+                                           '{0}_{1}_task-{2}_*MNI152NLin2009cAsym_brainmask*nii.gz'.
+                                           format(self.subject, self.session, run)))
                     brain_mask = nib.load(brain_mask)
                     brain_mask = resample_img(brain_mask, nifti.affine,
                                               target_shape=nifti.shape[:3])
