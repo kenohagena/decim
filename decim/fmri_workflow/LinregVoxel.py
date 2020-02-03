@@ -177,7 +177,7 @@ class VoxelSubject(object):
                                            self.session, 'func',
                                            '{0}_{1}_task-{2}_*MNI152NLin2009cAsym_brainmask*nii.gz'.
                                            format(self.subject, self.session, run)))
-                    brain_mask = nib.load(brain_mask)
+                    brain_mask = nib.load(brain_mask[0])
                     brain_mask = resample_img(brain_mask, nifti.affine,
                                               target_shape=nifti.shape[:3])
                     nifti = nib.Nifti1Image(np.multiply(nifti.get_fdata().T, brain_mask.get_fdata()).T, nifti.affine)
