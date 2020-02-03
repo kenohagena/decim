@@ -6,10 +6,10 @@ from decim.adjuvant import slurm_submit as slu
 from pymeg import parallel as pbs
 
 
-def execute(h):
+def execute(date):
     subjects_exclude = [11, 20]
     subjects_include = ['sub-{}'.format(i) for i in range(1, 23) if i not in subjects_exclude]
-    glm_run_path = '/home/khagena/FLEXRULE/Workflow/Sublevel_GLM_Climag_2020-01-26'
+    glm_run_path = '/home/khagena/FLEXRULE/Workflow/Sublevel_GLM_Climag_{}'.format(date)
     out_dir = join(glm_run_path, 'GroupLevel')
     slu.mkdir_p(out_dir)
 
@@ -75,6 +75,6 @@ def execute(h):
             new_image.to_filename(join(out_dir, '{0}_{1}.nii.gz'.format(reg, task)))
 
 
-def submit(x):
-    pbs.pmap(execute, [x], walltime='4:00:00',
-             memory=40, nodes=1, tasks=2, name='{}'.format(x))
+def submit(date):
+    pbs.pmap(execute, [[date]], walltime='4:00:00',
+             memory=40, nodes=1, tasks=2, name='glm_mni')
