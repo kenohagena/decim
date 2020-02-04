@@ -7,6 +7,13 @@ from pymeg import parallel as pbs
 from nilearn.image import smooth_img
 
 
+'''
+Important:
+1. Check subjects_exclude
+2. Check if smoothing
+'''
+
+
 def execute(date):
     subjects_exclude = [1, 2, 11, 20]
     subjects_include = ['sub-{}'.format(i) for i in range(1, 23) if i not in subjects_exclude]
@@ -36,7 +43,7 @@ def execute(date):
             t_stat = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[0], axis=3)
             p_vals = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[1], axis=3)
             new_image = nib.Nifti1Image(np.concatenate([t_stat, p_vals], axis=3), affine=nifti.affine)
-            new_image.to_filename(join(out_dir, '{0}_{1}_5mm.nii.gz'.format(regressor, task)))
+            new_image.to_filename(join(out_dir, '{0}_{1}.nii.gz'.format(regressor, task)))
 
     for task in ['inference', 'instructed']:
         t_test_avg = []
