@@ -8,7 +8,7 @@ from nilearn.image import smooth_img
 
 
 def execute(date):
-    subjects_exclude = [11, 20]
+    subjects_exclude = [1, 2, 11, 20]
     subjects_include = ['sub-{}'.format(i) for i in range(1, 23) if i not in subjects_exclude]
     glm_run_path = '/home/khagena/FLEXRULE/Workflow/Sublevel_GLM_Climag_{}'.format(date)
     out_dir = join(glm_run_path, 'GroupLevel')
