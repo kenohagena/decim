@@ -73,7 +73,7 @@ def execute(date):
             t_stat = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[0], axis=3)
             p_vals = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[1], axis=3)
             new_image = nib.Nifti1Image(np.concatenate([t_stat, p_vals], axis=3), affine=nifti.affine)
-            new_image.to_filename(join(out_dir, '{0}_{1}_5mm.nii.gz'.format(reg, task)))
+            new_image.to_filename(join(out_dir, '{0}_{1}.nii.gz'.format(reg, task)))
 
 
 def submit(date):
