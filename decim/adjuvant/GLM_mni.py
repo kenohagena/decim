@@ -22,7 +22,7 @@ def execute(date):
                 ses_mean = []
                 for session in ['ses-2', 'ses-3']:
                     try:
-                        nifti = smooth_img(nib.load(join(glm_run_path, subject, 'VoxelReg_{0}_{1}_{2}_{3}.nii.gz'.format(subject, session, regressor, task))), 5)
+                        nifti = nib.load(join(glm_run_path, subject, 'VoxelReg_{0}_{1}_{2}_{3}.nii.gz'.format(subject, session, regressor, task)))
                         data = nifti.get_fdata()[:, :, :, 0]  # coef_
                         data = np.expand_dims(data, axis=3)
                         ses_mean.append(data)
@@ -49,7 +49,7 @@ def execute(date):
                     ses_mean = []
                     for session in ['ses-2', 'ses-3']:
                         try:
-                            nifti = smooth_img(nib.load(join(glm_run_path, subject, 'VoxelReg_{0}_{1}_C(choice_box, levels=t)[T.{3}{4}]_{2}.nii.gz'.format(subject, session, task, response, rule_resp))), 5)
+                            nifti = nib.load(join(glm_run_path, subject, 'VoxelReg_{0}_{1}_C(choice_box, levels=t)[T.{3}{4}]_{2}.nii.gz'.format(subject, session, task, response, rule_resp)))
                             data = nifti.get_fdata()[:, :, :, 0]  # coef_
                             data = np.expand_dims(data, axis=3)
                             ses_mean.append(data)
