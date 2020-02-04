@@ -180,7 +180,7 @@ class VoxelSubject(object):
                     brain_mask = nib.load(brain_mask[0])
                     brain_mask = resample_img(brain_mask, nifti.affine,
                                               target_shape=nifti.shape[:3])
-                    nifti = nib.Nifti1Image(np.multiply(nifti.get_fdata().T, brain_mask.get_fdata()).T, nifti.affine)
+                    nifti = nib.Nifti1Image(np.multiply(nifti.get_fdata().T, brain_mask.get_fdata().T).T, nifti.affine)
 
             else:
                 print('{1} niftis found for {0}, {2}, {3}'.format(self.subject,
