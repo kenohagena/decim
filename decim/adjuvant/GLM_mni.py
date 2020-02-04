@@ -4,6 +4,7 @@ from os.path import join
 from scipy.stats import ttest_1samp
 from decim.adjuvant import slurm_submit as slu
 from pymeg import parallel as pbs
+from nilearn.image import smooth_img
 
 
 def execute(date):
@@ -21,7 +22,7 @@ def execute(date):
                 ses_mean = []
                 for session in ['ses-2', 'ses-3']:
                     try:
-                        nifti = nib.load(join(glm_run_path, subject, 'VoxelReg_{0}_{1}_{2}_{3}.nii.gz'.format(subject, session, regressor, task)))
+                        nifti = smooth_img(nib.load(join(glm_run_path, subject, 'VoxelReg_{0}_{1}_{2}_{3}.nii.gz'.format(subject, session, regressor, task))), 5)
                         data = nifti.get_fdata()[:, :, :, 0]  # coef_
                         data = np.expand_dims(data, axis=3)
                         ses_mean.append(data)
@@ -35,7 +36,7 @@ def execute(date):
             t_stat = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[0], axis=3)
             p_vals = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[1], axis=3)
             new_image = nib.Nifti1Image(np.concatenate([t_stat, p_vals], axis=3), affine=nifti.affine)
-            new_image.to_filename(join(out_dir, '{0}_{1}.nii.gz'.format(regressor, task)))
+            new_image.to_filename(join(out_dir, '{0}_{1}_5mm.nii.gz'.format(regressor, task)))
 
     for task in ['inference', 'instructed']:
         t_test_avg = []
@@ -48,7 +49,7 @@ def execute(date):
                     ses_mean = []
                     for session in ['ses-2', 'ses-3']:
                         try:
-                            nifti = nib.load(join(glm_run_path, subject, 'VoxelReg_{0}_{1}_C(choice_box, levels=t)[T.{3}{4}]_{2}.nii.gz'.format(subject, session, task, response, rule_resp)))
+                            nifti = smooth_img(nib.load(join(glm_run_path, subject, 'VoxelReg_{0}_{1}_C(choice_box, levels=t)[T.{3}{4}]_{2}.nii.gz'.format(subject, session, task, response, rule_resp))), 5)
                             data = nifti.get_fdata()[:, :, :, 0]  # coef_
                             data = np.expand_dims(data, axis=3)
                             ses_mean.append(data)
@@ -72,7 +73,7 @@ def execute(date):
             t_stat = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[0], axis=3)
             p_vals = np.expand_dims(ttest_1samp(t_test, popmean=0, axis=3)[1], axis=3)
             new_image = nib.Nifti1Image(np.concatenate([t_stat, p_vals], axis=3), affine=nifti.affine)
-            new_image.to_filename(join(out_dir, '{0}_{1}.nii.gz'.format(reg, task)))
+            new_image.to_filename(join(out_dir, '{0}_{1}_5mm.nii.gz'.format(reg, task)))
 
 
 def submit(date):
