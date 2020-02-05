@@ -2,7 +2,8 @@ import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
 import pandas as pd
 from glob import glob
-from os.path import join
+from os.path import join, expanduser
+from decim.adjuvant import slurm_submit as slu
 import nibabel as nib
 from sklearn.linear_model import LinearRegression
 from nilearn.surface import vol_to_surf
@@ -10,7 +11,13 @@ from nilearn import datasets
 from collections import defaultdict
 from patsy import dmatrix
 from nilearn.image import resample_img
-
+from joblib import Memory
+if expanduser('~') == '/home/faty014':
+    cachedir = expanduser('/work/faty014/joblib_cache')
+else:
+    cachedir = expanduser('~/joblib_cache')
+slu.mkdir_p(cachedir)
+memory = Memory(location=cachedir, verbose=0)
 
 #from scipy.interpolate import interp1d
 '''
@@ -222,10 +229,29 @@ class VoxelSubject(object):
             behav = behav.fillna(0)                                               # missed-reponse regressor can have std=0 --> NaNs introduced
         self.DesignMatrix = behav
         linreg = LinearRegression()
-        print('fit', self.task)
-        linreg.fit(behav.values, voxels.values)
-        predict = linreg.predict(behav.values)
-        for i, parameter in enumerate(behav.columns):
+        print('fit', self.task, behav.iloc[:, :5].columns)
+
+        linreg.fit(behav.iloc[:, :5].values, voxels.values)
+        predict = linreg.predict(behav.iloc[:, :5].values)
+        for i, parameter in enumerate(behav.iloc[:, :5].columns):
+            reg_result = np.concatenate(([linreg.coef_[:, i].flatten()],
+                                         [linreg.intercept_],
+                                         [r2_score(voxels, predict,
+                                                   multioutput='raw_values')],
+                                         [mean_squared_error(voxels,
+                                                             predict,
+                                                             multioutput='raw_values')]),
+                                        axis=0)
+            new_shape = np.stack([reg_result[i, :].
+                                  reshape(self.nifti_shape[0:3])
+                                  for i in range(reg_result.shape[0])], -1)
+            new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine)    # make 4D nifti with regression result per parameter
+            self.voxel_regressions[parameter] = new_image                       # fourth dimension contains coefficient, r_square, intercept, mean squared error
+        residuals = voxels.values - predict.values
+        print('fit', self.task, behav.iloc[:, 5:].columns)
+        linreg.fit(behav.iloc[:, 5:].values, residuals.values)
+        predict = linreg.predict(behav.iloc[:, 5:].values)
+        for i, parameter in enumerate(behav.iloc[:, 5:].columns):
             reg_result = np.concatenate(([linreg.coef_[:, i].flatten()],
                                          [linreg.intercept_],
                                          [r2_score(voxels, predict,
@@ -283,10 +309,12 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
 
 
 '''
+behav = pd.read_hdf('/Users/kenohagena/flexrule/fmri/analyses/Sublevel_GLM_Climag_2020-02-04/sub-3/BehavFrame_sub-3_ses-2.hdf', key='inference_run-4')
 
-behav = pd.read_hdf('/Users/kenohagena/flexrule/test_behav_6-2-7.hdf', key='test')
 s = VoxelSubject('sub-3', 'ses-2', ['inference_run-4'], '/Volumes/flxrl/FLEXRULE', behav, 'inference')
-print(s.design_matrix(behav).shape)
+s.design_matrix(behav)
+s.concat_runs()
+
 
 
 from decim.fmri_workflow import BehavDataframe as bd
