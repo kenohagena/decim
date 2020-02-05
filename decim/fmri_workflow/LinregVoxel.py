@@ -86,6 +86,7 @@ class VoxelSubject(object):
         self.surface_textures = defaultdict(dict)
         self.task = task
 
+    @memory.cache
     def design_matrix(self, behav):
         '''
         Make design matrix per block using Patsy
@@ -247,9 +248,9 @@ class VoxelSubject(object):
                                   for i in range(reg_result.shape[0])], -1)
             new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine)    # make 4D nifti with regression result per parameter
             self.voxel_regressions[parameter] = new_image                       # fourth dimension contains coefficient, r_square, intercept, mean squared error
-        residuals = voxels.values - predict.values
+        residuals = voxels.values - predict
         print('fit', self.task, behav.iloc[:, 5:].columns)
-        linreg.fit(behav.iloc[:, 5:].values, residuals.values)
+        linreg.fit(behav.iloc[:, 5:].values, residuals)
         predict = linreg.predict(behav.iloc[:, 5:].values)
         for i, parameter in enumerate(behav.iloc[:, 5:].columns):
             reg_result = np.concatenate(([linreg.coef_[:, i].flatten()],
