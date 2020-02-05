@@ -86,7 +86,6 @@ class VoxelSubject(object):
         self.surface_textures = defaultdict(dict)
         self.task = task
 
-    @memory.cache
     def design_matrix(self, behav):
         '''
         Make design matrix per block using Patsy
