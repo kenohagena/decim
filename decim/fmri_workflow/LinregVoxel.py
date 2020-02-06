@@ -19,7 +19,7 @@ else:
 slu.mkdir_p(cachedir)
 memory = Memory(location=cachedir, verbose=0)
 
-# from scipy.interpolate import interp1d
+#from scipy.interpolate import interp1d
 '''
 Script to run GLM
 1. Build behvavioral design matrix
@@ -163,7 +163,7 @@ class VoxelSubject(object):
         session_nifti = []
         session_behav = []
         for run in self.runs:
-            # behav = self.design_matrix(self.BehavDataframe[run])
+            behav = self.design_matrix(self.BehavDataframe[run])
             if self.input_nifti == 'mni_retroicor':
                 file_identifier = 'retroicor'
             elif self.input_nifti == 'T1w':
@@ -200,18 +200,15 @@ class VoxelSubject(object):
             data = nifti.get_data()
             d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.
                                                                    shape[-1])])
-            '''
             if len(d2) > len(behav):
                 d2 = d2[0: len(behav)]
             elif len(d2) < len(behav):
                 behav = behav.iloc[0:len(d2)]
-            '''
-            # session_behav.append(behav)
+            session_behav.append(behav)
             session_nifti.append(pd.DataFrame(d2))
         session_nifti = pd.concat(session_nifti, ignore_index=True)
-        # session_behav = pd.concat(session_behav, ignore_index=True)
-        # print(session_behav.std())
-        session_behav = pd.read_hdf(join(self.flex_dir, 'Workflow', 'Sublevel_GLM_Climag_2020-02-04', self.subject, 'DesignMatrix_{0}_{1}.hdf'.format(self.subject, self.session)), key=self.task)
+        session_behav = pd.concat(session_behav, ignore_index=True)
+        print(session_behav.std())
         assert session_behav.shape[0] == session_nifti.shape[0]
         self.session_nifti = session_nifti
         self.session_behav = session_behav
