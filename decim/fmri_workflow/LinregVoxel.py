@@ -157,7 +157,7 @@ class VoxelSubject(object):
         dm = dm.sort_index()
         return dm.drop('Intercept', axis=1)
 
-    def concat_runs(self, nuisance=None):
+    def concat_runs(self, nuisance_source=None):
         '''
         Concatenate design matrices per session.
 
@@ -178,7 +178,7 @@ class VoxelSubject(object):
                 if len(nuisance) != 1:
                     print(len(nuisance), 'nuisance files found', self.info)
                 elif len(nuisance) == 1:
-                    nuisance = pd.read_table(nuisance[0]).loc[:, ['{0}CompCor0{1}'.format(nuisance, i) for i in range(6)]]
+                    nuisance = pd.read_table(nuisance[0]).loc[:, ['{0}CompCor0{1}'.format(nuisance_source, i) for i in range(6)]]
             if self.input_nifti == 'mni_retroicor':
                 file_identifier = 'retroicor'
             elif self.input_nifti == 'T1w':
@@ -297,7 +297,7 @@ class VoxelSubject(object):
 def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     v = VoxelSubject(subject, session, runs, flex_dir, BehavDataframe, task)
     v.input_nifti = 'mni'                                                    # set input-identifier variable ('T1w', 'mni_retroicor', 'mni')
-    v.concat_runs(nuisance='a')
+    v.concat_runs(nuisance_source='a')
     v.glm()
     # v.vol_2surf()                                                            # use when working with T1w-subject space niftis
     v.mni_to_fsaverage()                                                    # use when working with MNI-space niftis
