@@ -85,6 +85,7 @@ class VoxelSubject(object):
         self.voxel_regressions = {}
         self.surface_textures = defaultdict(dict)
         self.task = task
+        self.info = [self.subject, self.session, self.task]
 
     def design_matrix(self, behav):
         '''
@@ -164,6 +165,18 @@ class VoxelSubject(object):
         session_behav = []
         for run in self.runs:
             behav = self.design_matrix(self.BehavDataframe[run])
+            nuisance = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
+                                 self.subject, 'fmriprep', self.subject,
+                                 self.session, 'func',
+                                 '{0}_{1}_task-{2}_*{3}*tsv'.
+                                 format(self.subject, self.session, run,
+                                        'confounds')))
+            if len(nuisance) != 1:
+                print(len(nuisance), 'nuisance files found', self.info)
+            elif len(nuisance) == 1:
+                nuisance = pd.read_table(nuisance[0]).loc[:, ['tCompCor00', 'tCompCor01',
+                                                              'tCompCor02', 'tCompCor03',
+                                                              'tCompCor04', 'tCompCor05']]
             if self.input_nifti == 'mni_retroicor':
                 file_identifier = 'retroicor'
             elif self.input_nifti == 'T1w':
@@ -190,20 +203,21 @@ class VoxelSubject(object):
                     nifti = nib.Nifti1Image(np.multiply(nifti.get_fdata().T, brain_mask.get_fdata().T).T, nifti.affine)
 
             else:
-                print('{1} niftis found for {0}, {2}, {3}'.format(self.subject,
-                                                                  len(files),
-                                                                  self.session,
-                                                                  run))
+                print(len(files), 'niftis found for', self.info)
 
             self.nifti_shape = nifti.get_data().shape
             self.nifti_affine = nifti.affine
             data = nifti.get_data()
             d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.
                                                                    shape[-1])])
+            assert len(d2) == len(nuisance)
             if len(d2) > len(behav):
                 d2 = d2[0: len(behav)]
+                nuisance = nuisance[0: len(behav)]
             elif len(d2) < len(behav):
                 behav = behav.iloc[0:len(d2)]
+            behav = pd.concat([behav, nuisance], ignore_index=True, axis=1)
+            print(behav.head())
             session_behav.append(behav)
             session_nifti.append(pd.DataFrame(d2))
         session_nifti = pd.concat(session_nifti, ignore_index=True)
@@ -229,29 +243,10 @@ class VoxelSubject(object):
             behav = behav.fillna(0)                                               # missed-reponse regressor can have std=0 --> NaNs introduced
         self.DesignMatrix = behav
         linreg = LinearRegression()
-        print('fit', self.task, behav.iloc[:, :5].columns)
-
-        linreg.fit(behav.iloc[:, :5].values, voxels.values)
-        predict = linreg.predict(behav.iloc[:, :5].values)
-        for i, parameter in enumerate(behav.iloc[:, :5].columns):
-            reg_result = np.concatenate(([linreg.coef_[:, i].flatten()],
-                                         [linreg.intercept_],
-                                         [r2_score(voxels, predict,
-                                                   multioutput='raw_values')],
-                                         [mean_squared_error(voxels,
-                                                             predict,
-                                                             multioutput='raw_values')]),
-                                        axis=0)
-            new_shape = np.stack([reg_result[i, :].
-                                  reshape(self.nifti_shape[0:3])
-                                  for i in range(reg_result.shape[0])], -1)
-            new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine)    # make 4D nifti with regression result per parameter
-            self.voxel_regressions[parameter] = new_image                       # fourth dimension contains coefficient, r_square, intercept, mean squared error
-        residuals = voxels.values - predict
-        print('fit', self.task, behav.iloc[:, 5:].columns)
-        linreg.fit(behav.iloc[:, 5:].values, residuals)
-        predict = linreg.predict(behav.iloc[:, 5:].values)
-        for i, parameter in enumerate(behav.iloc[:, 5:].columns):
+        print('fit', self.task)
+        linreg.fit(behav.values, voxels.values)
+        predict = linreg.predict(behav.values)
+        for i, parameter in enumerate(behav.columns):
             reg_result = np.concatenate(([linreg.coef_[:, i].flatten()],
                                          [linreg.intercept_],
                                          [r2_score(voxels, predict,
