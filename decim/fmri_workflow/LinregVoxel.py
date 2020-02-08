@@ -34,6 +34,7 @@ Script to run GLM
 '''
 
 
+@memory.cache
 def hrf(t):
     '''
     Compute hemodynamic response function
@@ -43,6 +44,7 @@ def hrf(t):
     return h / h.sum()
 
 
+@memory.cache
 def make_bold(evidence, dt=0.25):
     '''
     Convolve with hemodynamic response function.
@@ -51,6 +53,7 @@ def make_bold(evidence, dt=0.25):
     return np.convolve(evidence, hrf(t), 'same')
 
 
+@memory.cache
 def regular(df, target='16ms'):
     '''
     Set datetime index and resample to target frequency.
@@ -177,6 +180,7 @@ class VoxelSubject(object):
                 nuisance = pd.read_table(nuisance[0]).loc[:, ['tCompCor00', 'tCompCor01',
                                                               'tCompCor02', 'tCompCor03',
                                                               'tCompCor04', 'tCompCor05']]
+                print(nuisance.head(), nuisance.shape)
             if self.input_nifti == 'mni_retroicor':
                 file_identifier = 'retroicor'
             elif self.input_nifti == 'T1w':
@@ -210,6 +214,7 @@ class VoxelSubject(object):
             data = nifti.get_data()
             d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.
                                                                    shape[-1])])
+            print(len(d2), len(nuisance))
             assert len(d2) == len(nuisance)
             if len(d2) > len(behav):
                 d2 = d2[0: len(behav)]
