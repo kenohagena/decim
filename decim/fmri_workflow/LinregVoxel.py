@@ -168,7 +168,7 @@ class VoxelSubject(object):
         session_behav = []
         for run in self.runs:
             behav = self.design_matrix(self.BehavDataframe[run])
-            if nuisance is not None:
+            if nuisance_source is not None:
                 nuisance = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
                                      self.subject, 'fmriprep', self.subject,
                                      self.session, 'func',
