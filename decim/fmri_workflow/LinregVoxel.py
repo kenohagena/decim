@@ -223,7 +223,7 @@ class VoxelSubject(object):
                 behav = behav.iloc[0:len(d2)]
             nuisance.index = behav.index
             print(nuisance.head())
-            behav = pd.concat([concat, nuisance], axis=1)
+            behav = pd.concat([behav, nuisance], axis=1)
             print(behav.head())
             session_behav.append(behav)
             session_nifti.append(pd.DataFrame(d2))
