@@ -157,30 +157,28 @@ class VoxelSubject(object):
         dm = dm.sort_index()
         return dm.drop('Intercept', axis=1)
 
-    def concat_runs(self):
+    def concat_runs(self, nuisance=None):
         '''
         Concatenate design matrices per session.
 
         - Argument:
-            a) use denoised nifti?
+            a) nuisance: None, 't', 'a'
         '''
         session_nifti = []
         session_behav = []
         for run in self.runs:
             behav = self.design_matrix(self.BehavDataframe[run])
-            nuisance = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
-                                 self.subject, 'fmriprep', self.subject,
-                                 self.session, 'func',
-                                 '{0}_{1}_task-{2}_*{3}*tsv'.
-                                 format(self.subject, self.session, run,
-                                        'confounds')))
-            if len(nuisance) != 1:
-                print(len(nuisance), 'nuisance files found', self.info)
-            elif len(nuisance) == 1:
-                nuisance = pd.read_table(nuisance[0]).loc[:, ['tCompCor00', 'tCompCor01',
-                                                              'tCompCor02', 'tCompCor03',
-                                                              'tCompCor04', 'tCompCor05']]
-                print(nuisance.head(), nuisance.shape)
+            if nuisance is not None:
+                nuisance = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
+                                     self.subject, 'fmriprep', self.subject,
+                                     self.session, 'func',
+                                     '{0}_{1}_task-{2}_*{3}*tsv'.
+                                     format(self.subject, self.session, run,
+                                            'confounds')))
+                if len(nuisance) != 1:
+                    print(len(nuisance), 'nuisance files found', self.info)
+                elif len(nuisance) == 1:
+                    nuisance = pd.read_table(nuisance[0]).loc[:, ['{0}CompCor0{1}'.format(nuisance, i) for i in range(6)]]
             if self.input_nifti == 'mni_retroicor':
                 file_identifier = 'retroicor'
             elif self.input_nifti == 'T1w':
@@ -214,7 +212,6 @@ class VoxelSubject(object):
             data = nifti.get_data()
             d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.
                                                                    shape[-1])])
-            print(len(d2), len(nuisance))
             assert len(d2) == len(nuisance)
             if len(d2) > len(behav):
                 d2 = d2[0: len(behav)]
@@ -222,14 +219,11 @@ class VoxelSubject(object):
             elif len(d2) < len(behav):
                 behav = behav.iloc[0:len(d2)]
             nuisance.index = behav.index
-            print(nuisance.head())
             behav = pd.concat([behav, nuisance], axis=1)
-            print(behav.head())
             session_behav.append(behav)
             session_nifti.append(pd.DataFrame(d2))
         session_nifti = pd.concat(session_nifti, ignore_index=True)
         session_behav = pd.concat(session_behav, ignore_index=True)
-        print(session_behav.std())
         assert session_behav.shape[0] == session_nifti.shape[0]
         self.session_nifti = session_nifti
         self.session_behav = session_behav
@@ -303,7 +297,7 @@ class VoxelSubject(object):
 def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     v = VoxelSubject(subject, session, runs, flex_dir, BehavDataframe, task)
     v.input_nifti = 'mni'                                                    # set input-identifier variable ('T1w', 'mni_retroicor', 'mni')
-    v.concat_runs()
+    v.concat_runs(nuisance='a')
     v.glm()
     # v.vol_2surf()                                                            # use when working with T1w-subject space niftis
     v.mni_to_fsaverage()                                                    # use when working with MNI-space niftis
