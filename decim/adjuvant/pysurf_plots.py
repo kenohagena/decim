@@ -3,6 +3,7 @@ import pandas as pd
 import nibabel as nib
 from surfer import Brain
 from decim.adjuvant import slurm_submit as slu
+from pymeg import parallel as pbs
 from os.path import join
 from glob import glob
 from scipy.stats import ttest_1samp as ttest
@@ -51,7 +52,13 @@ mapping = {'C(stimulus, levels=s)[T.vertical]': 'stimulus_vertical',
            'C(response_, levels=t)[T.leftA]': 'response_left_rule_resp_A',
            'C(response_, levels=t)[T.leftB]': 'response_left_rule_resp_B',
            'C(response_, levels=t)[T.rightA]': 'response_right_rule_resp_A',
-           'C(response_, levels=t)[T.rightB]': 'response_right_rule_resp_B'}
+           'C(response_, levels=t)[T.rightB]': 'response_right_rule_resp_B',
+           'C(response_, levels=t)[T.missed]': 'response_missed',
+           'C(choice_box, levels=t)[T.leftA]': 'response_left_rule_resp_A',
+           'C(choice_box, levels=t)[T.leftB]': 'response_left_rule_resp_B',
+           'C(choice_box, levels=t)[T.rightA]': 'response_right_rule_resp_A',
+           'C(choice_box, levels=t)[T.rightB]': 'response_right_rule_resp_B',
+           'C(choice_box, levels=t)[T.missed]': 'response_missed'}
 
 '''
 First: Get data
@@ -83,6 +90,7 @@ def lateralize(x):
 def concat(SJ_dir, task):
     '''
     Concatenate all regression results on the cortical surface.
+    Average per Glasser label.
 
     Ouput as pD.DataFrames with the columns:
         subject, session, parameter, hemisphere, cortical label, value
@@ -95,7 +103,7 @@ def concat(SJ_dir, task):
         print(sub)
         subject = 'sub-{}'.format(sub)
         aparc_file = join('/Users/kenohagena/flexrule/fmri/only_aparc/completed_preprocessed/',
-                          subject, 'freesurfer', subject, 'label',
+                          subject, 'freesurfer', 'fsaverage', 'label',
                           '{}.HCPMMP1.annot'.format(hemis[hemi]))  # for fs average replace subject through 'fsaverage'
 
         try:
@@ -110,8 +118,6 @@ def concat(SJ_dir, task):
             session = 'ses-{}'.format(ses)
             try:
                 df = pd.read_hdf(file, key=task)
-                print(labels.shape)
-                print(df)
                 try:
                     assert len(df) == len(labels)
                 except AssertionError:
@@ -120,7 +126,7 @@ def concat(SJ_dir, task):
                 str_names = [str(i) for i in names]
                 str_names = [i[2:-1] if i == "b'???'" else i[4:-1]
                              for i in str_names]
-                grouped = df.groupby('labs').mean().reset_index()
+                grouped = df.groupby('labs').mean().reset_index()  # !! average per Glasser label
                 grouped['names'] = str_names
                 grouped['parameter'] = parameter
                 grouped['subject'] = subject
@@ -133,12 +139,17 @@ def concat(SJ_dir, task):
                 continue
 
     df = pd.concat(dfs, ignore_index=True)
+    df.to_hdf('/Users/kenohagena/Desktop/glm_troubleshoot/test_concat.hdf', key='test')
     return df
 
 
-def surface_glm_data(df, lateral_params, marker='coef_', output='t_stat'):
+def surface_glm_data(df, marker='coef_', output='t_stat'):
     '''
-    T-test across average beta-weights and lateralized beta-weights.
+    Input: beta-weights averaged per label.
+
+    1. Average across sessions
+    2. Average / Subtract for mean response, lateral response, etc...
+    3. ttest across subjects
 
     - Arguments:
         a) concatenated beta-weight data in a pd.DataFrame with the columns
@@ -152,45 +163,44 @@ def surface_glm_data(df, lateral_params, marker='coef_', output='t_stat'):
     elif output == 'p_val':
         p_or_t = 1
     ses_mean = df.groupby(['subject', 'parameter', 'names', 'hemisphere']).\
-        mean().reset_index()                                                    # average across sessions per subject
+        mean().reset_index()                                                   # !! average across sessions per subject
+    mean_response = ses_mean.loc[ses_mean.parameter.
+                                 isin(['response_left_rule_resp_A',
+                                       'response_left_rule_resp_B',
+                                       'response_right_rule_resp_A',
+                                       'response_right_rule_resp_B'])].\
+        groupby(['subject', 'names', 'hemisphere']).mean().reset_index()        # response average
+    mean_response['parameter'] = 'response_average'
+
+    response_left_minus_right = ses_mean.loc[ses_mean.parameter.isin
+                                             (['response_left_rule_resp_A',
+                                               'response_left_rule_resp_B'])].\
+        groupby(['subject', 'names', 'hemisphere']).mean() -\
+        ses_mean.loc[ses_mean.parameter.isin(['response_right_rule_resp_A',
+                                              'response_right_rule_resp_B'])].\
+        groupby(['subject', 'names', 'hemisphere']).mean()
+    response_left_minus_right = response_left_minus_right.reset_index()
+    response_right_minus_left = response_left_minus_right.copy()
+    response_right_minus_left.coef_ = -response_right_minus_left.coef_
+    response_left_minus_right['parameter'] = 'response_left-right'
+    response_right_minus_left['parameter'] = 'response_right-left'              # response subtractions
+    ses_mean = pd.concat([ses_mean, mean_response,
+                          response_left_minus_right,
+                          response_right_minus_left], sort=False)
+
     mag = ses_mean.groupby(['parameter', 'names', 'hemisphere']).\
-        agg(lambda x: ttest(x, 0)[p_or_t]).reset_index()                        # t-test across across subjects
-    mag = mag.groupby(['parameter', 'names']).mean().reset_index()              # average across hemispheres
-    mag = mag.pivot(columns='parameter', index='names', values=marker)
-    '''
-    for lateral_param in lateral_params:
-        if lateral_param[:8] == 'response':
-            lat = ses_mean.loc[ses_mean.parameter.isin(['response_left',
-                                                        'response_right'])]
-        if lateral_param == 'rule_resp':
-            lat = ses_mean.loc[ses_mean.parameter.isin(['rule_resp_A',
-                                                        'rule_resp_B'])]
-            lat = lat.replace({"parameter": {'rule_resp_A': 'rule_resp_left',
-                                             'rule_resp_B': 'rule_resp_right'}})
-        elif lateral_param in ['belief', 'LLR', 'switch']:                      # signed numerical parameters
-            lat = ses_mean.loc[ses_mean.parameter == '{}'.format(lateral_param)]
-            lat_opp = lat.copy()
-            lat_opp[marker] = -lat_opp[marker]
-            lat = lat.replace({"parameter":
-                               {'{}'.format(lateral_param):
-                                '{}_left'.format(lateral_param)}})
-            lat_opp = lat_opp.replace({"parameter":
-                                       {'{}'.format(lateral_param):
-                                        '{}_right'.format(lateral_param)}})
-            lat = pd.concat([lat, lat_opp], ignore_index=True)
-        # print(lat.parameter.unique())                                         # uncomment for debug
-        lat = lat.groupby(['parameter'], group_keys=False).\
-            apply(lateralize).reset_index()                                     # per parameter apply laterlization function
-        lat = lat.groupby(['names', 'subject']).\
-            mean().reset_index()
-        lat = lat.groupby(['names']).agg(lambda x: ttest(x, 0)[p_or_t]).\
-            reset_index()                                                       # t-test acorss subjects
-        mag['{}_lat'.format(lateral_param)] = lat[marker].values
-    '''
-    return mag
+        agg(lambda x: ttest(x, 0)[p_or_t]).reset_index()                        # !! t-test across across subjects
+    average = mag.groupby(['parameter', 'names']).mean().reset_index()          # !! average across hemispheres
+    average = average.pivot(columns='parameter', index='names',
+                            values=marker)
+    left_H = mag.loc[mag.hemisphere == 'L'].\
+        pivot(columns='parameter', index='names', values=marker)
+    right_H = mag.loc[mag.hemisphere == 'R'].\
+        pivot(columns='parameter', index='names', values=marker)
+    return average, left_H, right_H
 
 
-def surface_data(SJ_dir, lateral_params, task, exclude=['sub-11', 'sub-20']):
+def surface_data(SJ_dir, task, exclude=['sub-11', 'sub-20']):
     '''
     Load, concat, laterlize and t-test data
     Save as two pd.Dataframes with p-values and t-statistic respectively
@@ -199,14 +209,22 @@ def surface_data(SJ_dir, lateral_params, task, exclude=['sub-11', 'sub-20']):
     slu.mkdir_p(out_dir)
     grouped = concat(SJ_dir, task)
     grouped = grouped.loc[~grouped.subject.isin(exclude)]
-    grouped = grouped.loc[~((grouped.subject == 'sub-19') & (grouped.session == 'ses-2'))]
-    # print(grouped.subject.unique())
-    t_stat = surface_glm_data(grouped, lateral_params, output='t_stat')
-    p_vals = surface_glm_data(grouped, lateral_params, output='p_val')
-    t_stat.to_hdf(join(out_dir, 'Surface_{}.hdf'
-                       .format(task)), key='t_statistic')
-    p_vals.to_hdf(join(out_dir, 'Surface_{}.hdf'.
-                       format(task)), key='p_values')
+    print(grouped.subject.unique())
+    # grouped = grouped.loc[~((grouped.subject == 'sub-19') & (grouped.session == 'ses-2'))]
+    t_stat_avg, t_stat_L, t_stat_R = surface_glm_data(grouped, output='t_stat')
+    p_val_avg, p_val_L, p_val_R = surface_glm_data(grouped, output='p_val')
+    t_stat_L.to_hdf(join(out_dir, 'Surface_{}_L.hdf'
+                         .format(task)), key='t_statistic')
+    t_stat_R.to_hdf(join(out_dir, 'Surface_{}_R.hdf'
+                         .format(task)), key='t_statistic')
+    t_stat_avg.to_hdf(join(out_dir, 'Surface_{}_avg.hdf'
+                           .format(task)), key='t_statistic')
+    p_val_L.to_hdf(join(out_dir, 'Surface_{}_L.hdf'.
+                        format(task)), key='p_values')
+    p_val_R.to_hdf(join(out_dir, 'Surface_{}_R.hdf'.
+                        format(task)), key='p_values')
+    p_val_avg.to_hdf(join(out_dir, 'Surface_{}_avg.hdf'.
+                          format(task)), key='p_values')
 
 
 '''
@@ -214,12 +232,12 @@ Second: Do Cortex Plots & FDR-Correction
 '''
 
 
-def get_data(task, in_dir):
+def get_data(task, in_dir, input_hemisphere, hemi):
     '''
     Get data from .hdf files with p-values and t-statistic
     '''
-    glasser_labels = join('/Users/kenohagena/flexrule/fmri/only_aparc/label/lh.HCPMMP1.annot')
-    glasser_labels_comb = join('/Users/kenohagena/flexrule/fmri/only_aparc/label/lh.HCPMMP1_combined.annot')
+    glasser_labels = join('/Users/kenohagena/flexrule/fmri/only_aparc/label/{}.HCPMMP1.annot'.format(hemi))
+    glasser_labels_comb = join('/Users/kenohagena/flexrule/fmri/only_aparc/label/{}.HCPMMP1_combined.annot'.format(hemi))
     labels, ctab, names = nib.freesurfer.read_annot(glasser_labels)
     labels_comb, ctab, names_combined = nib.freesurfer.\
         read_annot(glasser_labels_comb)
@@ -231,12 +249,15 @@ def get_data(task, in_dir):
         groupby('full').mean().reset_index()
     combined = np.array(str_names_comb)[full_to_comb.combined.
                                         astype(int).values]
-    t_data = pd.read_hdf(join(in_dir, 'Surface_{}.hdf'.
-                              format(task)), key='t_statistic')
-    p_data = pd.read_hdf(join(in_dir, 'Surface_{}.hdf'.
-                              format(task)), key='p_values')
-    t_data = t_data.loc[str_names]
-    p_data = p_data.loc[str_names]
+    t_data = pd.read_hdf(join(in_dir, 'Surface_{0}{1}.hdf'.
+                              format(task, input_hemisphere)), key='t_statistic')
+    p_data = pd.read_hdf(join(in_dir, 'Surface_{0}{1}.hdf'.
+                              format(task, input_hemisphere)), key='p_values')
+    print('load', join(in_dir, 'Surface_{0}{1}.hdf'.
+                       format(task, input_hemisphere)))
+    print(t_data.columns)
+    t_data = t_data.reindex(str_names)
+    p_data = p_data.reindex(str_names)
     t_data.iloc[0] = 0
     return t_data, p_data, [str_names, combined], labels
 
@@ -245,6 +266,7 @@ def fdr_filter(t_data, p_data, parameter):
     '''
     Apply FDR-correction
     '''
+    print(t_data.columns)
     data = t_data[parameter].values
     filte = benjamini_hochberg(p_data[parameter], 0.05).values
     data[filte != True] = 0
@@ -265,7 +287,7 @@ def benjamini_hochberg(pvals, alpha):
     return p_values.sort_values(by='index').reject
 
 
-def montage_plot(parameter, in_dir, task, fdr_correct=True):
+def montage_plot(parameter, in_dir, task, fdr_correct=True, hemi='lh', input_hemisphere=''):
     '''
     Make plots for parameter on the cortical surface using pysurf module
 
@@ -278,9 +300,8 @@ def montage_plot(parameter, in_dir, task, fdr_correct=True):
     out_dir = join(in_dir, 'pysurf_plots')
     slu.mkdir_p(out_dir)
     fsaverage = "fsaverage"
-    hemi = "lh"
     surf = "inflated"
-    t_data, p_data, str_names, labels = get_data(task, in_dir)
+    t_data, p_data, str_names, labels = get_data(task, in_dir, input_hemisphere, hemi)
     if fdr_correct is True:
         data = fdr_filter(t_data, p_data, parameter)
     else:
@@ -289,7 +310,7 @@ def montage_plot(parameter, in_dir, task, fdr_correct=True):
     brain = Brain(fsaverage, hemi, surf,
                   background="white", title=parameter + task)
     brain.add_data(data, -10, 10, thresh=None, colormap="RdBu_r", alpha=.8)
-    brain.save_imageset(join(out_dir, parameter + '_' + task),
+    brain.save_imageset(join(out_dir, parameter + '_' + task + input_hemisphere),
                         ['lateral', 'medial'], colorbar=None)
 
 
@@ -345,27 +366,40 @@ def roi_names_param(parameter, task, correlation, in_dir):
     return df
 
 
-# USAGE OF THIS SCRIPT
-glm_run = 'Sublevel_GLM_Climag_2020-01-15'                                      # Specify where the GLM results are
-# 1. Make t- and p-maps
+def submit_surface_data(glm_run):
+    run_dir = join('/home/khagena/FLEXRULE/Workflow', glm_run)
+    for task in ['inference', 'instructed']:
+        pbs.pmap(surface_data, [(run_dir, task)],
+                 walltime='1:00:00', memory=15, nodes=1, tasks=1,
+                 name='surface_data_{0}'.format(task))
 
-surface_data(join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run),
-             ['response', 'switch'], 'instructed')
-surface_data(join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run),
-             ['response', 'belief', 'switch', 'LLR'], 'inference')
+# USAGE OF THIS SCRIPT
+glm_run = 'Sublevel_GLM_Climag_2020-02-06'
+                            # Specify where the GLM results are
+# 1. Make t- and p-maps
+'''
+surface_data(join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run), 'instructed')
+surface_data(join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run), 'inference')
+'''
+'''
+
+'''
 # 2. Do plotting
 
 
-for task in ['instructed', 'inference']:
-    in_dir = join('//Users/kenohagena/flexrule/fmri/analyses/', glm_run, 'GroupLevel')
-    cols = pd.read_hdf(join(in_dir,
-                            'Surface_{}.hdf'.format(task)), key='t_statistic').columns
-    for param in cols:
-        montage_plot(param, in_dir=in_dir, task=task, fdr_correct=True)
 '''
-# 3. Miscellaneous functions
-roi_names_param('response_left_multi', 'inference', 'neg')
-plot_single_roi('AAIC_ROI')
+in_dir = join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run, 'GroupLevel')
+#montage_plot('surprise', in_dir, 'inference', fdr_correct=True, input_hemisphere='_avg')
+for key, value in {'instructed': ['response_average', 'abs_switch'],
+                   'inference': ['response_average', 'abs_LLR', 'surprise', 'abs_belief']}.items():
+    for param in value:
+        montage_plot(param, in_dir=in_dir, task=key, fdr_correct=True, input_hemisphere='_avg')
+
+
+for task in ['inference', 'instructed']:
+    montage_plot('response_left-right', in_dir=in_dir, task=task, fdr_correct=True, hemi='lh', input_hemisphere='_L')
+    montage_plot('response_left-right', in_dir=in_dir, task=task, fdr_correct=True, hemi='rh', input_hemisphere='_R')
+    montage_plot('response_right-left', in_dir=in_dir, task=task, fdr_correct=True, hemi='lh', input_hemisphere='_L')
+    montage_plot('response_right-left', in_dir=in_dir, task=task, fdr_correct=True, hemi='rh', input_hemisphere='_R')
 '''
-#get_data(task='inference', in_dir='/Volumes/flxrl/FLEXRULE/Workflow/Sublevel_GLM_Climag_2020-01-03/GroupLevel')
-# montage_plot('surprise', in_dir='/Volumes/flxrl/FLEXRULE/Workflow/Sublevel_GLM_Climag_2020-01-03/GroupLevel', task='inference', fdr_correct=False)
+__version__ = '1.5'
