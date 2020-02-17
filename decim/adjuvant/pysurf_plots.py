@@ -1,7 +1,10 @@
 import numpy as np
 import pandas as pd
 import nibabel as nib
-from surfer import Brain
+try:
+    from surfer import Brain
+except ModuleNotFoundError:
+    print('no pysurfer')
 from decim.adjuvant import slurm_submit as slu
 from pymeg import parallel as pbs
 from os.path import join
