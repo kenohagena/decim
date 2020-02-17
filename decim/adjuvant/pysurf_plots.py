@@ -7,7 +7,7 @@ except ModuleNotFoundError:
     print('no pysurfer')
 from decim.adjuvant import slurm_submit as slu
 from pymeg import parallel as pbs
-from os.path import join
+from os.path import join, expanduser
 from glob import glob
 from scipy.stats import ttest_1samp as ttest
 from itertools import product
@@ -105,7 +105,7 @@ def concat(SJ_dir, task):
     for sub, hemi in product(range(1, 23), hemis.keys()):
         print(sub)
         subject = 'sub-{}'.format(sub)
-        aparc_file = join('/Users/kenohagena/flexrule/fmri/only_aparc/completed_preprocessed/',
+        aparc_file = join('/home/khagena/FLEXRULE/fmri/completed_preprocessed/',
                           subject, 'freesurfer', 'fsaverage', 'label',
                           '{}.HCPMMP1.annot'.format(hemis[hemi]))  # for fs average replace subject through 'fsaverage'
 
@@ -142,7 +142,7 @@ def concat(SJ_dir, task):
                 continue
 
     df = pd.concat(dfs, ignore_index=True)
-    df.to_hdf('/Users/kenohagena/Desktop/glm_troubleshoot/test_concat.hdf', key='test')
+    #df.to_hdf('/Users/kenohagena/Desktop/glm_troubleshoot/test_concat.hdf', key='test')
     return df
 
 
