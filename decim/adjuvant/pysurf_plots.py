@@ -61,7 +61,19 @@ mapping = {'C(stimulus, levels=s)[T.vertical]': 'stimulus_vertical',
            'C(choice_box, levels=t)[T.leftB]': 'response_left_rule_resp_B',
            'C(choice_box, levels=t)[T.rightA]': 'response_right_rule_resp_A',
            'C(choice_box, levels=t)[T.rightB]': 'response_right_rule_resp_B',
-           'C(choice_box, levels=t)[T.missed]': 'response_missed'}
+           'C(choice_box, levels=t)[T.missed]': 'response_missed',
+           'tCompCor00': 'tCompCor00',
+           'tCompCor01': 'tCompCor01',
+           'tCompCor02': 'tCompCor02',
+           'tCompCor03': 'tCompCor03',
+           'tCompCor04': 'tCompCor04',
+           'tCompCor05': 'tCompCor05',
+           'aCompCor00': 'aCompCor00',
+           'aCompCor01': 'aCompCor01',
+           'aCompCor02': 'aCompCor02',
+           'aCompCor03': 'aCompCor03',
+           'aCompCor04': 'aCompCor04',
+           'aCompCor05': 'aCompCor05'}
 
 '''
 First: Get data
@@ -142,7 +154,7 @@ def concat(SJ_dir, task):
                 continue
 
     df = pd.concat(dfs, ignore_index=True)
-    #df.to_hdf('/Users/kenohagena/Desktop/glm_troubleshoot/test_concat.hdf', key='test')
+    # df.to_hdf('/Users/kenohagena/Desktop/glm_troubleshoot/test_concat.hdf', key='test')
     return df
 
 
@@ -392,7 +404,7 @@ surface_data(join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run), 'infere
 
 '''
 in_dir = join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run, 'GroupLevel')
-#montage_plot('surprise', in_dir, 'inference', fdr_correct=True, input_hemisphere='_avg')
+# montage_plot('surprise', in_dir, 'inference', fdr_correct=True, input_hemisphere='_avg')
 for key, value in {'instructed': ['response_average', 'abs_switch'],
                    'inference': ['response_average', 'abs_LLR', 'surprise', 'abs_belief']}.items():
     for param in value:
