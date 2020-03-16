@@ -138,13 +138,14 @@ class VoxelSubject(object):
         b = ['none', 'left', 'right']
         r = ['none', 'A', 'B']
         t = ['none', 'leftA', 'leftB', 'rightA', 'rightB', 'missed']
+        print(combined.columns)
 
         if self.task == 'instructed':
             design_matrix = dmatrix('''switch + np.abs(switch) +
                           C(choice_box, levels=t)''',
                                     data=combined)
         elif self.task == 'inference':
-            design_matrix = dmatrix('''psi + np.abs(psi) + LLR + np.abs(LLR)+ surprise +
+            design_matrix = dmatrix('''belief + np.abs(belief) + LLR + np.abs(LLR)+ surprise +
                 C(choice_box, levels=t)''', data=combined)
 
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
