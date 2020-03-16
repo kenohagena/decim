@@ -114,6 +114,7 @@ class VoxelSubject(object):
             combined.loc[:, ['stimulus', 'response', 'switch',
                              'rule_resp', 'surprise', 'LLR']].fillna(0)
         combined.belief = combined.belief.fillna(method='ffill')
+        combined.psi = combined.psi.fillna(method='ffill')
         combined.stimulus = combined.stimulus.\
             map({-1: 'vertical', 1: 'horizontal', 0: 'none'})
         combined.response = combined.response.\
@@ -145,7 +146,7 @@ class VoxelSubject(object):
                           C(choice_box, levels=t)''',
                                     data=combined)
         elif self.task == 'inference':
-            design_matrix = dmatrix('''belief + np.abs(belief) + LLR + np.abs(LLR)+ surprise +
+            design_matrix = dmatrix('''psi + np.abs(psi) + LLR + np.abs(LLR)+ surprise +
                 C(choice_box, levels=t)''', data=combined)
 
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
