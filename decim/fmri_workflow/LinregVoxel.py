@@ -212,14 +212,17 @@ class VoxelSubject(object):
             data = nifti.get_data()
             d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.
                                                                    shape[-1])])
-            assert len(d2) == len(nuisance)
+            if nuisance_source is not None:
+                assert len(d2) == len(nuisance)
             if len(d2) > len(behav):
                 d2 = d2[0: len(behav)]
-                nuisance = nuisance[0: len(behav)]
+                if nuisance_source is not None:
+                    nuisance = nuisance[0: len(behav)]
             elif len(d2) < len(behav):
                 behav = behav.iloc[0:len(d2)]
-            nuisance.index = behav.index
-            behav = pd.concat([behav, nuisance], axis=1)
+            if nuisance_source is not None:
+                nuisance.index = behav.index
+                behav = pd.concat([behav, nuisance], axis=1)
             session_behav.append(behav)
             session_nifti.append(pd.DataFrame(d2))
         session_nifti = pd.concat(session_nifti, ignore_index=True)
