@@ -101,7 +101,7 @@ class VoxelSubject(object):
         print('load glm data...')
         combined = behav.loc[:, ['response', 'stimulus', 'switch',
                                  'rule_resp', 'event', 'belief',
-                                 'LLR', 'surprise', 'onset']]
+                                 'LLR', 'surprise', 'onset', 'psi']]
         combined.rule_resp = combined.rule_resp.fillna(0.)
         combined.response = combined.response.fillna('missed')                  # NaNs at this point are only missed/wrong chosen answers. Only when boxcar sitmulus
         combined = combined.set_index((combined.onset.values * 1000).
@@ -144,7 +144,7 @@ class VoxelSubject(object):
                           C(choice_box, levels=t)''',
                                     data=combined)
         elif self.task == 'inference':
-            design_matrix = dmatrix('''belief + np.abs(belief) + LLR + np.abs(LLR)+ surprise +
+            design_matrix = dmatrix('''psi + np.abs(psi) + LLR + np.abs(LLR)+ surprise +
                 C(choice_box, levels=t)''', data=combined)
 
         dm = pd.DataFrame(design_matrix, columns=design_matrix.
@@ -296,11 +296,11 @@ class VoxelSubject(object):
 #@memory.cache
 def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     v = VoxelSubject(subject, session, runs, flex_dir, BehavDataframe, task)
-    v.input_nifti = 'mni'                                                    # set input-identifier variable ('T1w', 'mni_retroicor', 'mni')
-    v.concat_runs(nuisance_source='a')
+    v.input_nifti = 'T1w'                                                    # set input-identifier variable ('T1w', 'mni_retroicor', 'mni')
+    v.concat_runs(nuisance_source=None)
     v.glm()
-    # v.vol_2surf()                                                            # use when working with T1w-subject space niftis
-    v.mni_to_fsaverage()                                                    # use when working with MNI-space niftis
+    v.vol_2surf()                                                           # use when working with T1w-subject space niftis
+    # v.mni_to_fsaverage()                                                      # use when working with MNI-space niftis
     return v.voxel_regressions, v.surface_textures, v.DesignMatrix
 
 

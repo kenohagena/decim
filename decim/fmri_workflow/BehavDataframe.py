@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from decim.fmri_workflow import LinregVoxel
+#from decim.fmri_workflow import LinregVoxel
 from decim.adjuvant import glaze_model as gm
 from os.path import join, expanduser
 from decim.adjuvant import slurm_submit as slu
@@ -67,7 +67,7 @@ class BehavDataframe(object):
         df = logs[self.run]
         H = summary.loc[(summary.subject == self.subject) &                     # Retrieve fitted H
                         (summary.session == self.session)].hmode.values[0]
-        df['belief'], psi, df['LLR'], df['surprise'] =\
+        df['belief'], df['psi'], df['LLR'], df['surprise'] =\
             gm.belief(df, H=H, ident='event')                                   # Compute belief, LLR, surprise
         for different_H in Hs:
             df['belief_{}'.format(different_H)] = gm.belief(df, H=different_H, ident='event')[0]
@@ -109,7 +109,7 @@ class BehavDataframe(object):
                                    'CHOICE_TRIAL_STIMOFF',
                                    'CHOICE_TRIAL_RESP'])]
         cols = ['onset', 'event', 'value',
-                'belief', 'LLR', 'gen_side',
+                'belief', 'psi', 'LLR', 'gen_side',
                 'stimulus', 'stimulus_off', 'rule_resp',
                 'trial_id', 'reward', 'rt', 'surprise'] +\
             ['belief_{}'.format(different_H) for different_H in Hs + ['reset']]
@@ -156,7 +156,7 @@ class BehavDataframe(object):
                 value.astype('float') * (-2) + 1
         df['response'] = df.event == 'CHOICE_TRIAL_RESP'
         df.loc[df.response == True, 'response'] =\
-            df.loc[df.response == True, 'value'].astype(float) * 2 - 1          # response coding: left -> -1 | right -> +1
+            df.loc[df.response == True, 'value'].astype(float) * 2 - 1          # response coding: 0 -> left -> -1 | 1 -> right -> +1
         df.loc[(df.event == 'CHOICE_TRIAL_RESP'), 'rule_resp'] =\
             -np.abs(df.loc[(df.event == 'CHOICE_TRIAL_ONSET')].stimulus.values +
                     df.loc[(df.event == 'CHOICE_TRIAL_RESP')].response.values) + 1
