@@ -107,7 +107,7 @@ class DecodeSurface(object):
             choices = choices.loc[~choices.response.isnull()]
             onsets = choices.onset.values.astype(float)
             try:
-                assert choices.isnull().meam().mean() == 0                      # no NaNs in behav
+                assert choices.isnull().mean().mean() == 0                      # no NaNs in behav
             except AssertionError:
                 print('choices data contains NaNs', self.session, run)
 
