@@ -85,6 +85,11 @@ class DecodeSurface(object):
         for run, surf_df in self.whole_cortex.items():
             roi = surf_df.loc[roi_index].reset_index(drop=True).T
             roi = (roi - roi.mean()) / roi.std()
+            try:
+                assert roi.isnull().mean().mean() == 0
+            except AssertionError:
+                print('vertex data contains NaNs', roi_str, self.session, run)
+
             dt = pd.to_timedelta(roi.index.values * 1900, unit='ms')
             roi = roi.set_index(dt)
             target = roi.resample('100ms').mean().index
@@ -101,6 +106,11 @@ class DecodeSurface(object):
                                     'onset': behav.loc[behav.event == 'CHOICE_TRIAL_ONSET'].onset.values.astype(float)})
             choices = choices.loc[~choices.response.isnull()]
             onsets = choices.onset.values.astype(float)
+            try:
+                assert choices.isnull().meam().mean() == 0                      # no NaNs in behav
+            except AssertionError:
+                print('choices data contains NaNs', self.session, run)
+
             bl = pd.Timedelta(2000, unit='ms')
             te = pd.Timedelta(12000, unit='ms')
             for onset in onsets:
@@ -112,7 +122,7 @@ class DecodeSurface(object):
                 neural.append(task_evoked.values)
                 behavoral.append(choices.loc[choices.onset == onset])
 
-        self.features = np.transpose(np.dstack(neural))                            # 1st axis (rows): trials; 2nd axis (cols): vertices; 3rd axis: timepoints within trial
+        self.features = np.transpose(np.dstack(neural))                         # 1st axis (rows): trials; 2nd axis (cols): vertices; 3rd axis: timepoints within trial
         self.behavioral = pd.concat(behavoral)
 
     def classify(self, parameter, timepoint):
