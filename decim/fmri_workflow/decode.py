@@ -141,7 +141,7 @@ class DecodeSurface(object):
 
 
 def execute(sub, flex_dir):
-    subject = 'sub-'.format(sub)
+    subject = 'sub-{}'.format(sub)
     list_of_dicts = []
     for session in ['ses-2', 'ses-3']:
         decoder = DecodeSurface(subject=subject, session=session, flex_dir=flex_dir)
