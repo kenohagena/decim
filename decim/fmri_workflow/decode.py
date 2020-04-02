@@ -140,7 +140,8 @@ class DecodeSurface(object):
         return np.mean(aucs)
 
 
-def execute(subject):
+def execute(sub):
+    subject = 'sub-'.format(sub)
     list_of_dicts = []
     for session in ['ses-2', 'ses-3']:
         decoder = DecodeSurface(subject=subject, session=session)
