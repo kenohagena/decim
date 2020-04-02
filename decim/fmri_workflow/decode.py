@@ -140,11 +140,11 @@ class DecodeSurface(object):
         return np.mean(aucs)
 
 
-def execute(sub):
+def execute(sub, flex_dir):
     subject = 'sub-'.format(sub)
     list_of_dicts = []
     for session in ['ses-2', 'ses-3']:
-        decoder = DecodeSurface(subject=subject, session=session)
+        decoder = DecodeSurface(subject=subject, session=session, flex_dir=flex_dir)
         decoder.get_data()
         for roi_str in decoder.labelnames:
             decoder.trim_data(roi_str)
@@ -165,6 +165,9 @@ def execute(sub):
     pd.DataFrame(list_of_dicts).to_hdf('CorticalDecoding.hdf', key=subject)
 
 
-def submit(sub):
-    pbs.pmap(execute, (sub), walltime='4:00:00',
-             memory=40, nodes=1, tasks=2, name='decode_sub-{}'.format(sub))
+def climag_submit(subrange):
+    flex_dir = '/home/khagena/FLEXRULE'
+    for sub in subrange:
+        pbs.pmap(execute, [(sub, flex_dir)],
+                 walltime='4:00:00', memory=15, nodes=1, tasks=1,
+                 name='decode_{0}'.format(sub))
