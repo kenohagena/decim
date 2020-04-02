@@ -89,6 +89,7 @@ class DecodeSurface(object):
                 assert roi.isnull().mean().mean() == 0
             except AssertionError:
                 print('vertex data contains NaNs', roi_str, self.session, run)
+                roi = roi.fillna(0)
 
             dt = pd.to_timedelta(roi.index.values * 1900, unit='ms')
             roi = roi.set_index(dt)
