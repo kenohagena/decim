@@ -139,7 +139,7 @@ def execute(sub, flex_dir):
         decoder.get_data()
         for roi_str in decoder.labelnames:
             decoder.trim_data(roi_str)
-            for parameter in ['response', 'stimulus', 'rule_responses']:
+            for parameter in ['response', 'stimulus', 'rule_response']:
                 for timepoint in range(8):
                     mean_auc = decoder.classify(parameter=parameter, timepoint=timepoint)
 
