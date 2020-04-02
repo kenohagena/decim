@@ -166,5 +166,5 @@ def execute(sub):
 
 
 def submit(sub):
-    pbs.pmap(execute, sub, walltime='4:00:00',
+    pbs.pmap(execute, [sub], walltime='4:00:00',
              memory=40, nodes=1, tasks=2, name='decode_sub-{}'.format(sub))
