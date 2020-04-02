@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
-from os.path import join
+from os.path import join, expanduser
+from decim.adjuvant import slurm_submit as slu
 from glob import glob
 import nibabel as ni
 from nilearn import surface
@@ -9,12 +10,22 @@ from collections import defaultdict
 from sklearn import svm
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold
+from joblib import Memory
+if expanduser('~') == '/home/faty014':
+    cachedir = expanduser('/work/faty014/joblib_cache')
+else:
+    cachedir = expanduser('~/joblib_cache')
+slu.mkdir_p(cachedir)
+memory = Memory(location=cachedir, verbose=0)
+from multiprocessing import Pool
+from pymeg import parallel as pbs
 
 
 hemispheres = ['lh', 'rh']
 hemis = ['L', 'R']
 
 
+@memory.cache
 def interp(x, y, target):
     '''
     Interpolate
@@ -39,7 +50,15 @@ class DecodeSurface(object):
         self.annotation = defaultdict()
         self.labels = defaultdict()
         self.mean_auc = defaultdict()
+        annot_path = join(self.flex_dir, 'fmri',
+                          'completed_preprocessed', self.subject,
+                          'freesurfer', self.subject,
+                          'label', 'lh.HCPMMP1.annot')
+        annot = ni.freesurfer.io.read_annot(annot_path)
+        labels = [i.astype('str') for i in annot[2]]
+        self.labelnames = [i[2:-4] for i in labels[1:]]
 
+    @memory.cache
     def get_data(self):
 
         for run in self.runs:
@@ -86,10 +105,8 @@ class DecodeSurface(object):
                                      format(self.subject, self.session)),
                                 key=run)
             choices = pd.DataFrame({'rule_response': behav.loc[behav.event == 'CHOICE_TRIAL_RESP', 'rule_resp'].values.astype(float),
-                                    'rt': behav.loc[behav.event == 'CHOICE_TRIAL_RESP'].rt.values.astype(float),
                                     'stimulus': behav.stimulus.dropna(how='any').values,
                                     'response': behav.loc[behav.event == 'CHOICE_TRIAL_RESP', 'value'].values.astype(float),
-                                    'reward': behav.loc[behav.event == 'CHOICE_TRIAL_RESP'].reward.values.astype(float),
                                     'onset': behav.loc[behav.event == 'CHOICE_TRIAL_ONSET'].onset.values.astype(float)})
             choices = choices.loc[~choices.response.isnull()]
             onsets = choices.onset.values.astype(float)
@@ -123,14 +140,14 @@ class DecodeSurface(object):
         return np.mean(aucs)
 
 
-def as_dict(subject):
+def execute(subject):
     list_of_dicts = []
     for session in ['ses-2', 'ses-3']:
         decoder = DecodeSurface(subject=subject, session=session)
         decoder.get_data()
-        for roi_str in ['4', 'V1', 'V2']:
+        for roi_str in decoder.labelnames:
             decoder.trim_data(roi_str)
-            for parameter in ['response', 'stimulus']:
+            for parameter in ['response', 'stimulus', 'rule_responses']:
                 for timepoint in range(8):
                     mean_auc = decoder.classify(parameter=parameter, timepoint=timepoint)
 
@@ -144,4 +161,9 @@ def as_dict(subject):
                     })
                     print(list_of_dicts[-1])
 
-    return list_of_dicts
+    pd.DataFrame(list_of_dicts).to_hdf('CorticalDecoding.hdf', key=subject)
+
+
+def submit(sub):
+    pbs.pmap(execute, [(sub)], walltime='4:00:00',
+             memory=40, nodes=1, tasks=2, name='decode_sub-{}'.format(sub))
