@@ -71,7 +71,7 @@ class DecodeSurface(object):
         neural = []
         behavoral = []
         roi_names = [hemis[0] + '_' + roi_str + '_ROI']
-        roi_index = self.labels[[hemis[0]]].index(roi_names[0])
+        roi_index = self.labels[hemis[0]].index(roi_names[0])
         for run, surf_df in self.whole_cortex.items():
             roi = surf_df.loc[roi_index].reset_index(drop=True).T
             roi = (roi - roi.mean()) / roi.std()
