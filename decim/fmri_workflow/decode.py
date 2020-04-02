@@ -122,25 +122,26 @@ class DecodeSurface(object):
 
         return np.mean(aucs)
 
-    def as_dict(self, subject):
-        list_of_dicts = []
-        for session in ['ses-2', 'ses-3']:
-            decoder = DecodeSurface(subject=subject, session=session)
-            decoder.get_data()
-            for roi_str in ['4', 'V1', 'V2']:
-                decoder.trim_data(roi_str)
-                for parameter in ['response', 'stimulus']:
-                    for timepoint in range(8):
-                        mean_auc = decoder.classify(parameter=parameter, timepoint=timepoint)
 
-                        list_of_dicts.append({
-                            'session': session,
-                            'subject': subject,
-                            'roi': roi_str,
-                            'parameter': parameter,
-                            'timepoint': timepoint,
-                            'roc_auc': mean_auc
-                        })
-                        print(list_of_dicts[-1])
+def as_dict(subject):
+    list_of_dicts = []
+    for session in ['ses-2', 'ses-3']:
+        decoder = DecodeSurface(subject=subject, session=session)
+        decoder.get_data()
+        for roi_str in ['4', 'V1', 'V2']:
+            decoder.trim_data(roi_str)
+            for parameter in ['response', 'stimulus']:
+                for timepoint in range(8):
+                    mean_auc = decoder.classify(parameter=parameter, timepoint=timepoint)
 
-        return list_of_dicts
+                    list_of_dicts.append({
+                        'session': session,
+                        'subject': subject,
+                        'roi': roi_str,
+                        'parameter': parameter,
+                        'timepoint': timepoint,
+                        'roc_auc': mean_auc
+                    })
+                    print(list_of_dicts[-1])
+
+    return list_of_dicts
