@@ -148,7 +148,7 @@ def execute(sub, flex_dir):
     for session in ['ses-2', 'ses-3']:
         decoder = DecodeSurface(subject=subject, session=session, flex_dir=flex_dir)
         decoder.get_data()
-        for roi_str in decoder.labelnames:
+        for roi_str in decoder.labelnames[3]:
             decoder.trim_data(roi_str)
             for parameter in ['response', 'stimulus', 'rule_response']:
                 for timepoint in range(8):
@@ -164,7 +164,7 @@ def execute(sub, flex_dir):
                     })
                     print(list_of_dicts[-1])
 
-    pd.DataFrame(list_of_dicts).to_hdf('CorticalDecoding.hdf', key=subject)
+    pd.DataFrame(list_of_dicts).to_hdf(join(flex_dir, 'CorticalDecoding.hdf'), key=subject)
 
 
 def climag_submit(subrange):
