@@ -10,14 +10,7 @@ from collections import defaultdict
 from sklearn import svm
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold
-from joblib import Memory
-if expanduser('~') == '/home/faty014':
-    cachedir = expanduser('/work/faty014/joblib_cache')
-else:
-    cachedir = expanduser('~/joblib_cache')
-slu.mkdir_p(cachedir)
-memory = Memory(location=cachedir, verbose=0)
-from multiprocessing import Pool
+
 from pymeg import parallel as pbs
 
 
@@ -25,7 +18,6 @@ hemispheres = ['lh', 'rh']
 hemis = ['L', 'R']
 
 
-@memory.cache
 def interp(x, y, target):
     '''
     Interpolate
@@ -58,7 +50,6 @@ class DecodeSurface(object):
         labels = [i.astype('str') for i in annot[2]]
         self.labelnames = [i[2:-4] for i in labels[1:]]
 
-    @memory.cache
     def get_data(self):
 
         for run in self.runs:
