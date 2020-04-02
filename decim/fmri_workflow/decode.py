@@ -148,7 +148,7 @@ def execute(sub, flex_dir):
     for session in ['ses-2', 'ses-3']:
         decoder = DecodeSurface(subject=subject, session=session, flex_dir=flex_dir)
         decoder.get_data()
-        for roi_str in decoder.labelnames[4:6]:
+        for roi_str in decoder.labelnames:
             decoder.trim_data(roi_str)
             for parameter in ['response', 'stimulus', 'rule_response']:
                 for timepoint in range(8):
