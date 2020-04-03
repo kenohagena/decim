@@ -130,10 +130,10 @@ class DecodeSurface(object):
 
         X = self.features[:, :, timepoint]
         y = self.behavioral[parameter].values
-        linear_SVC = svm.LinearSVC(C=.1, max_iter=50000)
+        linear_SVC = svm.LinearSVC(C=1, max_iter=50000)
 
         aucs = []
-        cv = StratifiedKFold(n_splits=10)
+        cv = StratifiedKFold(n_splits=8)
         for i, (train, test) in enumerate(cv.split(X, y)):
             linear_SVC.fit(X[train], y[train])
             viz = roc_auc_score(y[test], linear_SVC.predict(X[test]))
@@ -164,7 +164,7 @@ def execute(sub, flex_dir):
                     })
                     print(list_of_dicts[-1])
 
-    pd.DataFrame(list_of_dicts).to_hdf(join(flex_dir, 'CorticalDecoding.hdf'), key=subject)
+    pd.DataFrame(list_of_dicts).to_hdf(join(flex_dir, 'CorticalDecoding_2.hdf'), key=subject)
 
 
 def climag_submit(subrange):
