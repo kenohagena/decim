@@ -73,7 +73,7 @@ class DecodeSurface(object):
                     surf_df.index = annot[0]
                     hemisphere_data.append(surf_df)
                 surf_df = pd.concat(hemisphere_data)
-                self.whole_cortex[session][run] = surf_df
+                self.whole_cortex['{0}_{1}'.format(session, run)] = surf_df
 
     def trim_data(self, roi_str):
         self.features = None
@@ -82,47 +82,46 @@ class DecodeSurface(object):
         behavoral = []
         roi_names = [hemis[0] + '_' + roi_str + '_ROI']
         roi_index = self.labels[hemis[0]].index(roi_names[0])
-        for session, di in self.whole_cortex.items():
-            for run, surf_df in di.items():
-                roi = surf_df.loc[roi_index].reset_index(drop=True).T
-                roi = (roi - roi.mean()) / roi.std()
-                try:
-                    assert roi.isnull().mean().mean() == 0
-                except AssertionError:
-                    print('vertex data contains NaNs', roi_str, self.session, run)
-                    roi = roi.fillna(0)
+        for session_run, surf_df in self.whole_cortex.items():
+            roi = surf_df.loc[roi_index].reset_index(drop=True).T
+            roi = (roi - roi.mean()) / roi.std()
+            try:
+                assert roi.isnull().mean().mean() == 0
+            except AssertionError:
+                print('vertex data contains NaNs', roi_str, session_run)
+                roi = roi.fillna(0)
 
-                dt = pd.to_timedelta(roi.index.values * 1900, unit='ms')
-                roi = roi.set_index(dt)
-                target = roi.resample('100ms').mean().index
-                roi = pd.concat([interp(dt, roi[c], target) for c in roi.columns],
-                                axis=1)
-                behav = pd.read_hdf(join(self.flex_dir, 'Workflow',
-                                         'Sublevel_GLM_Climag_2020-01-07',
-                                         self.subject, 'BehavFrame_{0}_{1}.hdf'.
-                                         format(self.subject, session)),
-                                    key=run)
-                choices = pd.DataFrame({'rule_response': behav.loc[behav.event == 'CHOICE_TRIAL_RESP', 'rule_resp'].values.astype(float),
-                                        'stimulus': behav.stimulus.dropna(how='any').values,
-                                        'response': behav.loc[behav.event == 'CHOICE_TRIAL_RESP', 'value'].values.astype(float),
-                                        'onset': behav.loc[behav.event == 'CHOICE_TRIAL_ONSET'].onset.values.astype(float)})
-                choices = choices.loc[~choices.response.isnull()]
-                onsets = choices.onset.values.astype(float)
-                try:
-                    assert choices.isnull().mean().mean() == 0                      # no NaNs in behav
-                except AssertionError:
-                    print('choices data contains NaNs', self.session, run)
+            dt = pd.to_timedelta(roi.index.values * 1900, unit='ms')
+            roi = roi.set_index(dt)
+            target = roi.resample('100ms').mean().index
+            roi = pd.concat([interp(dt, roi[c], target) for c in roi.columns],
+                            axis=1)
+            behav = pd.read_hdf(join(self.flex_dir, 'Workflow',
+                                     'Sublevel_GLM_Climag_2020-01-07',
+                                     self.subject, 'BehavFrame_{0}_{1}.hdf'.
+                                     format(self.subject, session_run[:5])),
+                                key=run)
+            choices = pd.DataFrame({'rule_response': behav.loc[behav.event == 'CHOICE_TRIAL_RESP', 'rule_resp'].values.astype(float),
+                                    'stimulus': behav.stimulus.dropna(how='any').values,
+                                    'response': behav.loc[behav.event == 'CHOICE_TRIAL_RESP', 'value'].values.astype(float),
+                                    'onset': behav.loc[behav.event == 'CHOICE_TRIAL_ONSET'].onset.values.astype(float)})
+            choices = choices.loc[~choices.response.isnull()]
+            onsets = choices.onset.values.astype(float)
+            try:
+                assert choices.isnull().mean().mean() == 0                      # no NaNs in behav
+            except AssertionError:
+                print('choices data contains NaNs', session_run)
 
-                bl = pd.Timedelta(2000, unit='ms')
-                te = pd.Timedelta(12000, unit='ms')
-                for onset in onsets:
-                    cue = pd.Timedelta(onset, unit='s').round('100ms')
-                    task_evoked = roi.loc[cue - bl: cue + te]
-                    task_evoked = task_evoked.resample('1900ms').mean()
-                    task_evoked = task_evoked.iloc[:8]
-                    assert task_evoked.shape[0] == 8
-                    neural.append(task_evoked.values)
-                    behavoral.append(choices.loc[choices.onset == onset])
+            bl = pd.Timedelta(2000, unit='ms')
+            te = pd.Timedelta(12000, unit='ms')
+            for onset in onsets:
+                cue = pd.Timedelta(onset, unit='s').round('100ms')
+                task_evoked = roi.loc[cue - bl: cue + te]
+                task_evoked = task_evoked.resample('1900ms').mean()
+                task_evoked = task_evoked.iloc[:8]
+                assert task_evoked.shape[0] == 8
+                neural.append(task_evoked.values)
+                behavoral.append(choices.loc[choices.onset == onset])
 
         self.features = np.transpose(np.dstack(neural))                         # 1st axis (rows): trials; 2nd axis (cols): vertices; 3rd axis: timepoints within trial
         self.behavioral = pd.concat(behavoral)
