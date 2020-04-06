@@ -100,7 +100,7 @@ class DecodeSurface(object):
                                      'Sublevel_GLM_Climag_2020-01-07',
                                      self.subject, 'BehavFrame_{0}_{1}.hdf'.
                                      format(self.subject, session_run[:5])),
-                                key=run)
+                                key=session_run[6:])
             choices = pd.DataFrame({'rule_response': behav.loc[behav.event == 'CHOICE_TRIAL_RESP', 'rule_resp'].values.astype(float),
                                     'stimulus': behav.stimulus.dropna(how='any').values,
                                     'response': behav.loc[behav.event == 'CHOICE_TRIAL_RESP', 'value'].values.astype(float),
