@@ -51,7 +51,7 @@ class DecodeSurface(object):
         self.labelnames = [i[2:-4] for i in labels[1:]]
 
     def get_data(self):
-        for session in self.session:
+        for session in self.sessions:
             for run in self.runs:
                 hemisphere_data = []
                 for h in [0, 1]:
