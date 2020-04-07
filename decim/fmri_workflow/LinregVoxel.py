@@ -87,6 +87,7 @@ class VoxelSubject(object):
         self.BehavDataframe = BehavDataframe
         self.voxel_regressions = {}
         self.surface_textures = defaultdict(dict)
+        self.residuals = defaultdict(dict)
         self.task = task
         self.info = [self.subject, self.session, self.task]
 
@@ -322,15 +323,12 @@ class VoxelSubject(object):
             behav = (behav - behav.mean()) / behav.std()
             behav = behav.fillna(0)
             residuals = (voxels - self.LinearRegression.predict(behav.values)).values
-            print(residuals.shape)
-            print(self.nifti_shape)
+
             residuals[0, :].reshape(self.nifti_shape[:3])
             new_shape = np.stack([residuals[i, :].
                                   reshape(self.nifti_shape[0:3])
                                   for i in range(residuals.shape[0])], -1)
-            print(new_shape.shape)
-            print(data.shape)
-            new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine)
+            self.residuals[run] = nib.Nifti1Image(new_shape, affine=self.nifti_affine)
 
     def vol_2surf(self):
         '''
@@ -369,11 +367,13 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     v.input_nifti = 'T1w'                                                    # set input-identifier variable ('T1w', 'mni_retroicor', 'mni')
     v.concat_runs(nuisance_source=None)
     v.glm()
+    v.residuals()
     v.vol_2surf()                                                           # use when working with T1w-subject space niftis
     # v.mni_to_fsaverage()                                                      # use when working with MNI-space niftis
-    return v.voxel_regressions, v.surface_textures, v.DesignMatrix
+    return v.voxel_regressions, v.surface_textures, v.DesignMatrix, v.residuals
 
 
+'''
 behav = pd.read_hdf('/home/khagena/FLEXRULE/Workflow/Sublevel_GLM_Climag_2020-01-07/sub-3/BehavFrame_sub-3_ses-2.hdf', key='instructed_run-7')
 
 s = VoxelSubject('sub-3', 'ses-2', ['instructed_run-7'], '/home/khagena/FLEXRULE', {'instructed_run-7': behav}, 'instructed')
@@ -381,7 +381,7 @@ s.input_nifti = 'T1w'
 s.concat_runs()
 s.glm()
 s.residuals()
-
+'''
 
 '''
 from decim.fmri_workflow import BehavDataframe as bd
