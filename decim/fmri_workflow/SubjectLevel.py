@@ -268,8 +268,7 @@ class SubjectLevel(object):
                                                                      '{0}_{1}_{2}_{3}.nii.gz'.
                                                                      format(name,
                                                                             self.subject,
-                                                                            session, run)),
-                                                                key=run)
+                                                                            session, run)))
                         else:
                             attribute[session][run].to_hdf(join(output_dir,
                                                                 '{0}_{1}_{2}.hdf'.
