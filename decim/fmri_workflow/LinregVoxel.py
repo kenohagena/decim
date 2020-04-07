@@ -366,7 +366,7 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
 
 behav = pd.read_hdf('/home/khagena/FLEXRULE/Workflow/Sublevel_GLM_Climag_2020-01-07/sub-3/BehavFrame_sub-3_ses-2.hdf', key='instructed_run-7')
 
-s = VoxelSubject('sub-3', 'ses-2', ['instructed_run-7'], '/Volumes/flxrl/FLEXRULE', {'instructed_run-7': behav}, 'instructed')
+s = VoxelSubject('sub-3', 'ses-2', ['instructed_run-7'], '/home/khagena/FLEXRULE', {'instructed_run-7': behav}, 'instructed')
 s.input_nifti = 'T1w'
 s.concat_runs()
 s.glm()
