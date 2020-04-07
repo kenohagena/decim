@@ -310,11 +310,12 @@ class VoxelSubject(object):
             data = nifti.get_data()
             d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.
                                                                    shape[-1])])
+
             if len(d2) > len(behav):
                 d2 = d2[0: len(behav)]
             elif len(d2) < len(behav):
                 behav = behav.iloc[0:len(d2)]
-                voxels = pd.DataFrame(d2)
+            voxels = pd.DataFrame(d2)
             behav = self.session_behav
             voxels = (voxels - voxels.mean()) / voxels.std()                        # normalize voxels
             voxels = voxels.fillna(0)                                               # because if voxels have std == 0 --> NaNs introduced
