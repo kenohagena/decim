@@ -321,7 +321,7 @@ class VoxelSubject(object):
             voxels = voxels.fillna(0)                                               # because if voxels have std == 0 --> NaNs introduced
             behav = (behav - behav.mean()) / behav.std()
             behav = behav.fillna(0)
-            self.LinearRegression.predict(behav.values)
+            print((voxels - self.LinearRegression.predict(behav.values)).shape)
 
     def vol_2surf(self):
         '''
