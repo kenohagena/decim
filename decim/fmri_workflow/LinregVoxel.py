@@ -321,7 +321,13 @@ class VoxelSubject(object):
             voxels = voxels.fillna(0)                                               # because if voxels have std == 0 --> NaNs introduced
             behav = (behav - behav.mean()) / behav.std()
             behav = behav.fillna(0)
-            print((voxels - self.LinearRegression.predict(behav.values)).shape)
+            residuals = voxels - self.LinearRegression.predict(behav.values)
+            new_shape = np.stack([residuals[i, :].
+                                  reshape(self.nifti_shape[0:3])
+                                  for i in range(residuals.shape[0])], -1)
+            print(new_shape.shape)
+            print(data.shape)
+            new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine)
 
     def vol_2surf(self):
         '''
