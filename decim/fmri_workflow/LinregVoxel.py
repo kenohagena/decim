@@ -317,7 +317,6 @@ class VoxelSubject(object):
             elif len(d2) < len(behav):
                 behav = behav.iloc[0:len(d2)]
             voxels = pd.DataFrame(d2)
-            behav = self.session_behav
             voxels = (voxels - voxels.mean()) / voxels.std()                        # normalize voxels
             voxels = voxels.fillna(0)                                               # becaus if voxels have std == 0 --> NaNs introduced
             behav = (behav - behav.mean()) / behav.std()
