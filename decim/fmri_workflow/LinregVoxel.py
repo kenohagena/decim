@@ -321,7 +321,7 @@ class VoxelSubject(object):
             voxels = voxels.fillna(0)                                               # becaus if voxels have std == 0 --> NaNs introduced
             behav = (behav - behav.mean()) / behav.std()
             behav = behav.fillna(0)
-            residuals = voxels - self.LinearRegression.predict(behav.values)
+            residuals = (voxels - self.LinearRegression.predict(behav.values)).values
             print(residuals.shape)
             print(self.nifti_shape)
             residuals[0, :].reshape(self.nifti_shape[:3])
