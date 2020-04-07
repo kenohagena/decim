@@ -142,7 +142,7 @@ class VoxelSubject(object):
         print(combined.columns)
 
         if self.task == 'instructed':
-            design_matrix = dmatrix('''switch + np.abs(switch) +
+            design_matrix = dmatrix('''np.abs(switch) +
                           C(choice_box, levels=t)''',
                                     data=combined)
         elif self.task == 'inference':
@@ -266,6 +266,61 @@ class VoxelSubject(object):
                                   for i in range(reg_result.shape[0])], -1)
             new_image = nib.Nifti1Image(new_shape, affine=self.nifti_affine)    # make 4D nifti with regression result per parameter
             self.voxel_regressions[parameter] = new_image                       # fourth dimension contains coefficient, r_square, intercept, mean squared error
+            self.LinearRegression = linreg
+
+    def residuals(self):
+        '''
+        Concatenate design matrices per session.
+
+        - Argument:
+            a) nuisance: None, 't', 'a'
+        '''
+        for run in self.runs:
+            behav = self.design_matrix(self.BehavDataframe[run])
+            if self.input_nifti == 'mni_retroicor':
+                file_identifier = 'retroicor'
+            elif self.input_nifti == 'T1w':
+                file_identifier = 'space-T1w_preproc.'
+            elif self.input_nifti == 'mni':
+                file_identifier = 'space-MNI152NLin2009cAsym_preproc'
+            files = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
+                              self.subject, 'fmriprep', self.subject,
+                              self.session, 'func',
+                              '{0}_{1}_task-{2}_*{3}*nii.gz'.
+                              format(self.subject, self.session, run,
+                                     file_identifier)))
+            if len(files) == 1:
+                nifti = nib.load(files[0])
+                if self.input_nifti == 'mni':
+                    brain_mask = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
+                                           self.subject, 'fmriprep', self.subject,
+                                           self.session, 'func',
+                                           '{0}_{1}_task-{2}_*MNI152NLin2009cAsym_brainmask*nii.gz'.
+                                           format(self.subject, self.session, run)))
+                    brain_mask = nib.load(brain_mask[0])
+                    brain_mask = resample_img(brain_mask, nifti.affine,
+                                              target_shape=nifti.shape[:3])
+                    nifti = nib.Nifti1Image(np.multiply(nifti.get_fdata().T, brain_mask.get_fdata().T).T, nifti.affine)
+
+            else:
+                print(len(files), 'niftis found for', self.info)
+
+            self.nifti_shape = nifti.get_data().shape
+            self.nifti_affine = nifti.affine
+            data = nifti.get_data()
+            d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.
+                                                                   shape[-1])])
+            if len(d2) > len(behav):
+                d2 = d2[0: len(behav)]
+            elif len(d2) < len(behav):
+                behav = behav.iloc[0:len(d2)]
+                voxels = pd.DataFrame(d2)
+            behav = self.session_behav
+            voxels = (voxels - voxels.mean()) / voxels.std()                        # normalize voxels
+            voxels = voxels.fillna(0)                                               # because if voxels have std == 0 --> NaNs introduced
+            behav = (behav - behav.mean()) / behav.std()
+            behav = behav.fillna(0)
+            self.LinearRegression.predict(behav.values)
 
     def vol_2surf(self):
         '''
@@ -309,15 +364,16 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     return v.voxel_regressions, v.surface_textures, v.DesignMatrix
 
 
-'''
-behav = pd.read_hdf('/Users/kenohagena/flexrule/fmri/analyses/Sublevel_GLM_Climag_2020-02-04/sub-3/BehavFrame_sub-3_ses-2.hdf', key='inference_run-4')
+behav = pd.read_hdf('/home/khagena/FLEXRULE/Workflow/Sublevel_GLM_Climag_2020-01-07/sub-3/BehavFrame_sub-3_ses-2.hdf', key='instructed_run-7')
 
-s = VoxelSubject('sub-3', 'ses-2', ['inference_run-4'], '/Volumes/flxrl/FLEXRULE', behav, 'inference')
-s.design_matrix(behav)
+s = VoxelSubject('sub-3', 'ses-2', ['instructed_run-7'], '/Volumes/flxrl/FLEXRULE', {'instructed_run-7': behav}, 'instructed')
+s.input_nifti = 'T1w'
 s.concat_runs()
+s.glm()
+s.residuals()
 
 
-
+'''
 from decim.fmri_workflow import BehavDataframe as bd
 behav = bd.execute('sub-6', 'ses-2', 'instructed_run-7', 'instructed', '/Users/kenohagena/Desktop', pd.read_csv('/Users/kenohagena/flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv'))
 print(behav.response.unique())
