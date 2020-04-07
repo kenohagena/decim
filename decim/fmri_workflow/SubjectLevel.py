@@ -243,11 +243,12 @@ class SubjectLevel(object):
         self.VoxelReg = defaultdict(dict)
         self.SurfaceTxt = defaultdict(dict)
         self.DesignMatrix = defaultdict(dict)
+        self.Residuals = defaultdict(dict)
         for session, runs in self.session_runs.items():
             for task in set(runs.values()):
                 print(task, session)
                 rs = [r for r in runs.keys() if runs[r] == task]
-                self.VoxelReg[session][task], self.SurfaceTxt[session][task], self.DesignMatrix[session][task] =\
+                self.VoxelReg[session][task], self.SurfaceTxt[session][task], self.DesignMatrix[session][task], self.Residuals[session] =\
                     lv.execute(self.subject, session, rs,
                                self.flex_dir,
                                self.BehavFrame[session], task)
@@ -258,16 +259,24 @@ class SubjectLevel(object):
         slu.mkdir_p(output_dir)
         for name, attribute in self.__iter__():
             if name in ['BehavFrame', 'BehavAligned', 'PupilFrame',
-                        'CortRois', 'BrainstemRois', 'ChoiceEpochs', 'CortexEpochs']:
+                        'CortRois', 'BrainstemRois', 'ChoiceEpochs', 'CortexEpochs', 'Residuals']:
                 for session in attribute.keys():
                     for run in attribute[session].keys():
                         print('Saving', name, session, run)
-                        attribute[session][run].to_hdf(join(output_dir,
-                                                            '{0}_{1}_{2}.hdf'.
-                                                            format(name,
-                                                                   self.subject,
-                                                                   session)),
-                                                       key=run)
+                        if name == 'Residuals':
+                            attribute[session][run].to_filename(join(output_dir,
+                                                                     '{0}_{1}_{2}_{3}.nii.gz'.
+                                                                     format(name,
+                                                                            self.subject,
+                                                                            session, run)),
+                                                                key=run)
+                        else:
+                            attribute[session][run].to_hdf(join(output_dir,
+                                                                '{0}_{1}_{2}.hdf'.
+                                                                format(name,
+                                                                       self.subject,
+                                                                       session)),
+                                                           key=run)
 
             elif name == 'CleanEpochs':
                 for session in attribute.keys():
