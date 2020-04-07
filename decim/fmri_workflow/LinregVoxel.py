@@ -87,7 +87,7 @@ class VoxelSubject(object):
         self.BehavDataframe = BehavDataframe
         self.voxel_regressions = {}
         self.surface_textures = defaultdict(dict)
-        self.residuals = defaultdict(dict)
+        self.Residuals = defaultdict(dict)
         self.task = task
         self.info = [self.subject, self.session, self.task]
 
@@ -328,7 +328,7 @@ class VoxelSubject(object):
             new_shape = np.stack([residuals[i, :].
                                   reshape(self.nifti_shape[0:3])
                                   for i in range(residuals.shape[0])], -1)
-            self.residuals[run] = nib.Nifti1Image(new_shape, affine=self.nifti_affine)
+            self.Residuals[run] = nib.Nifti1Image(new_shape, affine=self.nifti_affine)
 
     def vol_2surf(self):
         '''
@@ -370,7 +370,7 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     v.residuals()
     v.vol_2surf()                                                           # use when working with T1w-subject space niftis
     # v.mni_to_fsaverage()                                                      # use when working with MNI-space niftis
-    return v.voxel_regressions, v.surface_textures, v.DesignMatrix, v.residuals
+    return v.voxel_regressions, v.surface_textures, v.DesignMatrix, v.Residuals
 
 
 '''
