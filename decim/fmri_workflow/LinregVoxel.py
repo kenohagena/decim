@@ -318,10 +318,13 @@ class VoxelSubject(object):
             voxels = pd.DataFrame(d2)
             behav = self.session_behav
             voxels = (voxels - voxels.mean()) / voxels.std()                        # normalize voxels
-            voxels = voxels.fillna(0)                                               # because if voxels have std == 0 --> NaNs introduced
+            voxels = voxels.fillna(0)                                               # becaus if voxels have std == 0 --> NaNs introduced
             behav = (behav - behav.mean()) / behav.std()
             behav = behav.fillna(0)
             residuals = voxels - self.LinearRegression.predict(behav.values)
+            print(residuals.shape)
+            print(self.nifti_shape)
+            residuals[0, :].reshape(self.nifti_shape[:3])
             new_shape = np.stack([residuals[i, :].
                                   reshape(self.nifti_shape[0:3])
                                   for i in range(residuals.shape[0])], -1)
