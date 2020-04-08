@@ -211,5 +211,4 @@ behav = {run: pd.read_hdf('/home/khagena/FLEXRULE/Workflow/Sublevel_GLM_Climag_2
 s = SingleTrialGLM('sub-3', 'ses-2', runs, '/home/khagena/FLEXRULE', behav, 'instructed', '/home/khagena/FLEXRULE')
 s.input_nifti = 'T1w'
 s.concat_runs()
-s.glm()
-s.residuals()
+s.run_GLMs()
