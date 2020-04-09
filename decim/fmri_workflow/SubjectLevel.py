@@ -331,7 +331,7 @@ class SubjectLevel(object):
                                                                    session)))
                     elif name == 'TrialRules':
                         pd.Series(attribute[session]).to_hdf(join(self.out_dir,
-                                                                  '{0}_{1}_{2}_{3}.hdf'.
+                                                                  '{0}_{1}_{2}.hdf'.
                                                                   format(name,
                                                                          self.subject,
                                                                          session)))
