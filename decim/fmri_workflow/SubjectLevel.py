@@ -87,7 +87,7 @@ spec_subs = {1: {2: [4, 5, 6, 7], 3: [4, 5, 6]},
              14: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
              15: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
              16: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
-             17: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
+             17: {2: [7, 8], 3: [7, 8]},
              18: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
              19: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
              20: {2: [4, 5, 6, 7], 3: [4, 5, 6, 7, 8]},
@@ -251,10 +251,11 @@ class SubjectLevel(object):
             for task in set(runs.values()):
                 print(task, session)
                 rs = [r for r in runs.keys() if runs[r] == task]
-                self.VoxelReg[session][task], self.SurfaceTxt[session][task], self.DesignMatrix[session][task], self.Residuals[session] =\
+                self.VoxelReg[session][task], self.SurfaceTxt[session][task], self.DesignMatrix[session][task], self.Residuals[session][task] =\
                     lv.execute(self.subject, session, rs,
                                self.flex_dir,
                                self.BehavFrame[session], task)
+                print(self.Residuals[session][task])
 
     def SingleTrialGLM(self):
         print('SingleTrialGLM')
@@ -266,7 +267,7 @@ class SubjectLevel(object):
                 rs = [r for r in runs.keys() if runs[r] == task]
                 self.SingleTrial[session], self.TrialRules[session] = st.execute(self.subject, session, rs,
                                                                                  self.flex_dir,
-                                                                                 self.BehavFrame[session], self.Residuals[session], self.out_dir)
+                                                                                 self.BehavFrame[session], self.Residuals[session][task], self.out_dir)
 
     def Output(self):
         print('Output')
