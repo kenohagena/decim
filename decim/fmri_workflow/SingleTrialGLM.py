@@ -64,13 +64,14 @@ class SingleTrialGLM(object):
         f) task
     '''
 
-    def __init__(self, subject, session, runs, flex_dir, BehavDataframe, task, out_dir):
+    def __init__(self, subject, session, runs, flex_dir, BehavDataframe, Residuals, task, out_dir):
         self.subject = subject
         self.session = session
         self.runs = runs
         self.flex_dir = flex_dir
         self.out_dir = out_dir
         self.BehavDataframe = BehavDataframe
+        self.Residuals = Residuals
         self.voxel_regressions = {}
         self.surface_textures = defaultdict(dict)
         self.task = task
@@ -115,36 +116,7 @@ class SingleTrialGLM(object):
         session_behav = []
         for run in self.runs:
             behav = self.design_matrix(run)
-
-            if self.input_nifti == 'mni_retroicor':
-                file_identifier = 'retroicor'
-            elif self.input_nifti == 'T1w':
-                file_identifier = 'space-T1w_preproc.'
-            elif self.input_nifti == 'mni':
-                file_identifier = 'space-MNI152NLin2009cAsym_preproc'
-
-            files = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
-                              self.subject, 'fmriprep', self.subject,
-                              self.session, 'func',
-                              '{0}_{1}_task-{2}_*{3}*nii.gz'.
-                              format(self.subject, self.session, run,
-                                     file_identifier)))
-            if len(files) == 1:
-                nifti = nib.load(files[0])
-                if self.input_nifti == 'mni':
-                    brain_mask = glob(join(self.flex_dir, 'fmri', 'completed_preprocessed',
-                                           self.subject, 'fmriprep', self.subject,
-                                           self.session, 'func',
-                                           '{0}_{1}_task-{2}_*MNI152NLin2009cAsym_brainmask*nii.gz'.
-                                           format(self.subject, self.session, run)))
-                    brain_mask = nib.load(brain_mask[0])
-                    brain_mask = resample_img(brain_mask, nifti.affine,
-                                              target_shape=nifti.shape[:3])
-                    nifti = nib.Nifti1Image(np.multiply(nifti.get_fdata().T, brain_mask.get_fdata().T).T, nifti.affine)
-
-            else:
-                print(len(files), 'niftis found for', self.info)
-
+            nifti = self.Residual[run]
             self.nifti_shape = nifti.get_data().shape
             self.nifti_affine = nifti.affine
             data = nifti.get_data()
@@ -201,14 +173,16 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, task, out_dir):
     v = SingleTrialGLM(subject, session, runs, flex_dir, BehavDataframe, task, out_dir)
     v.input_nifti = 'T1w'                                                    # set input-identifier variable ('T1w', 'mni_retroicor', 'mni')
     v.concat_runs()
+    v.sanity_check_trial_regressors()
     v.run_GLMs()
     print(v.voxel_regressions)
 
 
 runs = ['instructed_run-7', 'instructed_run-8']
 behav = {run: pd.read_hdf('/home/khagena/FLEXRULE/Workflow/Sublevel_GLM_Climag_2020-01-07/sub-3/BehavFrame_sub-3_ses-2.hdf', key=run) for run in runs}
+residuals = {run: nib.load('FLEXRULE/Workflow/Sublevel_GLM_Climag_2020-04-07/sub-3/Residuals_sub-3_ses-2_{}.nii.gz'.format(run)) for run in runs}
 
-s = SingleTrialGLM('sub-3', 'ses-2', runs, '/home/khagena/FLEXRULE', behav, 'instructed', '/home/khagena/FLEXRULE')
+s = SingleTrialGLM('sub-3', 'ses-2', runs, '/home/khagena/FLEXRULE', behav, residuals, 'instructed', '/home/khagena/FLEXRULE')
 s.input_nifti = 'T1w'
 s.concat_runs()
 s.run_GLMs()
