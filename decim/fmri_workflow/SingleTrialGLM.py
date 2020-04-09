@@ -1,15 +1,12 @@
 import numpy as np
-from sklearn.metrics import mean_squared_error, r2_score
 import pandas as pd
 from glob import glob
 from os.path import join, expanduser
 from decim.adjuvant import slurm_submit as slu
 import nibabel as nib
 from sklearn.linear_model import LinearRegression
-from nilearn.surface import vol_to_surf
-from nilearn import datasets
 from collections import defaultdict
-from nilearn.image import resample_img
+from nilearn.image import concat_imgs
 from matplotlib import pyplot as plt
 import seaborn as sns
 from joblib import Memory
@@ -64,7 +61,7 @@ class SingleTrialGLM(object):
         f) task
     '''
 
-    def __init__(self, subject, session, runs, flex_dir, BehavDataframe, Residuals, task, out_dir):
+    def __init__(self, subject, session, runs, flex_dir, BehavDataframe, Residuals, out_dir):
         self.subject = subject
         self.session = session
         self.runs = runs
@@ -72,10 +69,8 @@ class SingleTrialGLM(object):
         self.out_dir = out_dir
         self.BehavDataframe = BehavDataframe
         self.Residuals = Residuals
-        self.voxel_regressions = {}
-        self.surface_textures = defaultdict(dict)
-        self.task = task
-        self.info = [self.subject, self.session, self.task]
+        self.voxel_regressions = []
+        self.rewarded_rule = []
 
     def design_matrix(self, run, f=1000):
         '''
@@ -96,6 +91,7 @@ class SingleTrialGLM(object):
             else:
                 end = behav.iloc[-1].onset
             trials[i] = [start, end]
+            self.rewarded_rule.append(rule_switches.iloc[i].rewarded_rule)
         behav = behav.set_index((behav.onset.values * f).astype(int)).drop('onset', axis=1)
         behav = behav.reindex(pd.Index(np.arange(0, behav.index[-1] + 15000, 1)))
         behav.loc[0] = 0
@@ -156,28 +152,29 @@ class SingleTrialGLM(object):
         behav = (behav - behav.mean()) / behav.std()
         behav = behav.fillna(0)                                                 # missed-reponse regressor can have std=0 --> NaNs introduced
         linreg = LinearRegression()
-        print('fit', self.task)
+        print('fit', trial)
         linreg.fit(behav.values, voxels.values)
         ind = np.where(behav.columns == trial)[0]
         reg_result = linreg.coef_[:, ind].flatten().reshape(self.nifti_shape[0:3])
         new_image = nib.Nifti1Image(reg_result, affine=self.nifti_affine)
-        self.voxel_regressions[trial] = new_image
+        self.voxel_regressions.append(new_image)
 
     def run_GLMs(self):
         trials = self.session_behav.columns
         for trial in trials:
             self.single_glm(trial)
+        self.voxel_regressions = concat_imgs(self.voxel_regressions)
 
 
-def execute(subject, session, runs, flex_dir, BehavDataframe, task, out_dir):
-    v = SingleTrialGLM(subject, session, runs, flex_dir, BehavDataframe, task, out_dir)
-    v.input_nifti = 'T1w'                                                    # set input-identifier variable ('T1w', 'mni_retroicor', 'mni')
+def execute(subject, session, runs, flex_dir, BehavDataframe, Residuals, out_dir):
+    v = SingleTrialGLM(subject, session, runs, flex_dir, BehavDataframe, Residuals, out_dir)
     v.concat_runs()
     v.sanity_check_trial_regressors()
     v.run_GLMs()
-    print(v.voxel_regressions)
+    return v.voxel_regressions, v.rewarded_rule
 
 
+'''
 runs = ['instructed_run-7', 'instructed_run-8']
 behav = {run: pd.read_hdf('/home/khagena/FLEXRULE/Workflow/Sublevel_GLM_Climag_2020-01-07/sub-3/BehavFrame_sub-3_ses-2.hdf', key=run) for run in runs}
 residuals = {run: nib.load('FLEXRULE/Workflow/Sublevel_GLM_Climag_2020-04-07/sub-3/Residuals_sub-3_ses-2_{}.nii.gz'.format(run)) for run in runs}
@@ -186,3 +183,4 @@ s = SingleTrialGLM('sub-3', 'ses-2', runs, '/home/khagena/FLEXRULE', behav, resi
 s.input_nifti = 'T1w'
 s.concat_runs()
 s.run_GLMs()
+'''

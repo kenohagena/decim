@@ -97,7 +97,7 @@ spec_subs = {1: {2: [4, 5, 6, 7], 3: [4, 5, 6]},
 class SubjectLevel(object):
 
     def __init__(self, sub, ses_runs={2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
-                 environment='Volume'):
+                 environment='Volume', out_dir='SubjectLevel'):
         self.sub = sub
         self.subject = 'sub-{}'.format(sub)
         self.ses = ses_runs.keys()
@@ -120,6 +120,8 @@ class SubjectLevel(object):
             self.summary = pd.read_csv('/work/faty014/FLEXRULE/behavior/summary_stan_fits.csv')
         else:
             self.flex_dir = environment
+        self.out_dir = join(self.flex_dir, self.out_dir, self.subject)
+        slu.mkdir_p(out_dir)
 
     def __iter__(self):
         for attr, value in self.__dict__.items():
@@ -253,24 +255,34 @@ class SubjectLevel(object):
                                self.flex_dir,
                                self.BehavFrame[session], task)
 
-    def Output(self, dir='SubjectLevel'):
+    def SingleTrialGLM(self):
+        print('SingleTrialGLM')
+        self.SingleTrial = defaultdict(dict)
+        self.TrialRules
+        for session, runs in self.session_runs.items():
+            for task in set(runs.values()):
+                print(task, session)
+                rs = [r for r in runs.keys() if runs[r] == task]
+                self.SingleTrial[session], self.TrialRules[session] = lv.execute(self.subject, session, rs,
+                                                                                 self.flex_dir,
+                                                                                 self.BehavFrame[session], self.Residuals[session], self.out_dir)
+
+    def Output(self):
         print('Output')
-        output_dir = join(self.flex_dir, dir, self.subject)
-        slu.mkdir_p(output_dir)
         for name, attribute in self.__iter__():
             if name in ['BehavFrame', 'BehavAligned', 'PupilFrame',
-                        'CortRois', 'BrainstemRois', 'ChoiceEpochs', 'CortexEpochs', 'Residuals']:
+                        'CortRois', 'BrainstemRois', 'ChoiceEpochs', 'CortexEpochs', 'Residuals', 'Sin']:
                 for session in attribute.keys():
                     for run in attribute[session].keys():
                         print('Saving', name, session, run)
                         if name == 'Residuals':
-                            attribute[session][run].to_filename(join(output_dir,
+                            attribute[session][run].to_filename(join(self.out_dir,
                                                                      '{0}_{1}_{2}_{3}.nii.gz'.
                                                                      format(name,
                                                                             self.subject,
                                                                             session, run)))
                         else:
-                            attribute[session][run].to_hdf(join(output_dir,
+                            attribute[session][run].to_hdf(join(self.out_dir,
                                                                 '{0}_{1}_{2}.hdf'.
                                                                 format(name,
                                                                        self.subject,
@@ -280,7 +292,7 @@ class SubjectLevel(object):
             elif name == 'CleanEpochs':
                 for session in attribute.keys():
                     print('Saving', name, session)
-                    attribute[session].to_hdf(join(output_dir, '{0}_{1}_{2}.hdf'.
+                    attribute[session].to_hdf(join(self.out_dir, '{0}_{1}_{2}.hdf'.
                                                    format(name, self.subject, session)),
                                               key=session)
             elif name in ['VoxelReg', 'SurfaceTxt']:
@@ -289,13 +301,13 @@ class SubjectLevel(object):
                         for parameter, content in attribute[session][task].items():
                             print('Saving', name, session, task, parameter)
                             if name == 'VoxelReg':
-                                content.to_filename(join(output_dir,
+                                content.to_filename(join(self.out_dir,
                                                          '{0}_{1}_{2}_{3}_{4}.nii.gz'.
                                                          format(name, self.subject,
                                                                 session, parameter, task)))
                             elif name == 'SurfaceTxt':
                                 for hemisphere, cont in content.items():
-                                    cont.to_hdf(join(output_dir,
+                                    cont.to_hdf(join(self.out_dir,
                                                      '{0}_{1}_{2}_{3}_{4}.hdf'.
                                                      format(name, self.subject,
                                                             session, parameter, hemisphere)),
@@ -303,8 +315,23 @@ class SubjectLevel(object):
             elif name == 'DesignMatrix':
                 for session in attribute.keys():
                     for task in attribute[session].keys():
-                        attribute[session][task].to_hdf(join(output_dir,
+                        attribute[session][task].to_hdf(join(self.out_dir,
                                                              '{0}_{1}_{2}.hdf'.format(name, self.subject, session)), key=task)
+
+            elif name in ['SingleTrial', 'TrialRules']:
+                for session in attribute.keys():
+                    if name == 'SingleTrial':
+                        attribute[session].to_filename(join(self.out_dir,
+                                                            '{0}_{1}_{2}.nii.gz'.
+                                                            format(name,
+                                                                   self.subject,
+                                                                   session)))
+                    elif name == 'TrialRules':
+                        pd.Series(attribute[session]).to_hdf(join(self.out_dir,
+                                                                  '{0}_{1}_{2}_{3}.hdf'.
+                                                                  format(name,
+                                                                         self.subject,
+                                                                         session)))
 
 
 def execute(sub, ses, environment):
@@ -315,10 +342,12 @@ def execute(sub, ses, environment):
     sl.CortexEpochs()
     sl.Output(dir='Workflow/Sublevel_CortEpochs_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
     '''
-    sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
+    out_dir = 'Workflow/Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
+    sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment, out_dir=out_dir)
     sl.BehavFrames()
     sl.LinregVoxel()
-    sl.Output(dir='Workflow/Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+    sl.SingleTrialGLM()
+    sl.Output()
 
     '''
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)  # {ses: [4, 5, 6]} to only run inference
