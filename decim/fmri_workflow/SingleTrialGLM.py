@@ -129,17 +129,8 @@ class SingleTrialGLM(object):
         assert session_behav.shape[0] == session_nifti.shape[0]
         self.session_nifti = session_nifti
         self.session_behav = session_behav
-
-    def sanity_check_trial_regressors(self):
-        df = self.session_behav
-        f, ax = plt.subplots(len(df.columns), 1, figsize=(10, len(df.columns * .9)))
-        for i, col in enumerate(df.columns):
-            ax[i].plot(df[col].values)
-            ax[i].set(xticks=[], yticks=[])
-        sns.despine(bottom=True, left=True)
-        slu.mkdir_p(join(self.out_dir, 'sanity_checks'))
-        f.savefig(join(self.out_dir, 'sanity_checks',
-                       'trial_regressors_{0}_{1}.png'.format(self.subject, self.session)))
+        session_behav.to_hdf(join(self.out_dir,
+                                  'trial_regressors_{0}.hdf'.format(self.subject)), key=self.session)
 
     def single_glm(self, trial):
 
@@ -169,9 +160,18 @@ class SingleTrialGLM(object):
 def execute(subject, session, runs, flex_dir, BehavDataframe, Residuals, out_dir):
     v = SingleTrialGLM(subject, session, runs, flex_dir, BehavDataframe, Residuals, out_dir)
     v.concat_runs()
-    v.sanity_check_trial_regressors()
     v.run_GLMs()
     return v.voxel_regressions, v.rewarded_rule
+
+
+def sanity_check_trial_regressors(file, session):
+    df = pd.read_hdf(file, key=session)
+    f, ax = plt.subplots(len(df.columns), 1, figsize=(10, len(df.columns * .9)))
+    for i, col in enumerate(df.columns):
+        ax[i].plot(df[col].values)
+        ax[i].set(xticks=[], yticks=[])
+    sns.despine(bottom=True, left=True)
+    plt.show()
 
 
 '''
