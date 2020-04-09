@@ -120,8 +120,8 @@ class SubjectLevel(object):
             self.summary = pd.read_csv('/work/faty014/FLEXRULE/behavior/summary_stan_fits.csv')
         else:
             self.flex_dir = environment
-        self.out_dir = join(self.flex_dir, self.out_dir, self.subject)
-        slu.mkdir_p(out_dir)
+        self.out_dir = join(self.flex_dir, out_dir, self.subject)
+        slu.mkdir_p(self.out_dir)
 
     def __iter__(self):
         for attr, value in self.__dict__.items():
