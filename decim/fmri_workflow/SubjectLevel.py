@@ -7,6 +7,7 @@ from decim.fmri_workflow import ChoiceEpochs as ce
 from decim.fmri_workflow import LinregVoxel as lv
 from decim.fmri_workflow import SwitchEpochs as se
 from decim.fmri_workflow import CortexEpochs as cort
+from decim.fmri_workflow import SingleTrialGLM as st
 from decim.adjuvant import slurm_submit as slu
 from collections import defaultdict
 from os.path import join
@@ -263,7 +264,7 @@ class SubjectLevel(object):
             for task in set(runs.values()):
                 print(task, session)
                 rs = [r for r in runs.keys() if runs[r] == task]
-                self.SingleTrial[session], self.TrialRules[session] = lv.execute(self.subject, session, rs,
+                self.SingleTrial[session], self.TrialRules[session] = st.execute(self.subject, session, rs,
                                                                                  self.flex_dir,
                                                                                  self.BehavFrame[session], self.Residuals[session], self.out_dir)
 
