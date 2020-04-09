@@ -187,7 +187,7 @@ class SingleTrialGLM(object):
         print('fit', self.task)
         linreg.fit(behav.values, voxels.values)
         ind = np.where(behav.columns == trial)[0]
-        reg_result = [linreg.coef_[:, ind].flatten()].reshape(self.nifti_shape[0:3])
+        reg_result = linreg.coef_[:, ind].flatten().reshape(self.nifti_shape[0:3])
         new_image = nib.Nifti1Image(reg_result, affine=self.nifti_affine)
         self.voxel_regressions[trial] = new_image
 
