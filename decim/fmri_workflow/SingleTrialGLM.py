@@ -116,7 +116,7 @@ class SingleTrialGLM(object):
         session_behav = []
         for run in self.runs:
             behav = self.design_matrix(run)
-            nifti = self.Residual[run]
+            nifti = self.Residuals[run]
             self.nifti_shape = nifti.get_data().shape
             self.nifti_affine = nifti.affine
             data = nifti.get_data()
