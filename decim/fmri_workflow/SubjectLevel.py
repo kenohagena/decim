@@ -258,7 +258,7 @@ class SubjectLevel(object):
     def SingleTrialGLM(self):
         print('SingleTrialGLM')
         self.SingleTrial = defaultdict(dict)
-        self.TrialRules
+        self.TrialRules = defaultdict(dict)
         for session, runs in self.session_runs.items():
             for task in set(runs.values()):
                 print(task, session)
