@@ -278,11 +278,12 @@ class SubjectLevel(object):
                     for run in attribute[session].keys():
                         print('Saving', name, session, run)
                         if name == 'Residuals':
-                            attribute[session][run].to_filename(join(self.out_dir,
-                                                                     '{0}_{1}_{2}_{3}.nii.gz'.
-                                                                     format(name,
-                                                                            self.subject,
-                                                                            session, run)))
+                            for task, nifti in attribute[session][run].items():
+                                nifti.to_filename(join(self.out_dir,
+                                                       '{0}_{1}_{2}_{3}_{4}.nii.gz'.
+                                                       format(name,
+                                                              self.subject,
+                                                              session, run, task)))
                         else:
                             attribute[session][run].to_hdf(join(self.out_dir,
                                                                 '{0}_{1}_{2}.hdf'.
