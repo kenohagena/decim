@@ -1,15 +1,14 @@
 import numpy as np
 import pandas as pd
-from glob import glob
 from os.path import join, expanduser
 from decim.adjuvant import slurm_submit as slu
 import nibabel as nib
 from sklearn.linear_model import LinearRegression
-from collections import defaultdict
 from nilearn.image import concat_imgs
 import matplotlib as mpl
 mpl.use('Agg')
-import matplotlib.pyplot as pltimport seaborn as sns
+import matplotlib.pyplot as plt
+import seaborn as sns
 from joblib import Memory
 if expanduser('~') == '/home/faty014':
     cachedir = expanduser('/work/faty014/joblib_cache')
