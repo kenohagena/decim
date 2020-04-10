@@ -7,8 +7,9 @@ import nibabel as nib
 from sklearn.linear_model import LinearRegression
 from collections import defaultdict
 from nilearn.image import concat_imgs
-from matplotlib import pyplot as plt
-import seaborn as sns
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as pltimport seaborn as sns
 from joblib import Memory
 if expanduser('~') == '/home/faty014':
     cachedir = expanduser('/work/faty014/joblib_cache')
