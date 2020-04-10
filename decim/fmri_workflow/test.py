@@ -7,7 +7,9 @@ import nibabel as nib
 from sklearn.linear_model import LinearRegression
 from collections import defaultdict
 from pymeg import parallel as pbs
-from matplotlib import pyplot as plt
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 import seaborn as sns
 
 
