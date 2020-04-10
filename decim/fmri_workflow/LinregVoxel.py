@@ -91,13 +91,14 @@ class VoxelSubject(object):
         self.task = task
         self.info = [self.subject, self.session, self.task]
 
-    def design_matrix(self, behav):
+    def design_matrix(self, behav, f=1000):
         '''
         Make design matrix per block using Patsy
         Dummy code categorical variables.
 
         - Arguments:
             a) behavioral pd.DataFrame
+            b) f: sampling frequency
         '''
         print('load glm data...')
         combined = behav.loc[:, ['response', 'stimulus', 'switch',
@@ -105,10 +106,10 @@ class VoxelSubject(object):
                                  'LLR', 'surprise', 'onset', 'psi']]
         combined.rule_resp = combined.rule_resp.fillna(0.)
         combined.response = combined.response.fillna('missed')                  # NaNs at this point are only missed/wrong chosen answers. Only when boxcar sitmulus
-        combined = combined.set_index((combined.onset.values * 1000).
+        combined = combined.set_index((combined.onset.values * f).
                                       astype(int)).drop('onset', axis=1)
         combined = combined.\
-            reindex(pd.Index(np.arange(0, combined.index[-1] + 15000, 1)))
+            reindex(pd.Index(np.arange(0, combined.index[-1] + 15*f, 1)))
         combined.loc[0] = 0
         combined.loc[:, ['stimulus', 'response', 'switch',
                          'rule_resp', 'surprise', 'LLR']] =\
@@ -154,7 +155,7 @@ class VoxelSubject(object):
                           design_info.column_names, index=combined.index)
         for column in dm.columns:
             print('Align ', column)
-            dm[column] = make_bold(dm[column].values, dt=.001)                    # convolve with hrf
+            dm[column] = make_bold(dm[column].values, dt=1/f)                    # convolve with hrf
         dm = regular(dm, target='1900ms')
         dm.loc[pd.Timedelta(0)] = 0
         dm = dm.sort_index()
@@ -363,12 +364,12 @@ class VoxelSubject(object):
 #@memory.cache
 def execute(subject, session, runs, flex_dir, BehavDataframe, task):
     v = VoxelSubject(subject, session, runs, flex_dir, BehavDataframe, task)
-    v.input_nifti = 'T1w'                                                    # set input-identifier variable ('T1w', 'mni_retroicor', 'mni')
+    v.input_nifti = 'mni'                                                    # set input-identifier variable ('T1w', 'mni_retroicor', 'mni')
     v.concat_runs(nuisance_source=None)
     v.glm()
     v.residuals()
-    v.vol_2surf()                                                           # use when working with T1w-subject space niftis
-    # v.mni_to_fsaverage()                                                      # use when working with MNI-space niftis
+    # v.vol_2surf()                                                           # use when working with T1w-subject space niftis
+    v.mni_to_fsaverage()                                                      # use when working with MNI-space niftis
     return v.voxel_regressions, v.surface_textures, v.DesignMatrix, v.Residuals
 
 
