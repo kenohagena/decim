@@ -8,6 +8,8 @@ from decim.fmri_workflow import LinregVoxel as lv
 from decim.fmri_workflow import SwitchEpochs as se
 from decim.fmri_workflow import CortexEpochs as cort
 from decim.fmri_workflow import SingleTrialGLM as st
+from decim.fmri_workflow import Decoder as dec
+
 from decim.adjuvant import slurm_submit as slu
 from collections import defaultdict
 from os.path import join
@@ -269,6 +271,12 @@ class SubjectLevel(object):
                                                                                  self.flex_dir,
                                                                                  self.BehavFrame[session], self.Residuals[session][task], self.out_dir)
 
+    def Decode(self):
+        print('Decoder')
+        for session in self.session_runs.keys():
+            dec.execute(self.subject, session, trialbetas=self.SingleTrial[session],
+                        trialrules=self.TrialRules[session])
+
     def Output(self):
         print('Output')
         for name, attribute in self.__iter__():
@@ -349,7 +357,8 @@ def execute(sub, ses, environment):
     sl.BehavFrames()
     sl.LinregVoxel()
     sl.SingleTrialGLM()
-    sl.Output()
+    sl.Decode()
+    #sl.Output()
 
     '''
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)  # {ses: [4, 5, 6]} to only run inference
