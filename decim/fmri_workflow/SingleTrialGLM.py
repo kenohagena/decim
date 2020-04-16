@@ -113,9 +113,9 @@ class SingleTrialGLM(object):
         for run in self.runs:
             behav = self.design_matrix(run)
             nifti = self.Residuals[run]
-            self.nifti_shape = nifti.get_data().shape
+            self.nifti_shape = nifti.get_fdata().shape
             self.nifti_affine = nifti.affine
-            data = nifti.get_data()
+            data = nifti.get_fdata()
             d2 = np.stack([data[:, :, :, i].ravel() for i in range(data.
                                                                    shape[-1])])
             if len(d2) > len(behav):
@@ -163,7 +163,7 @@ class SingleTrialGLM(object):
             ax[i].plot(df[col].values)
             ax[i].set(xticks=[], yticks=[])
         sns.despine(bottom=True, left=True)
-        f.savefig(join(self.out_dir, 'trial_regressors.png'))
+        f.savefig(join(self.out_dir, 'trial_regressors_{}.png'.format(self.session_behav)))
 
 
 def execute(subject, session, runs, flex_dir, BehavDataframe, Residuals, out_dir):
@@ -194,3 +194,6 @@ s.input_nifti = 'T1w'
 s.concat_runs()
 s.run_GLMs()
 '''
+
+
+'working_version'

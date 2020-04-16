@@ -63,3 +63,6 @@ def execute(subject, session, trialbetas, trialrules):
     d.get_masks()
     for index in range(181):
         d.decode(index)
+
+
+'working_version'

@@ -400,3 +400,6 @@ def submit(sub, env='Climag'):
         for ses in [2, 3]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
                      memory=40, nodes=1, tasks=2, name='subvert_sub-{}'.format(sub))
+
+
+'working_version'
