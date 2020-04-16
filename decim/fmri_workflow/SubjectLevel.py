@@ -397,7 +397,7 @@ def submit(sub, env='Climag'):
         slu.pmap(par_execute, keys(sub), walltime='2:00:00',
                  memory=40, nodes=1, tasks=2, name='SubjectLevel')
     elif env == 'Climag':
-        for ses in [2, 3]:
+        for ses in [2]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
                      memory=40, nodes=1, tasks=2, name='subvert_sub-{}'.format(sub))
 
