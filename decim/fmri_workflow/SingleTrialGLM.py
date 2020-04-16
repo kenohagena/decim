@@ -83,7 +83,7 @@ class SingleTrialGLM(object):
         print('load glm data...')
         behav = self.BehavDataframe[run]
         rule_switches = behav.loc[behav.event == 'CHOICE_TRIAL_RESP'].reset_index()
-        trials = rule_switches
+        trials = rule_switches.onset.values
         for i in range(rule_switches.shape[0]):
             self.rewarded_rule.append(rule_switches.iloc[i].response)
         behav = behav.set_index((behav.onset.values * f).astype(int)).drop('onset', axis=1)
