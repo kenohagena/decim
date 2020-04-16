@@ -82,22 +82,16 @@ class SingleTrialGLM(object):
         '''
         print('load glm data...')
         behav = self.BehavDataframe[run]
-        rule_switches = behav.loc[behav.event == 'REWARDED_RULE_STIM'].reset_index()
-        trials = {}
+        rule_switches = behav.loc[behav.event == 'CHOICE_TRIAL_RESP'].reset_index()
+        trials = rule_switches
         for i in range(rule_switches.shape[0]):
-            start = rule_switches.iloc[i].onset
-            if i < rule_switches.shape[0] - 1:
-                end = rule_switches.iloc[i + 1].onset
-            else:
-                end = behav.iloc[-1].onset
-            trials[i] = [start, end]
-            self.rewarded_rule.append(rule_switches.iloc[i].rewarded_rule)
+            self.rewarded_rule.append(rule_switches.iloc[i].response)
         behav = behav.set_index((behav.onset.values * f).astype(int)).drop('onset', axis=1)
         behav = behav.reindex(pd.Index(np.arange(0, behav.index[-1] + 15000, 1)))
         behav.loc[0] = 0
-        for i, start_end in trials.items():
+        for onset in trials:
             behav['{0}_trial_{1}'.format(run[-1], i)] = 0
-            behav.loc[int(start_end[0] * f): int(start_end[1] * f), '{0}_trial_{1}'.format(run[-1], i)] = 1
+            behav.loc[onset * f, '{0}_trial_{1}'.format(run[-1], i)] = 1
             behav['{0}_trial_{1}'.format(run[-1], i)] = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
         trial_bolds = behav.loc[:, ['{0}_trial_{1}'.format(run[-1], i) for i in range(len(trials))]]
         dm = regular(trial_bolds, target='1900ms')
@@ -172,16 +166,6 @@ def execute(subject, session, runs, flex_dir, BehavDataframe, Residuals, out_dir
     v.run_GLMs()
     v.sanity_check_trial_regressors()
     return v.voxel_regressions, v.rewarded_rule
-
-
-def sanity_check_trial_regressors(file, session):
-    df = pd.read_hdf(file, key=session)
-    f, ax = plt.subplots(len(df.columns), 1, figsize=(10, len(df.columns) * .9))
-    for i, col in enumerate(df.columns):
-        ax[i].plot(df[col].values)
-        ax[i].set(xticks=[], yticks=[])
-    sns.despine(bottom=True, left=True)
-    plt.show()
 
 
 '''
