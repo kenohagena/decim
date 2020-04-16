@@ -275,7 +275,7 @@ class SubjectLevel(object):
         print('Decoder')
         for session in self.session_runs.keys():
             dec.execute(self.subject, session, trialbetas=self.SingleTrial[session],
-                        trialrules=self.TrialRules[session])
+                        trialrules=pd.Series(self.TrialRules[session]))
 
     def Output(self):
         print('Output')
@@ -358,7 +358,7 @@ def execute(sub, ses, environment):
     sl.LinregVoxel()
     sl.SingleTrialGLM()
     sl.Decode()
-    #sl.Output()
+    # sl.Output()
 
     '''
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)  # {ses: [4, 5, 6]} to only run inference
