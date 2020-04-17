@@ -48,6 +48,13 @@ def regular(df, target='16ms'):
     return df.resample(target).mean()
 
 
+@memory.cache
+def linregression(behavior, voxels):
+    linreg = LinearRegression()
+    linreg.fit(behavior, voxels)
+    return linreg.coef_
+
+
 class SingleTrialGLM(object):
     '''
     Initialize.
@@ -136,11 +143,10 @@ class SingleTrialGLM(object):
         voxels = voxels.fillna(0)                                               # because if voxels have std == 0 --> NaNs introduced
         behav = (behav - behav.mean()) / behav.std()
         behav = behav.fillna(0)                                                 # missed-reponse regressor can have std=0 --> NaNs introduced
-        linreg = LinearRegression()
+        coef_ = linregression(behavior=behav.values, voxels=voxels.values)
         print('fit', trial)
-        linreg.fit(behav.values, voxels.values)
         ind = np.where(behav.columns == trial)[0]
-        reg_result = linreg.coef_[:, ind].flatten().reshape(self.nifti_shape[0:3])
+        reg_result = coef_[:, ind].flatten().reshape(self.nifti_shape[0:3])
         new_image = nib.Nifti1Image(reg_result, affine=self.nifti_affine)
         self.voxel_regressions.append(new_image)
 
