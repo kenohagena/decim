@@ -96,7 +96,7 @@ class SingleTrialGLM(object):
         behav = behav.set_index((behav.onset.values * f).astype(int)).drop('onset', axis=1)
         behav = behav.reindex(pd.Index(np.arange(0, behav.index[-1] + 15000, 1)))
         behav.loc[0] = 0
-        for onset in trials:
+        for i, onset in enumerate(trials):
             behav['{0}_trial_{1}'.format(run[-1], i)] = 0
             behav.loc[onset * f, '{0}_trial_{1}'.format(run[-1], i)] = 1
             behav['{0}_trial_{1}'.format(run[-1], i)] = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
