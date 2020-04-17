@@ -102,6 +102,7 @@ class SingleTrialGLM(object):
             behav['{0}_trial_{1}'.format(run[-1], i)] = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
         trial_bolds = behav.loc[:, ['{0}_trial_{1}'.format(run[-1], i) for i in range(len(trials))]]
         dm = regular(trial_bolds, target='1900ms')
+        print('mean', dm.mean())
         dm.loc[pd.Timedelta(0)] = 0
         return dm.sort_index()
 
