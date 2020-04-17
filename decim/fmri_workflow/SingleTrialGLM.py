@@ -143,7 +143,7 @@ class SingleTrialGLM(object):
         voxels = voxels.fillna(0)                                               # because if voxels have std == 0 --> NaNs introduced
         behav = (behav - behav.mean()) / behav.std()
         behav = behav.fillna(0)                                                 # missed-reponse regressor can have std=0 --> NaNs introduced
-        coef_ = linregression(behavior=behav.values, voxels=voxels.values)
+        coef_ = linregression(behav.values, voxels.values)
         print('fit', trial)
         ind = np.where(behav.columns == trial)[0]
         reg_result = coef_[:, ind].flatten().reshape(self.nifti_shape[0:3])
