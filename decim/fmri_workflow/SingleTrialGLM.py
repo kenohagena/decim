@@ -157,7 +157,7 @@ class SingleTrialGLM(object):
             ax[i].plot(df[col].values)
             ax[i].set(xticks=[], yticks=[])
         sns.despine(bottom=True, left=True)
-        f.savefig(join(self.out_dir, 'trial_regressors_{}.png'.format(self.session_behav)))
+        f.savefig(join(self.out_dir, 'trial_regressors_{}.png'.format(self.subject)))
 
 
 def execute(subject, session, runs, flex_dir, BehavDataframe, Residuals, out_dir):
