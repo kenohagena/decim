@@ -100,6 +100,7 @@ class SingleTrialGLM(object):
         for i, onset in enumerate(trials):
             behav['{0}_trial_{1}'.format(run[-1], i)] = 0
             behav.loc[onset * f, '{0}_trial_{1}'.format(run[-1], i)] = 1
+            print(behav.loc[behav['{0}_trial_{1}'.format(run[-1], i)] != 0])
             behav['{0}_trial_{1}'.format(run[-1], i)] = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
             print(behav.loc[behav['{0}_trial_{1}'.format(run[-1], i)] != 0])
             break
