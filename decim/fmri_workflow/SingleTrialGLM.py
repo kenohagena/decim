@@ -18,7 +18,7 @@ slu.mkdir_p(cachedir)
 memory = Memory(location=cachedir, verbose=0)
 
 
-@memory.cache
+#@memory.cache
 def hrf(t):
     '''
     Compute hemodynamic response function
@@ -28,7 +28,7 @@ def hrf(t):
     return h / h.sum()
 
 
-@memory.cache
+#@memory.cache
 def make_bold(evidence, dt=0.25):
     '''
     Convolve with hemodynamic response function.
