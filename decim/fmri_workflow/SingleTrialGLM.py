@@ -103,8 +103,9 @@ class SingleTrialGLM(object):
             print(behav.loc[behav['{0}_trial_{1}'.format(run[-1], i)] != 0])
             print(np.mean(behav['{0}_trial_{1}'.format(run[-1], i)].values))
             print(np.unique(behav['{0}_trial_{1}'.format(run[-1], i)].values))
-
-            behav['{0}_trial_{1}'.format(run[-1], i)] = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
+            b = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
+            print(np.unique(b))
+            behav.loc[:, '{0}_trial_{1}'.format(run[-1], i)] = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
             print(np.mean(behav['{0}_trial_{1}'.format(run[-1], i)].values))
             print(np.unique(behav['{0}_trial_{1}'.format(run[-1], i)].values))
             print(behav.loc[behav['{0}_trial_{1}'.format(run[-1], i)] != 0])
@@ -198,3 +199,9 @@ s.run_GLMs()
 
 
 'working_version'
+p = np.zeros(600000)
+print(np.mean(p), np.unique(p))
+p[100000] = 1
+print(np.mean(p), np.unique(p))
+b = make_bold(p, dt=1 / 1000)
+print(np.mean(b), np.unique(b))
