@@ -101,12 +101,16 @@ class SingleTrialGLM(object):
             behav['{0}_trial_{1}'.format(run[-1], i)] = 0
             behav.loc[onset * f, '{0}_trial_{1}'.format(run[-1], i)] = 1
             print(behav.loc[behav['{0}_trial_{1}'.format(run[-1], i)] != 0])
+            print(np.mean(behav['{0}_trial_{1}'.format(run[-1], i)].values))
+            print(np.unique(behav['{0}_trial_{1}'.format(run[-1], i)].values))
+
             behav['{0}_trial_{1}'.format(run[-1], i)] = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
+            print(np.mean(behav['{0}_trial_{1}'.format(run[-1], i)].values))
+            print(np.unique(behav['{0}_trial_{1}'.format(run[-1], i)].values))
             print(behav.loc[behav['{0}_trial_{1}'.format(run[-1], i)] != 0])
-            break
+            assert x == 1
         trial_bolds = behav.loc[:, ['{0}_trial_{1}'.format(run[-1], i) for i in range(len(trials))]]
         print(trial_bolds.mean())
-        assert trial_bolds == 1
         dm = regular(trial_bolds, target='1900ms')
         print('mean', dm.mean())
         dm.loc[pd.Timedelta(0)] = 0
