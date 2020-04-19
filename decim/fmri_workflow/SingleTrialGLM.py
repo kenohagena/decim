@@ -99,7 +99,7 @@ class SingleTrialGLM(object):
         print(behav.head())
         for i, onset in enumerate(trials):
             behav['{0}_trial_{1}'.format(run[-1], i)] = 0
-            behav.loc[onset * f, '{0}_trial_{1}'.format(run[-1], i)] = 1
+            behav.loc[np.floor(onset * f), '{0}_trial_{1}'.format(run[-1], i)] = 1
             print(behav.loc[behav['{0}_trial_{1}'.format(run[-1], i)] != 0])
             print(np.mean(behav['{0}_trial_{1}'.format(run[-1], i)].values))
             print(np.unique(behav['{0}_trial_{1}'.format(run[-1], i)].values))
