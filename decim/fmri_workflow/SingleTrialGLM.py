@@ -103,6 +103,7 @@ class SingleTrialGLM(object):
             print(behav.loc[behav['{0}_trial_{1}'.format(run[-1], i)] != 0])
             print(np.mean(behav['{0}_trial_{1}'.format(run[-1], i)].values))
             print(np.unique(behav['{0}_trial_{1}'.format(run[-1], i)].values))
+            behav.to_hdf('/home/khagena/test.hdf', key='test')
             b = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
             print(np.unique(b))
             behav.loc[:, '{0}_trial_{1}'.format(run[-1], i)] = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
