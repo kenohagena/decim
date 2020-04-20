@@ -18,7 +18,7 @@ slu.mkdir_p(cachedir)
 memory = Memory(location=cachedir, verbose=0)
 
 
-#@memory.cache
+@memory.cache
 def hrf(t):
     '''
     Compute hemodynamic response function
@@ -28,7 +28,7 @@ def hrf(t):
     return h / h.sum()
 
 
-#@memory.cache
+@memory.cache
 def make_bold(evidence, dt=0.25):
     '''
     Convolve with hemodynamic response function.
@@ -89,7 +89,7 @@ class SingleTrialGLM(object):
         '''
         print('load glm data...')
         behav = self.BehavDataframe[run]
-        rule_switches = behav.loc[behav.event == 'CHOICE_TRIAL_RESP'].reset_index()
+        rule_switches = behav.loc[(behav.event == 'CHOICE_TRIAL_RESP') & (~behav.response.isnull())].reset_index()
         trials = rule_switches.onset.values
         for i in range(rule_switches.shape[0]):
             self.rewarded_rule.append(rule_switches.iloc[i].response)
