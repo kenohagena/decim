@@ -358,7 +358,7 @@ def execute(sub, ses, environment):
     sl.LinregVoxel()
     sl.SingleTrialGLM()
     sl.Decode()
-    # sl.Output()
+    sl.Output()
 
     '''
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)  # {ses: [4, 5, 6]} to only run inference
