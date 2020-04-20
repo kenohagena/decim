@@ -398,7 +398,7 @@ def submit(sub, env='Climag'):
                  memory=40, nodes=1, tasks=2, name='SubjectLevel')
     elif env == 'Climag':
         for ses in [2]:
-            pbs.pmap(execute, [(sub, ses, env)], walltime='4:00:00',
+            pbs.pmap(execute, [(sub, ses, env)], walltime='20:00:00',
                      memory=40, nodes=1, tasks=2, name='subvert_sub-{}'.format(sub))
 
 
