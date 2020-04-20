@@ -96,12 +96,24 @@ class SingleTrialGLM(object):
         behav = behav.set_index((behav.onset.values * f).astype(int)).drop('onset', axis=1)
         behav = behav.reindex(pd.Index(np.arange(0, behav.index[-1] + 15000, 1)))
         behav.loc[0] = 0
+        print(behav.head())
         for i, onset in enumerate(trials):
             behav['{0}_trial_{1}'.format(run[-1], i)] = 0
             behav.loc[np.floor(onset * f), '{0}_trial_{1}'.format(run[-1], i)] = 1
+            print(behav.loc[behav['{0}_trial_{1}'.format(run[-1], i)] != 0])
+            print(np.mean(behav['{0}_trial_{1}'.format(run[-1], i)].values))
+            print(np.unique(behav['{0}_trial_{1}'.format(run[-1], i)].values))
+            behav.to_hdf('/home/khagena/test.hdf', key='test')
+            b = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
+            print(np.unique(b))
             behav.loc[:, '{0}_trial_{1}'.format(run[-1], i)] = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
+            print(np.mean(behav['{0}_trial_{1}'.format(run[-1], i)].values))
+            print(np.unique(behav['{0}_trial_{1}'.format(run[-1], i)].values))
+            print(behav.loc[behav['{0}_trial_{1}'.format(run[-1], i)] != 0])
         trial_bolds = behav.loc[:, ['{0}_trial_{1}'.format(run[-1], i) for i in range(len(trials))]]
+        print(trial_bolds.mean())
         dm = regular(trial_bolds, target='1900ms')
+        print('mean', dm.mean())
         dm.loc[pd.Timedelta(0)] = 0
         return dm.sort_index()
 
