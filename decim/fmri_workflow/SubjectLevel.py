@@ -361,9 +361,9 @@ def execute(sub, ses, environment):
     for run in ['instructed_run-7', 'instructed_run-8']:
         path = join(sl.flex_dir, 'fmri', 'completed_preprocessed',
                     sl.subject, 'fmriprep', sl.subject,
-                    'ses-'.format(ses), 'func',
+                    'ses-{}'.format(ses), 'func',
                     '{0}_{1}_task-{2}_*{3}*nii.gz'.
-                    format(sl.subject, 'ses-'.format(ses), run,
+                    format(sl.subject, 'ses-{}'.format(ses), run,
                                  'space-MNI152NLin2009cAsym_preproc'))
         print(path)
         files = glob(path)
