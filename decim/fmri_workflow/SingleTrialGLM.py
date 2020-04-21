@@ -195,12 +195,3 @@ s.input_nifti = 'T1w'
 s.concat_runs()
 s.run_GLMs()
 '''
-
-
-'working_version'
-p = np.zeros(600000)
-print(np.mean(p), np.unique(p))
-p[100000] = 1
-print(np.mean(p), np.unique(p))
-b = make_bold(p, dt=1 / 1000)
-print(np.mean(b), np.unique(b))
