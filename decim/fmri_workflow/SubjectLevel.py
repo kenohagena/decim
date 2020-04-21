@@ -111,6 +111,7 @@ class SubjectLevel(object):
         self.subject = 'sub-{}'.format(sub)
         self.session = 'ses-{}'.format(ses)
         self.runs = [run_names[i - 4]for i in runs]
+        self.tasks = set([r[:-6] for r in self.runs])
         if environment == 'Volume':
             self.flex_dir = '/Volumes/flxrl/FLEXRULE'
             self.summary = pd.read_csv('/Users/kenohagena/Flexrule/fmri/analyses/bids_stan_fits/summary_stan_fits.csv')
@@ -244,7 +245,7 @@ class SubjectLevel(object):
         self.SurfaceTxt = defaultdict(dict)
         self.DesignMatrix = defaultdict(dict)
         self.Residuals = defaultdict(dict)
-        for task in ['instructed', 'inference']:
+        for task in self.tasks:
             rs = [r for r in self.runs if r[:-6] == task]
             self.VoxelReg[task], self.SurfaceTxt[task], self.DesignMatrix[task], self.Residuals[task] =\
                 lv.execute(self.subject, self.session, rs,
@@ -253,7 +254,7 @@ class SubjectLevel(object):
 
     def SingleTrialGLM(self):
         print('SingleTrialGLM')
-        for task in ['instructed', 'inference']:
+        for task in self.tasks:
             rs = [r for r in self.runs if r[:-6] == task]
             self.SingleTrial, self.TrialRules = st.execute(self.subject, self.session, rs,
                                                            self.flex_dir,
