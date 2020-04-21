@@ -9,7 +9,7 @@ from decim.fmri_workflow import SwitchEpochs as se
 from decim.fmri_workflow import CortexEpochs as cort
 from decim.fmri_workflow import SingleTrialGLM as st
 from decim.fmri_workflow import Decoder as dec
-
+import nibabel as nib
 from decim.adjuvant import slurm_submit as slu
 from collections import defaultdict
 from os.path import join
@@ -355,7 +355,17 @@ def execute(sub, ses, environment):
     out_dir = 'Workflow/Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
     sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment, out_dir=out_dir)
     sl.BehavFrames()
-    sl.LinregVoxel()
+    # sl.LinregVoxel()
+
+    sl.Residuals = defaultdict(dict)
+    for run in ['instructed_run-7', 'instructed_run-8']:
+        files = glob(join(sl.flex_dir, 'fmri', 'completed_preprocessed',
+                          sl.subject, 'fmriprep', sl.subject,
+                          'ses-'.format(ses), 'func',
+                          '{0}_{1}_task-{2}_*{3}*nii.gz'.
+                          format(sl.subject, 'ses-'.format(ses), run,
+                                 'space-MNI152NLin2009cAsym_preproc')))
+        sl.Residuals[run] = nib.load(files[0])
     sl.SingleTrialGLM()
     sl.Decode()
     sl.Output()
