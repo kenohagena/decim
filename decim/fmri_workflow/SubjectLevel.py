@@ -353,7 +353,7 @@ def execute(sub, ses, environment):
         files = glob(path)
         print(files)
         d[run] = nib.load(files[0])
-    sl.Residuals['ses-{}'.format(ses)]['instructed'] = d
+    sl.Residuals['instructed'] = d
     sl.SingleTrialGLM()
     sl.Decode()
     sl.Output()
