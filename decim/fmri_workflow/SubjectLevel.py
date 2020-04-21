@@ -358,6 +358,7 @@ def execute(sub, ses, environment):
     # sl.LinregVoxel()
 
     sl.Residuals = defaultdict(dict)
+    d = {}
     for run in ['instructed_run-7', 'instructed_run-8']:
         path = join(sl.flex_dir, 'fmri', 'completed_preprocessed',
                     sl.subject, 'fmriprep', sl.subject,
@@ -368,7 +369,8 @@ def execute(sub, ses, environment):
         print(path)
         files = glob(path)
         print(files)
-        sl.Residuals['ses-{}'.format(ses)]['instructed'][run] = nib.load(files[0])
+        d[run] = nib.load(files[0])
+    sl.Residuals['ses-{}'.format(ses)]['instructed'] = d
     sl.SingleTrialGLM()
     sl.Decode()
     sl.Output()
