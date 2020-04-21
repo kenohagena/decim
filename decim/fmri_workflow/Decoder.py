@@ -65,4 +65,4 @@ def execute(subject, session, trialbetas, trialrules):
         d.decode(index)
 
 
-'working_version'
+'working_version_motor'

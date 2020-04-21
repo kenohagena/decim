@@ -417,4 +417,4 @@ def submit(sub, env='Climag'):
                      memory=40, nodes=1, tasks=2, name='subvert_sub-{}'.format(sub))
 
 
-'working_version'
+'working_version_motor'

@@ -195,3 +195,5 @@ s.input_nifti = 'T1w'
 s.concat_runs()
 s.run_GLMs()
 '''
+
+'working_version_motor'
