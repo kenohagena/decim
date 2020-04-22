@@ -54,15 +54,14 @@ class Decoder(object):
             grid.fit(X[train], y[train])
             # print(grid.best_params_)
             aucs.append(roc_auc_score(y[test], grid.predict(X[test])))
-        print(aucs)
+        return aucs
 
 
 def execute(subject, session, trialbetas, trialrules):
     d = Decoder(subject=subject, trialbetas=trialbetas, trialrules=trialrules, session=session,
                 flex_dir='/home/khagena/FLEXRULE')
     d.get_masks()
+    decodes = {}
     for index in range(181):
-        d.decode(index)
-
-
-'working_version_motor'
+        decodes[index] = d.decode(index)
+    return pd.DataFrame(decodes).T
