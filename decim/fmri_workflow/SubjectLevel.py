@@ -262,8 +262,8 @@ class SubjectLevel(object):
 
     def Decode(self):
         print('Decoder')
-        DecodeResult = dec.execute(self.subject, self.session, trialbetas=self.SingleTrial[self.session],
-                                   trialrules=pd.Series(self.TrialRules[self.session]))
+        DecodeResult = dec.execute(self.subject, self.session, trialbetas=self.SingleTrial,
+                                   trialrules=pd.Series(self.TrialRules))
         DecodeResult.to_hdf(join(self.out_dir, '{0}_{1}.hdf'.format('Decoding', self.subject), key=self.session))
 
     def Output(self):
