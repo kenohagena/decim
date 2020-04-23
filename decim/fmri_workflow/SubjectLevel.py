@@ -336,7 +336,7 @@ def execute(sub, ses, environment):
     sl.CortexEpochs()
     sl.Output(dir='Workflow/Sublevel_CortEpochs_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
     '''
-    out_dir = 'Workflow/Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
+    out_dir = 'Workflow/Sublevel_GLM_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
     sl = SubjectLevel(sub, ses, runs=spec_subs[sub][ses], environment=environment, out_dir=out_dir)
     sl.BehavFrames()
     sl.LinregVoxel()
