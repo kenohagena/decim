@@ -89,7 +89,7 @@ spec_subs = {1: {2: [4, 5, 6, 7], 3: [4, 5, 6]},
              14: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
              15: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
              16: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
-             17: {2: [7, 8], 3: [7, 8]},
+             17: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
              18: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
              19: {2: [4, 5, 6, 7, 8], 3: [4, 5, 6, 7, 8]},
              20: {2: [4, 5, 6, 7], 3: [4, 5, 6, 7, 8]},
@@ -339,8 +339,8 @@ def execute(sub, ses, environment):
     out_dir = 'Workflow/Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
     sl = SubjectLevel(sub, ses, runs=spec_subs[sub][ses], environment=environment, out_dir=out_dir)
     sl.BehavFrames()
-    # sl.LinregVoxel()
-
+    sl.LinregVoxel()
+    '''
     sl.Residuals = defaultdict(dict)
     d = {}
     for run in ['instructed_run-7', 'instructed_run-8']:
@@ -357,6 +357,7 @@ def execute(sub, ses, environment):
     sl.Residuals['instructed'] = d
     sl.SingleTrialGLM()
     sl.Decode()
+    '''
     sl.Output()
 
     '''

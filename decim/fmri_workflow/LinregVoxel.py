@@ -109,7 +109,7 @@ class VoxelSubject(object):
         combined = combined.set_index((combined.onset.values * f).
                                       astype(int)).drop('onset', axis=1)
         combined = combined.\
-            reindex(pd.Index(np.arange(0, combined.index[-1] + 15*f, 1)))
+            reindex(pd.Index(np.arange(0, combined.index[-1] + 15 * f, 1)))
         combined.loc[0] = 0
         combined.loc[:, ['stimulus', 'response', 'switch',
                          'rule_resp', 'surprise', 'LLR']] =\
@@ -117,6 +117,7 @@ class VoxelSubject(object):
                              'rule_resp', 'surprise', 'LLR']].fillna(0)
         combined.belief = combined.belief.fillna(method='ffill')
         combined.psi = combined.psi.fillna(method='ffill')
+        combined.psi = -combined.psi                                            # psi --> uncertainty
         combined.stimulus = combined.stimulus.\
             map({-1: 'vertical', 1: 'horizontal', 0: 'none'})
         combined.response = combined.response.\
@@ -155,7 +156,7 @@ class VoxelSubject(object):
                           design_info.column_names, index=combined.index)
         for column in dm.columns:
             print('Align ', column)
-            dm[column] = make_bold(dm[column].values, dt=1/f)                    # convolve with hrf
+            dm[column] = make_bold(dm[column].values, dt=1 / f)                    # convolve with hrf
         dm = regular(dm, target='1900ms')
         dm.loc[pd.Timedelta(0)] = 0
         dm = dm.sort_index()
