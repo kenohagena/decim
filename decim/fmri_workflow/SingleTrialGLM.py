@@ -89,17 +89,23 @@ class SingleTrialGLM(object):
         '''
         print('load glm data...')
         behav = self.BehavDataframe[run]
-        rule_switches = behav.loc[(behav.event == 'CHOICE_TRIAL_RESP') & (~behav.response.isnull())].reset_index()
-        trials = rule_switches.onset.values
+        rule_switches = behav.loc[behav.event == 'REWARDED_RULE_STIM'].reset_index()
+        trials = {}
         for i in range(rule_switches.shape[0]):
-            self.rewarded_rule.append(rule_switches.iloc[i].response)
+            start = rule_switches.iloc[i].onset
+            if i < rule_switches.shape[0] - 1:
+                end = rule_switches.iloc[i + 1].onset
+            else:
+                end = behav.iloc[-1].onset
+            trials[i] = [start, end]
+            self.rewarded_rule.append(rule_switches.iloc[i].rewarded_rule)
         behav = behav.set_index((behav.onset.values * f).astype(int)).drop('onset', axis=1)
         behav = behav.reindex(pd.Index(np.arange(0, behav.index[-1] + 15000, 1)))
         behav.loc[0] = 0
-        for i, onset in enumerate(trials):
+        for i, start_end in trials.items():
             behav['{0}_trial_{1}'.format(run[-1], i)] = 0
-            behav.loc[np.floor(onset * f), '{0}_trial_{1}'.format(run[-1], i)] = 1
-            behav.loc[:, '{0}_trial_{1}'.format(run[-1], i)] = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
+            behav.loc[int(start_end[0] * f): int(start_end[1] * f), '{0}_trial_{1}'.format(run[-1], i)] = 1
+            behav['{0}_trial_{1}'.format(run[-1], i)] = make_bold(behav['{0}_trial_{1}'.format(run[-1], i)].values, dt=1 / f)
         trial_bolds = behav.loc[:, ['{0}_trial_{1}'.format(run[-1], i) for i in range(len(trials))]]
         dm = regular(trial_bolds, target='1900ms')
         dm.loc[pd.Timedelta(0)] = 0

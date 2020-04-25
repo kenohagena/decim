@@ -337,10 +337,8 @@ def execute(sub, ses, environment):
     sl.Output(dir='Workflow/Sublevel_CortEpochs_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
     '''
     out_dir = 'Workflow/Sublevel_GLM_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
-    sl = SubjectLevel(sub, ses, runs=spec_subs[sub][ses], environment=environment, out_dir=out_dir)
+    sl = SubjectLevel(sub, ses, runs=[7, 8], environment=environment, out_dir=out_dir)
     sl.BehavFrames()
-    sl.LinregVoxel()
-    '''
     sl.Residuals = defaultdict(dict)
     d = {}
     for run in ['instructed_run-7', 'instructed_run-8']:
@@ -357,7 +355,6 @@ def execute(sub, ses, environment):
     sl.Residuals['instructed'] = d
     sl.SingleTrialGLM()
     sl.Decode()
-    '''
     sl.Output()
 
     '''
@@ -397,6 +394,6 @@ def submit(sub, env='Climag'):
         slu.pmap(par_execute, keys(sub), walltime='2:00:00',
                  memory=40, nodes=1, tasks=2, name='SubjectLevel')
     elif env == 'Climag':
-        for ses in [2, 3]:
+        for ses in [2]:
             pbs.pmap(execute, [(sub, ses, env)], walltime='20:00:00',
                      memory=40, nodes=1, tasks=2, name='subvert_sub-{}'.format(sub))
