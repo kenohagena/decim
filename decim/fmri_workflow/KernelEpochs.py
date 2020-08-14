@@ -137,4 +137,4 @@ __version__ = '2.0'
 -triallocked period now 1000ms before offset and total of 4500ms
 -if rt > 2000ms choicelocked is set to np.nan
 '''
-execute('sub-17', 'ses-2', 'inference_run-4', 'inference', 'flex_dir', pd.read_hdf('/Users/kenohagena/Desktop/BehavFrame_sub-17_ses-2.hdf', key='inference_run-4'))
+#execute('sub-17', 'ses-2', 'inference_run-4', 'inference', 'flex_dir', pd.read_hdf('/Users/kenohagena/Desktop/BehavFrame_sub-17_ses-2.hdf', key='inference_run-4'))
