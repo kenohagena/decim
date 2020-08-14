@@ -9,6 +9,7 @@ from decim.fmri_workflow import SwitchEpochs as se
 from decim.fmri_workflow import CortexEpochs as cort
 from decim.fmri_workflow import SingleTrialGLM as st
 from decim.fmri_workflow import Decoder as dec
+from decim.fmri_workflow import KernelEpochs as ke
 import nibabel as nib
 from decim.adjuvant import slurm_submit as slu
 from collections import defaultdict
@@ -60,6 +61,29 @@ Example II (run only GLM):
         sl.BehavFrames()
         sl.LinregVoxel()
         sl.Output(dir='Sublevel_GLM_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
+
+
+Example III (Decoding):
+    out_dir = 'Workflow/Sublevel_GLM_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
+    sl = SubjectLevel(sub, ses, runs=[7, 8], environment=environment, out_dir=out_dir)
+    sl.BehavFrames()
+    sl.Residuals = defaultdict(dict)
+    d = {}
+    for run in ['instructed_run-7', 'instructed_run-8']:
+        path = join(sl.flex_dir, 'fmri', 'completed_preprocessed',
+                    sl.subject, 'fmriprep', sl.subject,
+                    'ses-{}'.format(ses), 'func',
+                    '{0}_{1}_task-{2}_*{3}*nii.gz'.
+                    format(sl.subject, 'ses-{}'.format(ses), run,
+                                 'space-MNI152NLin2009cAsym_preproc'))
+        print(path)
+        files = glob(path)
+        print(files)
+        d[run] = nib.load(files[0])
+    sl.Residuals['instructed'] = d
+    sl.SingleTrialGLM()
+    sl.Decode()
+    sl.Output()
 
 Comments:
 1. In the "Output" method of "SubjectLevel" i specify an ouput directory.
@@ -218,6 +242,16 @@ class SubjectLevel(object):
                              self.BehavFrame[run],
                              self.CortRois[run])
 
+    def KernEpochs(self):
+        self.KernelEpochs = defaultdict(dict)
+        for run in self.runs:
+            task = 'inference'
+            print('Do kernel epochs', self.subject, self.session, run)
+            self.KernelEpochs[run] =\
+                ke.execute(self.subject, self.session,
+                           run, task, self.flex_dir,
+                           self.BehavFrame[run])
+
     def CleanEpochs(self, epoch='Choice'):
         '''
         Concatenate runs within a Session per task.
@@ -270,7 +304,7 @@ class SubjectLevel(object):
         print('Output')
         for name, attribute in self.__iter__():
             if name in ['BehavFrame', 'BehavAligned', 'PupilFrame',
-                        'CortRois', 'BrainstemRois', 'ChoiceEpochs', 'CortexEpochs', 'Residuals', 'Sin']:
+                        'CortRois', 'BrainstemRois', 'ChoiceEpochs', 'CortexEpochs', 'KernelEpochs', 'Residuals', 'Sin']:
                 for run in attribute.keys():
                     print('Saving', name, run)
                     if name == 'Residuals':
@@ -329,53 +363,12 @@ class SubjectLevel(object):
 
 
 def execute(sub, ses, environment):
-    '''
-    sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)
-    sl.BehavFrames()
-    sl.RoiExtract(input_nifti='T1w')
-    sl.CortexEpochs()
-    sl.Output(dir='Workflow/Sublevel_CortEpochs_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
-    '''
-    out_dir = 'Workflow/Sublevel_GLM_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
-    sl = SubjectLevel(sub, ses, runs=[7, 8], environment=environment, out_dir=out_dir)
-    sl.BehavFrames()
-    sl.Residuals = defaultdict(dict)
-    d = {}
-    for run in ['instructed_run-7', 'instructed_run-8']:
-        path = join(sl.flex_dir, 'fmri', 'completed_preprocessed',
-                    sl.subject, 'fmriprep', sl.subject,
-                    'ses-{}'.format(ses), 'func',
-                    '{0}_{1}_task-{2}_*{3}*nii.gz'.
-                    format(sl.subject, 'ses-{}'.format(ses), run,
-                                 'space-MNI152NLin2009cAsym_preproc'))
-        print(path)
-        files = glob(path)
-        print(files)
-        d[run] = nib.load(files[0])
-    sl.Residuals['instructed'] = d
-    sl.SingleTrialGLM()
-    sl.Decode()
-    sl.Output()
 
-    '''
-    sl = SubjectLevel(sub, ses_runs={ses: spec_subs[sub][ses]}, environment=environment)  # {ses: [4, 5, 6]} to only run inference
+    out_dir = 'Workflow/Sublevel_KernelEpochs_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
+    sl = SubjectLevel(sub, ses, runs=[4, 5, 6], environment=environment, out_dir=out_dir)
     sl.BehavFrames()
-    sl.RoiExtract(input_nifti='mni_retroicor')
-    sl.PupilFrame = defaultdict(dict)
-    file = glob(join(sl.flex_dir, 'pupil/linear_pupilframes_manual', 'PupilFrame_sub-{0}_ses-{1}.hdf'.format(sl.sub, ses)))
-    if len(file) != 1:
-        print(len(file), ' pupil frames found...')
-    with pd.HDFStore(file[0]) as hdf:
-        k = hdf.keys()
-    for run in k:
-        sl.PupilFrame['ses-{}'.format(ses)][run[run.find('in'):]] = pd.read_hdf(file[0], key=run)
-    # sl.ChoiceEpochs()
-    sl.SwitchEpochs(mode='switch')
-    del sl.PupilFrame
-    # sl.CleanEpochs(epoch='Choice')
-    sl.CleanEpochs(epoch='Switch')
-    sl.Output(dir='Workflow/Sublevel_SwitchEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment))
-    '''
+    sl.KernEpochs()
+    sl.Output()
 
 
 def par_execute(keys):
