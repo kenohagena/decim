@@ -68,7 +68,7 @@ class Choiceframe(object):
                 df.loc[df.event == 'CHOICE_TRIAL_ONSET'].belief.values.astype(float)
             choices['rewarded_rule'] =\
                 df.loc[df.event == 'CHOICE_TRIAL_ONSET'].gen_side.values + 0.5
-        self.choice_behavior = choices
+        self.choices = choices
 
     def kernel_samples(self, parameter, log=False, zs=False):
         '''
@@ -81,7 +81,7 @@ class Choiceframe(object):
         if zs is True:
             points[parameter] = (points[parameter] - points[parameter].mean()) / points.parameter.std()
         p = []
-        for i, row in self.choice_behavior.iterrows():
+        for i, row in self.choices.iterrows():
             trial_points = points.loc[points.onset.astype('float') < row.onset]
             if len(trial_points) < self.n_samples:
                 trial_points = np.full(self.n_samples, np.nan)
@@ -89,16 +89,16 @@ class Choiceframe(object):
                 trial_points = trial_points[parameter].values[len(trial_points) - self.n_samples:len(trial_points)]
             p.append(trial_points)
         points = pd.DataFrame(p)
-        points['trial_id'] = self.choice_behavior.trial_id.values
+        points['trial_id'] = self.choices.trial_id.values
         self.kernels[parameter] = points
 
     def merge(self):
         '''
         Merge everything into one pd.MultiIndex pd.DataFrame.
         '''
-        self.choice_behavior.columns =\
+        self.choices.columns =\
             pd.MultiIndex.from_product([['behavior'], ['parameters'],
-                                        self.choice_behavior.columns],
+                                        self.choices.columns],
                                        names=['source', 'type', 'name'])
         for p in self.parameters:
             self.kernels[p].columns =\
@@ -106,7 +106,7 @@ class Choiceframe(object):
                                             list(range(self.kernels[p].shape[1] - 1)) + ['trial_id']],
                                            names=['source', 'type', 'name'])
 
-        master = pd.concat([self.kernels[p] for p in self.parameters] + [self.choice_behavior], axis=1)
+        master = pd.concat([self.kernels[p] for p in self.parameters] + [self.choices], axis=1)
         self.master = master.set_index([master.behavior.parameters.trial_id])
 
 
@@ -124,6 +124,7 @@ def execute(subject, session, run, task,
     '''
     c = Choiceframe(subject, session, run, task,
                     flex_dir, BehavFrame)
+    c.choice_behavior()
     c.kernel_samples(parameter='LLR')
     c.kernel_samples(parameter='psi', zs=True)
     c.kernel_samples(parameter='surprise', zs=True, log=True)
