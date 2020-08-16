@@ -124,9 +124,9 @@ def execute(subject, session, run, task,
     '''
     c = Choiceframe(subject, session, run, task,
                     flex_dir, BehavFrame)
-    c.kernel_samples('LLR')
-    c.kernel_samples('psi', zs=True)
-    c.kernel_samples('surprise', zs=True, log=True)
+    c.kernel_samples(parameter='LLR')
+    c.kernel_samples(parameter='psi', zs=True)
+    c.kernel_samples(parameter='surprise', zs=True, log=True)
     c.merge()
     print(c.master.behavior.surprise)
     return c.master
