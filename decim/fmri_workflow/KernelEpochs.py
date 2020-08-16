@@ -79,7 +79,7 @@ class Choiceframe(object):
         if log is True:
             points[parameter] = np.log(points[parameter])
         if zs is True:
-            points[parameter] = (points[parameter] - points[parameter].mean()) / points[parameter]std()
+            points[parameter] = (points[parameter] - points[parameter].mean()) / points[parameter].std()
         p = []
         for i, row in self.choices.iterrows():
             trial_points = points.loc[points.onset.astype('float') < row.onset]
