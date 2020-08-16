@@ -70,12 +70,16 @@ class Choiceframe(object):
                 df.loc[df.event == 'CHOICE_TRIAL_ONSET'].gen_side.values + 0.5
         self.choice_behavior = choices
 
-    def kernel_samples(self, parameter):
+    def kernel_samples(self, parameter, log=False, zs=False):
         '''
         Add last n points before choice onset.
         '''
         df = self.BehavFrame
         points = df.loc[(df.event == 'GL_TRIAL_LOCATION')]
+        if log is True:
+            points[parameter] = np.log(points[parameter])
+        if zs is True:
+            points[parameter] = (points[parameter] - points[parameter].mean()) / points.parameter.std()
         p = []
         for i, row in self.choice_behavior.iterrows():
             trial_points = points.loc[points.onset.astype('float') < row.onset]
