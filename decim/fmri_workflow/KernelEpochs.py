@@ -77,7 +77,7 @@ class Choiceframe(object):
         df = self.BehavFrame
         points = df.loc[(df.event == 'GL_TRIAL_LOCATION')]
         if log is True:
-            points[parameter] = np.log(points[parameter])
+            points.loc[1:, parameter] = np.log(points.loc[1:, parameter])                   # first surprise is 0 --> inf introduced
         if zs is True:
             points[parameter] = (points[parameter] - points[parameter].mean()) / points[parameter].std()
         p = []
