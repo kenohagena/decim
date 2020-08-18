@@ -48,7 +48,7 @@ class Choiceframe(object):
         BehavFrame.onset = BehavFrame.onset.astype(float)
         BehavFrame = BehavFrame.sort_values(by='onset')
         self.BehavFrame = BehavFrame
-        self.n_samples = 24
+        self.n_samples = 12
         self.parameters = ['LLR', 'surprise', 'psi']
         self.kernels = defaultdict()
 
