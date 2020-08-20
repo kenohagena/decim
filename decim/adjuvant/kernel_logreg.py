@@ -4,6 +4,7 @@ from decim.adjuvant import slurm_submit as slu
 from os.path import join
 from sklearn.linear_model import LogisticRegression
 from pymeg import parallel as pbs
+from scipy.special import expit
 
 
 samples = {8: '2020-08-20',
