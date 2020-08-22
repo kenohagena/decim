@@ -16,7 +16,7 @@ samples = {8: '2020-08-20',
 fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
 
 
-def regress(n, krun, out_dir):
+def regress(n, krun, C, out_dir):
     coefs = []
     for sub in range(1, 23):
         if sub == 11:
@@ -51,17 +51,18 @@ def regress(n, krun, out_dir):
                 data = data.dropna(axis=0)
                 x = data.drop('choice_probabilities', axis=1)
                 x = (x - x.mean()) / x.std()
-                l = LogisticRegression(C=1e8)
+                l = LogisticRegression(C=C)
                 l.fit(x.values, np.random.binomial(n=1, p=data.choice_probabilities))
                 coef_mean.append(l.coef_[0])
             coefs.append(pd.DataFrame(coef_mean).mean())
-    pd.DataFrame(coefs).to_hdf(join(out_dir, 'model_kernels_C=1e8.hdf'), key=str(n))
+    pd.DataFrame(coefs).to_hdf(join(out_dir, 'model_kernels_C={}.hdf'.format(C)), key=str(n))
 
 
 def submit_surface_data(glm_run):
     out_dir = join('/home/khagena/FLEXRULE/behavior/kernels')
     slu.mkdir_p(out_dir)
-    for n, run in samples.items():
-        pbs.pmap(regress, [(n, run, out_dir)],
-                 walltime='1:00:00', memory=15, nodes=1, tasks=1,
-                 name='kernels_{0}'.format(n))
+    for C in [1e-3, 1e-2, 1e-1, 1, 1e1, 1e2, 1e3, 1e8]:
+        for n, run in samples.items():
+            pbs.pmap(regress, [(n, run, C, out_dir)],
+                     walltime='1:00:00', memory=15, nodes=1, tasks=1,
+                     name='kernels_{0}'.format(n))
