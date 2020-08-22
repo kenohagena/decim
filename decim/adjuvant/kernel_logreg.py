@@ -7,13 +7,14 @@ from pymeg import parallel as pbs
 from scipy.special import expit
 
 
-samples = {8: '2020-08-20',
-           12: '2020-08-16',
-           16: '2020-08-18-c',
-           20: '2020-08-20-b',
-           24: '2020-08-16-b'}
+samples = {8: '2020-08-22--6.0',
+           12: '2020-08-22--5.0',
+           16: '2020-08-22--4.0',
+           20: '2020-08-22--3.0',
+           24: '2020-08-22--2.0'}
 
 fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
+leaky_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/Stan_Fits_Leaky_2020-08-22/new/summary_stan_fits.csv')
 
 
 def regress(n, krun, C, out_dir):
@@ -35,8 +36,8 @@ def regress(n, krun, C, out_dir):
                         try:
                             epochs = pd.read_hdf('/home/khagena/FLEXRULE/Workflow/Sublevel_KernelEpochs_Climag_{2}/sub-{0}/KernelEpochs_sub-{0}_ses-{1}.hdf'.format(sub, ses, krun),
                                                  key='inference_run-{}'.format(run))
-                            epochs['choice_probabilities'] = expit(epochs.behavior.parameters.accumulated_belief.values /
-                                                                   fits.loc[(fits.subject == 'sub-{}'.format(sub)) & (fits.session == 'ses-{}'.format(ses))].vmode.values)
+                            epochs['choice_probabilities'] = expit(epochs.behavior.parameters.accumulated_leaky_belief.values /
+                                                                   leaky_fits.loc[(leaky_fits.subject == 'sub-{}'.format(sub)) & (leaky_fits.session == 'ses-{}'.format(ses))].vmode.values)
                             e.append(epochs)
                         except FileNotFoundError:
                             print('no file', sub, ses, run)
@@ -55,7 +56,7 @@ def regress(n, krun, C, out_dir):
                 l.fit(x.values, np.random.binomial(n=1, p=data.choice_probabilities))
                 coef_mean.append(l.coef_[0])
             coefs.append(pd.DataFrame(coef_mean).mean())
-    pd.DataFrame(coefs).to_hdf(join(out_dir, 'model_kernels_C={}.hdf'.format(C)), key=str(n))
+    pd.DataFrame(coefs).to_hdf(join(out_dir, 'leaky_model_kernels_C={}.hdf'.format(C)), key=str(n))
 
 
 def submit_surface_data(glm_run):
