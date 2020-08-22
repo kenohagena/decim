@@ -67,7 +67,7 @@ class BehavDataframe(object):
         df = logs[self.run]
         H = summary.loc[(summary.subject == self.subject) &                     # Retrieve fitted H
                         (summary.session == self.session)].hmode.values[0]
-        df['belief'], df['psi'], df['LLR'], df['surprise'] =\
+        df['belief'], df['psi'], df['LLR'], df['surprise'], df['leak'] =\
             gm.belief(df, H=H, ident='event')                                   # Compute belief, LLR, surprise
         for different_H in Hs:
             df['belief_{}'.format(different_H)] = gm.belief(df, H=different_H, ident='event')[0]
@@ -111,7 +111,7 @@ class BehavDataframe(object):
         cols = ['onset', 'event', 'value',
                 'belief', 'psi', 'LLR', 'gen_side',
                 'stimulus', 'stimulus_off', 'rule_resp',
-                'trial_id', 'reward', 'rt', 'surprise'] +\
+                'trial_id', 'reward', 'rt', 'surprise', 'leak'] +\
             ['belief_{}'.format(different_H) for different_H in Hs + ['reset']]
         df = df.loc[:, cols]
         df = df.reset_index(drop=True)
