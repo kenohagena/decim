@@ -8,7 +8,7 @@ data {
     int obs_decisions[I];
 }
 parameters {
-    real<lower=0, upper=1> lambda; //Hazardrate used in glaze
+    real<lower=0, upper=1> H; //H is lambda as in leaky accumulator (--> Murphy 2020 Eq. 14)
     real<lower=1> V; //Variance used in glaze
     //real<lower=0> gen_var; //Variance used in glaze
 }
@@ -23,7 +23,7 @@ transformed parameters {
 
         for (n in (b[i]+2):b[i+1]) {
             llr = normal_lpdf(x[n] | 0.5, 1) - normal_lpdf(x[n] | -0.5, 1);
-            psi[n] = llr + (psi[n-1] * (1-lambda));
+            psi[n] = llr + (psi[n-1] * (1-H));
             }
     }
 }
