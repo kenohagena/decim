@@ -142,6 +142,7 @@ class SubjectLevel(object):
         elif environment == 'Climag':
             self.flex_dir = '/home/khagena/FLEXRULE'
             self.summary = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
+            self.leaky_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/Stan_Fits_Leaky_2020-08-22/new/summary_stan_fits.csv')
         elif environment == 'Hummel':
             self.flex_dir = '/work/faty014/FLEXRULE'
             self.summary = pd.read_csv('/work/faty014/FLEXRULE/behavior/summary_stan_fits.csv')
@@ -190,7 +191,7 @@ class SubjectLevel(object):
             try:
                 behavior_frame = bd.execute(self.subject, self.session,
                                             run, task, self.flex_dir,
-                                            self.summary, belief_TR=belief_TR)
+                                            self.summary, self.leaky_fits, belief_TR=belief_TR)
                 self.BehavFrame[run] = behavior_frame
             except RuntimeError:
                 print('Runtimeerror for', self.subject, self.session, run)

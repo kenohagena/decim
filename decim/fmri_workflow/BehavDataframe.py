@@ -62,15 +62,17 @@ class BehavDataframe(object):
         self.bids_path = join(flex_dir, 'raw', 'bids_mr_v1.2')
         self.flex_dir = flex_dir
 
-    def inference(self, summary, Hs=[]):
+    def inference(self, summary, leaky_fits, Hs=[]):
         logs = gm.load_logs_bids(self.subject, self.session, self.bids_path)    # Load data from raw directory
         df = logs[self.run]
         H = summary.loc[(summary.subject == self.subject) &                     # Retrieve fitted H
                         (summary.session == self.session)].hmode.values[0]
+        lamb = leaky_fits.loc[(summary.subject == self.subject) &                     # Retrieve fitted lambda leak for leaky acc
+                              (summary.session == self.session)].hmode.values[0]
         df['belief'], df['psi'], df['LLR'], df['surprise'], df['leak'] =\
-            gm.belief(df, H=H, ident='event')                                   # Compute belief, LLR, surprise
+            gm.belief(df, H=H, lamb=lamb, ident='event')                                   # Compute belief, LLR, surprise
         for different_H in Hs:
-            df['belief_{}'.format(different_H)] = gm.belief(df, H=different_H, ident='event')[0]
+            df['belief_{}'.format(different_H)] = gm.belief(df, H=different_H, lamb=lamb, ident='event')[0]
         df = df.loc[df.event.isin(['GL_TRIAL_LOCATION', 'GL_TRIAL_GENSIDE',
                                    'GL_TRIAL_STIM_ID', 'CHOICE_TRIAL_ONSET',
                                    'CHOICE_TRIAL_STIMOFF', 'CHOICE_TRIAL_RESP',
@@ -210,7 +212,7 @@ def realign_to_TR(behav, convolve_hrf=False, task='instructed'):
 
 
 #@memory.cache
-def execute(subject, session, run, task, flex_dir, summary, belief_TR=False):
+def execute(subject, session, run, task, flex_dir, summary, leaky_fits, belief_TR=False):
     '''
     Execute this script.
 
@@ -228,7 +230,7 @@ def execute(subject, session, run, task, flex_dir, summary, belief_TR=False):
     summary = summary
     bd = BehavDataframe(subject, session, run, flex_dir)
     if task == 'inference':
-        bd.inference(summary=summary, Hs=[0, .5, .014])
+        bd.inference(summary=summary, leaky_fits=leaky_fits, Hs=[0, .5, .014])
     elif task == 'instructed':
         bd.instructed()
     if belief_TR is True:
