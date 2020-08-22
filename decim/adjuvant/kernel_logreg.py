@@ -55,7 +55,7 @@ def regress(n, krun, out_dir):
                 l.fit(x.values, np.random.binomial(n=1, p=data.choice_probabilities))
                 coef_mean.append(l.coef_[0])
             coefs.append(pd.DataFrame(coef_mean).mean())
-    pd.DataFrame(coefs).to_hdf(join(out_dir, 'model_kernels.hdf'), key=n)
+    pd.DataFrame(coefs).to_hdf(join(out_dir, 'model_kernels.hdf'), key=str(n))
 
 
 def submit_surface_data(glm_run):
