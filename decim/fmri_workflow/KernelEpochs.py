@@ -62,6 +62,7 @@ class Choiceframe(object):
                                 'onset': df.loc[df.event == 'CHOICE_TRIAL_ONSET'].onset.values.astype(float)})
         if self.task == 'inference':
             df.belief = df.belief.fillna(method='ffill')
+            df.leak = df.leak.fillna(method='ffill')
             choices['trial_id'] =\
                 df.loc[df.event == 'CHOICE_TRIAL_ONSET'].trial_id.values.astype(int)
             choices['accumulated_belief'] =\
