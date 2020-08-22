@@ -26,7 +26,7 @@ Necessary Input files:
 class Choiceframe(object):
 
     def __init__(self, subject, session, run, task,
-                 flex_dir, BehavFrame):
+                 flex_dir, BehavFrame, n):
         '''
         Initialize
 
@@ -48,7 +48,7 @@ class Choiceframe(object):
         BehavFrame.onset = BehavFrame.onset.astype(float)
         BehavFrame = BehavFrame.sort_values(by='onset')
         self.BehavFrame = BehavFrame
-        self.n_samples = 20
+        self.n_samples = n
         self.parameters = ['LLR', 'surprise', 'psi']
         self.kernels = defaultdict()
 
@@ -66,6 +66,8 @@ class Choiceframe(object):
                 df.loc[df.event == 'CHOICE_TRIAL_ONSET'].trial_id.values.astype(int)
             choices['accumulated_belief'] =\
                 df.loc[df.event == 'CHOICE_TRIAL_ONSET'].belief.values.astype(float)
+            choices['accumulated_leaky_belief'] =\
+                df.loc[df.event == 'CHOICE_TRIAL_ONSET'].leak.values.astype(float)
             choices['rewarded_rule'] =\
                 df.loc[df.event == 'CHOICE_TRIAL_ONSET'].gen_side.values + 0.5
         self.choices = choices
@@ -112,7 +114,7 @@ class Choiceframe(object):
 
 #@memory.cache
 def execute(subject, session, run, task,
-            flex_dir, BehavFrame):
+            flex_dir, BehavFrame, n):
     '''
     Execute per subject, session, task and run.
 
@@ -123,7 +125,7 @@ def execute(subject, session, run, task,
         - extracted brainstem ROI time series pd.DataFrame
     '''
     c = Choiceframe(subject, session, run, task,
-                    flex_dir, BehavFrame)
+                    flex_dir, BehavFrame, n)
     c.choice_behavior()
     c.kernel_samples(parameter='LLR')
     c.kernel_samples(parameter='psi', zs=True)

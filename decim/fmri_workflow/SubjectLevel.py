@@ -243,7 +243,7 @@ class SubjectLevel(object):
                              self.BehavFrame[run],
                              self.CortRois[run])
 
-    def KernEpochs(self):
+    def KernEpochs(self, n):
         self.KernelEpochs = defaultdict(dict)
         for run in self.runs:
             task = 'inference'
@@ -251,7 +251,7 @@ class SubjectLevel(object):
             self.KernelEpochs[run] =\
                 ke.execute(self.subject, self.session,
                            run, task, self.flex_dir,
-                           self.BehavFrame[run])
+                           self.BehavFrame[run], n)
 
     def CleanEpochs(self, epoch='Choice'):
         '''
@@ -364,12 +364,12 @@ class SubjectLevel(object):
 
 
 def execute(sub, ses, environment):
-
-    out_dir = 'Workflow/Sublevel_KernelEpochs_{1}_{0}-b'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
-    sl = SubjectLevel(sub, ses, runs=[4, 5, 6], environment=environment, out_dir=out_dir)
-    sl.BehavFrames()
-    sl.KernEpochs()
-    sl.Output()
+    for n in np.arange(8, 28, 4):
+        out_dir = 'Workflow/Sublevel_KernelEpochs_{1}_{0}-{2}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment, n / 4 - 8)
+        sl = SubjectLevel(sub, ses, runs=[4, 5, 6], environment=environment, out_dir=out_dir)
+        sl.BehavFrames()
+        sl.KernEpochs(n=n)
+        sl.Output()
 
 
 def par_execute(keys):
