@@ -127,7 +127,7 @@ def single():
     subjects = fits.loc[fits.vmode < 2.5].subject.unique()
     out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation')
     slu.mkdir_p(out_dir)
-    for subject in subjects[0]:
+    for subject in subjects[0:2]:
         print(subject)
         V = fits.loc[fits.subject == subject].vmode.mean()
         H = fits.loc[fits.subject == subject].hmode.mean()
