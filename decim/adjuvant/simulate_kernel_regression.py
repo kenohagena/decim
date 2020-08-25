@@ -128,8 +128,9 @@ def single():
     out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation')
     slu.mkdir_p(out_dir)
     for subject in subjects[0]:
-        V = fits.loc[fits.subject == subject].vmode.values
-        H = fits.loc[fits.subject == subject].hmode.values
+        print(subject)
+        V = fits.loc[fits.subject == subject].vmode.mean()
+        H = fits.loc[fits.subject == subject].hmode.mean()
         for C in [1]:
             for n in [8]:
                 pbs.pmap(simulate_regression, [(100000, H, V, C, n, out_dir, subject)],
