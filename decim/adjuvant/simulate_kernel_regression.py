@@ -101,14 +101,14 @@ def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, sub=
     coefs.mean().to_hdf(join(out_dir, 'simulated_regression_{0}_{1}_{2}'.format(n, model_V, sub)), key=regression_C)
 
 
-def submit_surface_data(glm_run):
+def submit():
     fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
     subjects = fits.loc[fits.vmode < 2.5].subject.unique()
     out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation')
     slu.mkdir_p(out_dir)
     for subject in subjects:
-        V = fits.loc[fits.subject == subject].vmode
-        H = fits.loc[fits.subject == subject].hmode
+        V = fits.loc[fits.subject == subject].vmode.values
+        H = fits.loc[fits.subject == subject].hmode.values
         for C in [1, 1e8]:
             for n in [8, 12]:
                 pbs.pmap(simulate_regression, [(100000, H, V, C, n, out_dir, subject)],
