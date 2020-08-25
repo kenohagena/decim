@@ -98,7 +98,7 @@ def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, sub=
     coefs['V'] = model_V
     coefs['C'] = regression_C
     coefs['subject'] = sub
-    coefs.to_hdf(join(out_dir, 'simulated_regression_{0}_{1}_{2}.hdf'.format(n, model_V, sub)), key=regression_C)
+    coefs.to_hdf(join(out_dir, 'simulated_regression_{0}_{1}_{2}.hdf'.format(n, model_V, sub)), key=str(regression_C))
 
 
 def submit():
