@@ -104,7 +104,7 @@ def leaky(b_prior, lamb):
     return psi
 
 
-def belief(df, H, lamb, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='message', reset_firsts=[]):
+def belief(df, H, lamb=.1, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='message', reset_firsts=[]):
     """
     Computes Glaze belief, LLR, psi and Murphy surprise.
 

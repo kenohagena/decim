@@ -34,7 +34,7 @@ def fast_sim(x, tH=1 / 70, nodec=5, isi=35.):
 
     nodec = minimum points between decisions. Nodec points are shown, after that 'isi' determines decision probability.
     """
-    inter_choice_dists = np.cumsum(expon.rvs(scale=1 / (1 / isi), size=1000))
+    inter_choice_dists = np.cumsum(expon.rvs(scale=1 / (1 / isi), size=10000))
     inter_choice_dists = np.array([int(j + nodec + nodec * (np.where(inter_choice_dists == j)[0]))
                                    for j in inter_choice_dists])  # adds 5 (nodec) points between every decision
     inter_choice_dists = inter_choice_dists[inter_choice_dists < x]
@@ -70,6 +70,9 @@ def add_belief(df, H, gen_var=1):
     """
     glazes = glaze.belief(df, H, gen_var=gen_var)
     df['belief'] = glazes[0]
+    df['LLR'] = glazes[2]
+    df['PCP'] = glazes[3]
+    df['psi'] = glazes[1]
     return df
 
 
