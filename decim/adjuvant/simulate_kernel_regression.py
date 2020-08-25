@@ -120,3 +120,18 @@ def submit():
                 pbs.pmap(simulate_regression, [(100000, 1 / 70, V, C, n, out_dir)],
                          walltime='1:00:00', memory=15, nodes=1, tasks=1,
                          name='kernels')
+
+
+def single():
+    fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
+    subjects = fits.loc[fits.vmode < 2.5].subject.unique()
+    out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation')
+    slu.mkdir_p(out_dir)
+    for subject in subjects[0]:
+        V = fits.loc[fits.subject == subject].vmode.values
+        H = fits.loc[fits.subject == subject].hmode.values
+        for C in [1]:
+            for n in [8]:
+                pbs.pmap(simulate_regression, [(100000, H, V, C, n, out_dir, subject)],
+                         walltime='1:00:00', memory=15, nodes=1, tasks=1,
+                         name='kernels')
