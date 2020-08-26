@@ -74,7 +74,7 @@ def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, sub=
     c = Choiceframe(df, n=n)
     c.choice_behavior()
     c.kernel_samples('LLR')
-    c.kernel_samples('PCP', zs=True, log=True)
+    c.kernel_samples('PCP', zs=True)
     c.kernel_samples('psi', zs=True)
     c.merge()
     coefs = []
@@ -104,20 +104,20 @@ def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, sub=
 def submit():
     fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
     subjects = fits.loc[fits.vmode < 2.5].subject.unique()
-    out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation')
+    out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation/no_log_transform')
     slu.mkdir_p(out_dir)
     for subject in subjects:
         V = fits.loc[fits.subject == subject].vmode.mean()
         H = fits.loc[fits.subject == subject].hmode.mean()
         for C in [1, 1e8]:
             for n in [8, 12]:
-                pbs.pmap(simulate_regression, [(10000, H, V, C, n, out_dir, subject)],
+                pbs.pmap(simulate_regression, [(100000, H, V, C, n, out_dir, subject)],
                          walltime='1:00:00', memory=15, nodes=1, tasks=1,
                          name='kernels')
     for V in [1, 1.5, 2., 2.5]:
         for C in [1, 1e8]:
             for n in [8, 12]:
-                pbs.pmap(simulate_regression, [(10000, 1 / 70, V, C, n, out_dir)],
+                pbs.pmap(simulate_regression, [(100000, 1 / 70, V, C, n, out_dir)],
                          walltime='1:00:00', memory=15, nodes=1, tasks=1,
                          name='kernels')
 
