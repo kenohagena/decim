@@ -130,7 +130,7 @@ def execute(subject, session, run, task,
     c.choice_behavior()
     c.kernel_samples(parameter='LLR')
     c.kernel_samples(parameter='psi', zs=True)
-    c.kernel_samples(parameter='surprise', zs=True, log=True)
+    c.kernel_samples(parameter='surprise', zs=True, log=False)
     c.merge()
     print(c.master.behavior.surprise)
     return c.master
