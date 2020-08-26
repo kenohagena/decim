@@ -98,7 +98,7 @@ def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, sub=
     coefs['V'] = model_V
     coefs['C'] = regression_C
     coefs['subject'] = sub
-    coefs.to_hdf(join(out_dir, 'simulated_regression_{0}_{1}_{2}.hdf'.format(n, model_V, sub)), key=str(regression_C))
+    coefs.to_hdf(join(out_dir, 'simulated_regression_{0}_{1}_{2}_{3}.hdf'.format(n, model_V, sub, trials)), key=str(regression_C))
 
 
 def submit():
@@ -111,13 +111,13 @@ def submit():
         H = fits.loc[fits.subject == subject].hmode.mean()
         for C in [1, 1e8]:
             for n in [8, 12]:
-                pbs.pmap(simulate_regression, [(100000, H, V, C, n, out_dir, subject)],
+                pbs.pmap(simulate_regression, [(10000, H, V, C, n, out_dir, subject)],
                          walltime='1:00:00', memory=15, nodes=1, tasks=1,
                          name='kernels')
     for V in [1, 1.5, 2., 2.5]:
         for C in [1, 1e8]:
             for n in [8, 12]:
-                pbs.pmap(simulate_regression, [(100000, 1 / 70, V, C, n, out_dir)],
+                pbs.pmap(simulate_regression, [(10000, 1 / 70, V, C, n, out_dir)],
                          walltime='1:00:00', memory=15, nodes=1, tasks=1,
                          name='kernels')
 
