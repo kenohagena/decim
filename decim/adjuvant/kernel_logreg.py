@@ -17,8 +17,8 @@ normative_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.
 leaky_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/Stan_Fits_Leaky_2020-08-22/new/summary_stan_fits.csv')
 f = {'leak': leaky_fits,
      'normative': normative_fits}
-y = {'leak': accumulated_leaky_belief,
-     'normative': accumulated_belief}
+y = {'leak': 'accumulated_leaky_belief',
+     'normative': 'accumulated_belief'}
 
 
 def regress(n, krun, C, out_dir, mode):
