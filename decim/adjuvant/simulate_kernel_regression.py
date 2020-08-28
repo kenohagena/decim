@@ -70,7 +70,7 @@ class Choiceframe(object):
 
 def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, gen_var, sub='optimal_observer', regression_iter=1000):
 
-    df = pt.complete(pt.fast_sim(trials, gen_var=gen_var), H=model_H, V=model_V, method='inverse', gen_var=gen_var)
+    df = pt.complete(pt.fast_sim(trials, gen_var=gen_var, tH=model_H), H=model_H, V=model_V, method='inverse', gen_var=gen_var)
     c = Choiceframe(df, n=n)
     c.choice_behavior()
     c.kernel_samples('LLR')
@@ -105,7 +105,7 @@ def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, gen_
 def submit():
     fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
     subjects = fits.loc[fits.vmode < 2.5].subject.unique()
-    out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation/change_gen_H')
+    out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation/change_gen_H-2')
     slu.mkdir_p(out_dir)
     '''
     for subject in subjects:
