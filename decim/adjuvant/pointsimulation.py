@@ -46,7 +46,7 @@ def fast_sim(x, tH=1 / 70, nodec=5, isi=35., gen_var=1):
     while cnt < x:
         i = 1 + int(np.round(expon.rvs(scale=1 / tH)))
         mus.append([start] * i)
-        values.append(norm.rvs(start, gen_sigma, size=i))
+        values.append(norm.rvs(start, gen_var, size=i))
         start *= -1
         cnt += i
 
