@@ -65,7 +65,7 @@ def regress(n, krun, C, out_dir, mode):
     pd.DataFrame(coefs).to_hdf(join(out_dir, '{0}_model_kernels_C={1}.hdf'.format(mode, C)), key=str(n))
 
 
-def submit_surface_data(glm_run):
+def submit():
     out_dir = join('/home/khagena/FLEXRULE/behavior/kernels')
     slu.mkdir_p(out_dir)
     for C in [1, 1e8]:

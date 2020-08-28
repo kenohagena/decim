@@ -68,9 +68,9 @@ class Choiceframe(object):
         self.master = master.set_index([master.behavior.parameters.trial_id])
 
 
-def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, sub='optimal_observer', regression_iter=1000):
+def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, gen_var, sub='optimal_observer', regression_iter=1000):
 
-    df = pt.complete(pt.fast_sim(trials), H=model_H, V=model_V, method='inverse')
+    df = pt.complete(pt.fast_sim(trials, gen_var=gen_var), H=model_H, V=model_V, method='inverse', gen_var=gen_var)
     c = Choiceframe(df, n=n)
     c.choice_behavior()
     c.kernel_samples('LLR')
@@ -98,14 +98,16 @@ def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, sub=
     coefs['V'] = model_V
     coefs['C'] = regression_C
     coefs['subject'] = sub
-    coefs.to_hdf(join(out_dir, 'simulated_regression_{0}_{1}_{2}_{3}.hdf'.format(n, model_V, sub, trials)), key=str(regression_C))
+    coefs['gen_var'] = gen_var
+    coefs.to_hdf(join(out_dir, 'simulated_regression_{0}_{1}_{2}_{3}.hdf'.format(gen_var, model_H, sub, trials)), key=str(regression_C))
 
 
 def submit():
     fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
     subjects = fits.loc[fits.vmode < 2.5].subject.unique()
-    out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation/no_log_transform')
+    out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation/change_gen_H')
     slu.mkdir_p(out_dir)
+    '''
     for subject in subjects:
         V = fits.loc[fits.subject == subject].vmode.mean()
         H = fits.loc[fits.subject == subject].hmode.mean()
@@ -113,11 +115,12 @@ def submit():
             for n in [8, 12]:
                 pbs.pmap(simulate_regression, [(100000, H, V, C, n, out_dir, subject)],
                          walltime='1:00:00', memory=15, nodes=1, tasks=1,
-                         name='kernels')
-    for V in [1, 1.5, 2., 2.5]:
-        for C in [1, 1e8]:
-            for n in [8, 12]:
-                pbs.pmap(simulate_regression, [(100000, 1 / 70, V, C, n, out_dir)],
+                         name='kernels')\
+    '''
+    for H in [0.001, 0.01, 1 / 70, 0.08, 0.2, 0.3]:
+        for gen_sigma in [1, 0.5, 0.75, 1.25]:
+            for n in [12]:
+                pbs.pmap(simulate_regression, [(100000, H, 1, 1, n, out_dir, gen_sigma)],
                          walltime='1:00:00', memory=15, nodes=1, tasks=1,
                          name='kernels')
 

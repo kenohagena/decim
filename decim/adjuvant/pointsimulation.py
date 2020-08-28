@@ -28,7 +28,7 @@ All-in-one use:
 
 # SIMULATE POINT LOCATIONS AND DECISION POINTS
 
-def fast_sim(x, tH=1 / 70, nodec=5, isi=35.):
+def fast_sim(x, tH=1 / 70, nodec=5, isi=35., gen_var=1):
     """
     Simulates a dataset with x trials and true hazardrate tH. Does so faster.
 
@@ -46,7 +46,7 @@ def fast_sim(x, tH=1 / 70, nodec=5, isi=35.):
     while cnt < x:
         i = 1 + int(np.round(expon.rvs(scale=1 / tH)))
         mus.append([start] * i)
-        values.append(norm.rvs(start, 1, size=i))
+        values.append(norm.rvs(start, gen_sigma, size=i))
         start *= -1
         cnt += i
 

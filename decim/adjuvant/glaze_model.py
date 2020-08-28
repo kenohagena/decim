@@ -135,7 +135,7 @@ def belief(df, H, lamb=.1, gen_var=1, point_message='GL_TRIAL_LOCATION', ident='
             else:
                 belief[i] = prior(belief[i - 1], H) + LLR(value[0], sigma=gen_var)
                 psi[i] = prior(belief[i - 1], H)
-                pcp_surprise[i] = pcp(value[0], belief[i - 1], H)
+                pcp_surprise[i] = pcp(value[0], belief[i - 1], H, sigma=gen_var)
                 leak[i] = leaky(leak[i - 1], lamb) + LLR(value[0], sigma=gen_var)
     # surprise = murphy_surprise(psi, LLR(locs.values))
     return pd.Series(belief, index=locs.index), pd.Series(psi, index=locs.index), pd.Series(LLR(locs.values), index=locs.index), pd.Series(pcp_surprise, index=locs.index), pd.Series(leak, index=locs.index)
