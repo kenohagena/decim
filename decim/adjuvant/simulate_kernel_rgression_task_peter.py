@@ -57,7 +57,7 @@ def multi_trials(trials, H, V, var, dist_mean):
 
 
 def simulate_regression(trials, H, V, regression_C, n,
-                        out_dir, var, dist_mean,
+                        out_dir, var, dist_mean=.5,
                         sub='optimal_observer', regression_iter=1000, subs=20):
     su = []
     for s in range(subs):
@@ -97,7 +97,7 @@ def submit():
     slu.mkdir_p(out_dir)
 
     for H in [0.001, 0.01, 1 / 70, 0.08, 0.2, 0.3]:
-        for gen_sigma in [1, 0.5, 0.75, 1.25]:
+        for gen_sigma in [1, 0.5, 0.75, 1.25, 1.5]:
             for n in [12]:
                 for C in [1, 1e8]:
                     pbs.pmap(simulate_regression, [(5000, H, 1, C, n, out_dir, gen_sigma)],
@@ -106,16 +106,13 @@ def submit():
 
 
 def single():
-    fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
-    subjects = fits.loc[fits.vmode < 2.5].subject.unique()
-    out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation')
+    out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation/simulate_murphy_task')
     slu.mkdir_p(out_dir)
-    for subject in subjects[0:2]:
-        print(subject)
-        V = fits.loc[fits.subject == subject].vmode.mean()
-        H = fits.loc[fits.subject == subject].hmode.mean()
-        for C in [1]:
-            for n in [8]:
-                pbs.pmap(simulate_regression, [(100000, H, V, C, n, out_dir, subject)],
-                         walltime='1:00:00', memory=15, nodes=1, tasks=1,
-                         name='kernels')
+
+    for H in [1 / 70]:
+        for gen_sigma in [0.75]:
+            for n in [12]:
+                for C in [1]:
+                    pbs.pmap(simulate_regression, [(5000, H, 1, C, n, out_dir, gen_sigma)],
+                             walltime='1:00:00', memory=15, nodes=1, tasks=1,
+                             name='kernels')
