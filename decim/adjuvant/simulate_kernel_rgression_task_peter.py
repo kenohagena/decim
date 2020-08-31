@@ -18,16 +18,18 @@ def make_trial(H, V, var, dist_mean, samples=12):
             distribution = 2 * (np.random.binomial(p=.5, n=1) - 0.5) * dist_mean       # random first generative distribution
             psi = 0
             pcp = 0
+            loc = norm.rvs(distribution, var, 1)
+            LLR = gm.LLR(loc, dist_mean, -dist_mean, var)
         elif i > 0:
             if cp == 1:
                 distribution = distribution * -1
             if cp == 0:
                 distribution = distribution
             psi = gm.prior(Ln, H)[0]
+            loc = norm.rvs(distribution, var, 1)
+            LLR = gm.LLR(loc, dist_mean, -dist_mean, var)
             pcp = gm.pcp(loc, Ln, H, e_right=dist_mean,
                          e_left=-dist_mean, sigma=var)[0]
-        loc = norm.rvs(distribution, var, 1)
-        LLR = gm.LLR(loc, dist_mean, -dist_mean, var)
 
         Ln = psi + LLR
 
