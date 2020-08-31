@@ -89,7 +89,8 @@ def simulate_regression(trials, H, V, regression_C, n,
         coefs['gen_var'] = var
         coefs['dist_mean'] = dist_mean
         su.append(coefs)
-    pd.DataFrame(su).to_hdf(join(out_dir, 'sim_reg_{0}_{1}_{2}_{3}.hdf'.format(var, H, sub, trials)), key=str(regression_C))
+    su = pd.DataFrame(su)
+    su.to_hdf(join(out_dir, 'sim_reg_{0}_{1}_{2}_{3}.hdf'.format(var, H, sub, trials)), key=str(regression_C))
 
 
 def submit():
@@ -113,6 +114,6 @@ def single():
         for gen_sigma in [0.75]:
             for n in [12]:
                 for C in [1]:
-                    pbs.pmap(simulate_regression, [(5000, H, 1, C, n, out_dir, gen_sigma)],
+                    pbs.pmap(simulate_regression, [(50, H, 1, C, n, out_dir, gen_sigma)],
                              walltime='1:00:00', memory=15, nodes=1, tasks=1,
                              name='kernels')
