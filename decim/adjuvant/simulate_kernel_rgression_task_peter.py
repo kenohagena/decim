@@ -89,7 +89,7 @@ def simulate_regression(trials, H, V, regression_C, n,
         coefs['gen_var'] = var
         coefs['dist_mean'] = dist_mean
         su.append(coefs)
-    su = pd.concat(su, axis=1).T
+    su = pd.concat(su, axis=1)
     su.to_hdf(join(out_dir, 'sim_reg_{0}_{1}_{2}_{3}.hdf'.format(var, H, sub, trials)), key=str(regression_C))
 
 
