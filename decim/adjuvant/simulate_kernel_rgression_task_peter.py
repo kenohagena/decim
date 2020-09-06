@@ -65,18 +65,18 @@ def simulate_regression(trials, H, V, regression_C, n,
         coefs = []
         for i in range(regression_iter):
             llr_cpp = simulated_trials.xs('pcp', axis=1, level=1, drop_level=True).drop(0, axis=1)
-            llr_cpp = (llr_cpp - llr_cpp.values.mean()) / llr_cpp.values.std()
+            llr_cpp = ((llr_cpp.T - llr_cpp.mean(axis=1)) / llr_cpp.std(axis=1)).T
             llr_cpp = llr_cpp.multiply(simulated_trials.xs('LLR', axis=1, level=1, drop_level=True).drop(0, axis=1))
 
             llr_psi = -simulated_trials.xs('psi', axis=1, level=1, drop_level=True).abs().drop(0, axis=1)
-            llr_psi = (llr_psi - llr_psi.values.mean()) / llr_psi.values.std()
+            llr_psi = ((llr_psi.T - llr_psi.mean(axis=1)) / llr_psi.std(axis=1)).T
             llr_psi = llr_psi.multiply(simulated_trials.xs('LLR', axis=1, level=1, drop_level=True).drop(0, axis=1))
             data = pd.concat([simulated_trials.xs('LLR', axis=1, level=1, drop_level=True), llr_cpp, llr_psi, simulated_trials.loc[:, 11].choice_prob], axis=1)
 
             x = data.drop('choice_prob', axis=1)
             x = (x - x.mean()) / x.std()
 
-            logreg = LogisticRegression(C=1)
+            logreg = LogisticRegression(C=regression_C)
             logreg.fit(x.values, np.random.binomial(n=1, p=data.choice_prob))
             coefs.append(logreg.coef_[0])
         coefs = pd.DataFrame(coefs, columns=x.columns).mean()
