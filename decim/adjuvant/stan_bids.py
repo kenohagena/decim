@@ -101,16 +101,16 @@ def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
             sm = pystan.StanModel(file=model_file)
             pickle.dump(sm, open(compilefile, 'wb'))
         fit = sm.sampling(data=data, iter=5000, chains=4, n_jobs=1)
-        d = {parameter: fit.extract(parameter)[parameter]
-             for parameter in ['H', 'V']}
-        d['log_lik'] = fit.extract('log_lik')['log_lik']
-        d = pd.DataFrame(d)
+        d = pd.DataFrame({parameter: fit.extract(parameter)[parameter] for parameter in ['H', 'V']})
+        log_lik = pd.DataFrame(fit.extract()['log_lik'])
         out_dir = join(flex_dir, 'Stan_Fits_Leaky_{0}'.format(datetime.datetime.now().
                                                               strftime("%Y-%m-%d")), 'new')
         slu.mkdir_p(out_dir)
         print(out_dir)
         d.to_hdf(join(out_dir, 'sub-{0}_stanfit.hdf'.
                       format(sub)), key='ses-{}'.format(ses))
+        log_lik.to_hdf(join(out_dir, 'sub-{0}_stanfit_loglik.hdf'.
+                            format(sub)), key='ses-{}'.format(ses))
     except RuntimeError as e:
         print("No file found for subject {0}, session {1}, path {2}".
               format(sub, ses, bids_mr), e)
