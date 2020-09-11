@@ -93,8 +93,8 @@ def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
     '''
     try:
         data = stan_data_control(sub, ses, bids_mr)
-        model_file = decim.get_data('stan_models/leaky_acc.stan')
-        compilefile = join(flex_dir, 'leaky_acc.stan')
+        model_file = decim.get_data('stan_models/inv_glaze_b_fixgen_var.stan')
+        compilefile = join(flex_dir, 'inv_glaze_b_fixgen_var.stan')
         try:                                                                    # reduce memory load by only compiling the model once at the beginning
             sm = pickle.load(open(compilefile, 'rb'))
         except IOError:
@@ -103,7 +103,7 @@ def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
         fit = sm.sampling(data=data, iter=5000, chains=4, n_jobs=1)
         d = pd.DataFrame({parameter: fit.extract(parameter)[parameter] for parameter in ['H', 'V']})
         log_lik = pd.DataFrame(fit.extract()['log_lik'])
-        out_dir = join(flex_dir, 'Stan_Fits_Leaky_{0}'.format(datetime.datetime.now().
+        out_dir = join(flex_dir, 'Stan_Fits_Glaze_{0}'.format(datetime.datetime.now().
                                                               strftime("%Y-%m-%d")), 'new')
         slu.mkdir_p(out_dir)
         print(out_dir)
