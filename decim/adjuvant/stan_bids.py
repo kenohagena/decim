@@ -103,7 +103,7 @@ def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
         fit = sm.sampling(data=data, iter=5000, chains=4, n_jobs=1)
         d = {parameter: fit.extract(parameter)[parameter]
              for parameter in ['H', 'V']}
-        d['log_lik'] = fit.extract()['log_lik']
+        d['log_lik'] = fit.extract('log_lik')['log_lik']
         d = pd.DataFrame(d)
         out_dir = join(flex_dir, 'Stan_Fits_Leaky_{0}'.format(datetime.datetime.now().
                                                               strftime("%Y-%m-%d")), 'new')
