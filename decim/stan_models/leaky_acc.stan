@@ -32,6 +32,12 @@ model {
     V ~ normal(1, 50);
 
     for (i in 1:I) {
-        obs_decisions[i] ~ bernoulli(inv_logit(psi[obs_idx[i]]/V));
+        obs_decisions[i] ~ bernoulli(inv_logit(psi[obs_idx[i]]/V));   //bernoulli(inv_logit) is equivalent (more stabel, less efficient) to bernoulli_logit
+    }
+generated_quantities {
+    real log_lik[I];
+
+    for ((i in 1:I) {
+        log_lik[i] = bernoulli_logit_lpmf(obs_decisions[i] | psi[obs_idx[i]]/V);
     }
 }
