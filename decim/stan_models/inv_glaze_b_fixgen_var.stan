@@ -36,3 +36,11 @@ model {
         obs_decisions[i] ~ bernoulli(inv_logit(psi[obs_idx[i]]/V));
     }
 }
+
+generated quantities {
+    real log_lik[I];
+
+    for (i in 1:I) {
+        log_lik[i] = bernoulli_logit_lpmf(obs_decisions[i] | psi[obs_idx[i]]/V);
+    }
+}
