@@ -34,6 +34,7 @@ model {
     for (i in 1:I) {
         obs_decisions[i] ~ bernoulli(inv_logit(psi[obs_idx[i]]/V));   //bernoulli(inv_logit) is equivalent (more stabel, less efficient) to bernoulli_logit
     }
+}
 generated quantities {
     real log_lik[I];
 
