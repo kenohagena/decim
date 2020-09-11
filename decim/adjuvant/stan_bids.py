@@ -101,10 +101,12 @@ def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
             sm = pystan.StanModel(file=model_file)
             pickle.dump(sm, open(compilefile, 'wb'))
         fit = sm.sampling(data=data, iter=5000, chains=4, n_jobs=1)
-        d = pd.DataFrame({parameter: fit.extract(parameter)[parameter]
-                          for parameter in ['H', 'V']})
+        d = {parameter: fit.extract(parameter)[parameter]
+             for parameter in ['H', 'V']}
+        d['log_lik'] = fit.extract()['log_lik']
+        d = pd.DataFrame(d)
         out_dir = join(flex_dir, 'Stan_Fits_Leaky_{0}'.format(datetime.datetime.now().
-                                                        strftime("%Y-%m-%d")), 'new')
+                                                              strftime("%Y-%m-%d")), 'new')
         slu.mkdir_p(out_dir)
         print(out_dir)
         d.to_hdf(join(out_dir, 'sub-{0}_stanfit.hdf'.
@@ -146,6 +148,7 @@ def concatenate(input_dir):
     '''
     summary = []
     files = glob(join(input_dir, '*.hdf'))
+    print(len(files), 'found')
     for file in files:
         with h5py.File(file, 'r') as f:
             for key in f.keys():
