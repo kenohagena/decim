@@ -12,6 +12,7 @@ from glob import glob
 import datetime
 from decim.adjuvant import slurm_submit as slu
 from decim.adjuvant import statmisc
+from scipy.special import expit
 
 
 '''
@@ -34,6 +35,46 @@ def keys():
     for subject in subjects:
         for session in sessions:
             yield(subject, session)
+
+
+def stan_data_from_behav_frame(sub, ses, in_dir=join(flex_dir, 'Behav_DataFrames'),
+                               model='rule_resp', V=1,
+                               runs=['inference_run-4',
+                                     'inference_run-5',
+                                     'inference_run-6']):
+    lp = [0]
+    all_runs = []
+    for run in runs:
+        df = pd.read_hdf(join(in_dir, 'sub-{}'.format(sub),
+                              'BehavFrame_sub-{0}_ses-{1}.hdf'.format(sub, ses)), key=run)
+        df.loc[:, ['belief_0.014', 'leak']] =\
+            df.loc[:, ['belief_0.014', 'leak']].fillna(method='ffill')
+        df.leak = np.random.binomial(n=1, p=expit(df.leak / V))
+        df.loc[:, 'belief_0.014'] = \
+            np.random.binomial(n=1, p=expit(df.loc[:, 'belief_0.014'] / V))
+        df.rule_resp = -df.rule_resp / 2 + 1                            # in behav frames: -1 and 1 wrongly coded ---> 0 and 1
+        lp.append(df.loc[df.event == 'GL_TRIAL_LOCATION'].shape[0])                                                            # append samples per block
+        all_runs.append(df)
+    ar = pd.concat(all_runs, ignore_index=True)
+    ar = ar.loc[ar.event.isin(['GL_TRIAL_LOCATION',
+                               'CHOICE_TRIAL_RESP'])].reset_index()
+    samples = ar.loc[ar.event == 'GL_TRIAL_LOCATION'].value
+    dec = ar.loc[(ar.event == 'CHOICE_TRIAL_RESP') & (ar.value.isin(['0', '1']))]
+    obs_idx = np.searchsorted(ar.loc[ar.event == 'GL_TRIAL_LOCATION'].index,
+                              dec.index)
+
+    decisions = dec[model].values
+
+    data = {
+        'I': len(decisions),                                                # number of decisions
+        'N': len(samples.values),                                           # number of point samples
+        'obs_decisions': decisions.astype(int),                             # decisions (0 or 1)
+        'x': samples.values.astype(float),                                  # sample values
+        'obs_idx': obs_idx,                                                 # indices of decisions
+        'B': len(runs),                                                     # number of total samples
+        'b': np.cumsum(lp)                                                  # indices of new block within session (belief --> zero)
+    }
+    return data
 
 
 def stan_data_control(sub, ses, path, swap=False):
@@ -67,7 +108,7 @@ def stan_data_control(sub, ses, path, swap=False):
     decisions = decisions.dropna().astype(float)
     belief_indices = df.loc[decisions.index].index.values
     pointinds = np.array(points.index)
-    dec_indices = np.searchsorted(pointinds, belief_indices)                    # np.searchsorted looks for position where belief index would fit into pointinds
+    dec_indices = np.searchsorted(pointinds, belief_indices)                    # np.searchsorted looks for position where belief index would fit into pointinds. CAVE: indexing in Stan starts with 1
     data = {
         'I': dec_count,                                                         # number of decisions
         'N': point_count,                                                       # number of point samples
@@ -81,7 +122,8 @@ def stan_data_control(sub, ses, path, swap=False):
     return data
 
 
-def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
+def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir,
+                data_mode='participant'):
     '''
     Fit Glaze model for subject and session using Stan.
 
@@ -90,9 +132,14 @@ def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
         b) session (just number)
         c) directory of raw BIDS data set
         d) output directory
+        e)data_mode: participant, 'leak', 'belief_0.014', 'rule_resp'
     '''
     try:
-        data = stan_data_control(sub, ses, bids_mr)
+        if data_mode == 'participant':
+            data = stan_data_control(sub, ses, bids_mr)
+        else:
+            data = stan_data_from_behav_frame(sub, ses, model=data_mode)
+
         model_file = decim.get_data('stan_models/inv_glaze_b_fixgen_var.stan')
         compilefile = join(flex_dir, 'inv_glaze_b_fixgen_var.stan')
         try:                                                                    # reduce memory load by only compiling the model once at the beginning
@@ -103,8 +150,8 @@ def fit_session(sub, ses, bids_mr=bids_mr, flex_dir=flex_dir):
         fit = sm.sampling(data=data, iter=5000, chains=4, n_jobs=1)
         d = pd.DataFrame({parameter: fit.extract(parameter)[parameter] for parameter in ['H', 'V']})
         log_lik = pd.DataFrame(fit.extract()['log_lik'])
-        out_dir = join(flex_dir, 'Stan_Fits_Glaze_{0}'.format(datetime.datetime.now().
-                                                              strftime("%Y-%m-%d")), 'new')
+        out_dir = join(flex_dir, 'Stan_Fits_{0}'.format(datetime.datetime.now().
+                                                        strftime("%Y-%m-%d")), data_mode)
         slu.mkdir_p(out_dir)
         print(out_dir)
         d.to_hdf(join(out_dir, 'sub-{0}_stanfit.hdf'.
