@@ -31,13 +31,13 @@ subjects = np.array(range(1, 23))
 sessions = [1, 2, 3]
 
 
-def keys():
+def keys(mode):
     for subject in subjects:
         for session in sessions:
-            yield(subject, session)
+            yield(subject, session, mode)
 
 
-def stan_data_from_behav_frame(sub, ses, in_dir=join(flex_dir, 'Behav_DataFrames'),
+def stan_data_from_behav_frame(sub, ses, in_dir=join(flex_dir, 'behavior', 'Behav_DataFrames'),
                                model='rule_resp', V=1,
                                runs=['inference_run-4',
                                      'inference_run-5',
@@ -175,16 +175,16 @@ def par_execute(chunk):
         p.starmap(fit_session, chunk)
 
 
-def submit():
+def submit(data_mode='participant'):
     print(__version__)
-    for chunk in grouper(keys(), 6):                                            # more than 6 crashes the node
+    for chunk in grouper(keys(data_mode), 6):                                            # more than 6 crashes the node
         slu.pmap(par_execute, chunk, walltime='2:00:00',
                  memory=60, nodes=1, tasks=16, name='bids_stan')
 
 
-def submit_single(sub, ses):
+def submit_single(sub, ses, mode='participant'):
     print(__version__)
-    slu.pmap(fit_session, sub, ses, walltime='2:00:00',
+    slu.pmap(fit_session, sub, ses, mode, walltime='2:00:00',
              memory=60, nodes=1, tasks=16, name='bids_stan_sinlge')
 
 
