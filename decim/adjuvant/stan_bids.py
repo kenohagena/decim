@@ -45,7 +45,7 @@ def stan_data_from_behav_frame(sub, ses, in_dir=join(flex_dir, 'behavior', 'Beha
     lp = [0]
     all_runs = []
     for run in runs:
-        df = pd.read_hdf(join(in_dir, 'sub-{}'.format(sub),
+        df = pd.read_hdf(join(in_dir,
                               'BehavFrame_sub-{0}_ses-{1}.hdf'.format(sub, ses)), key=run)
         df.loc[:, ['belief_0.014', 'leak']] =\
             df.loc[:, ['belief_0.014', 'leak']].fillna(method='ffill')
