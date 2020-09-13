@@ -31,10 +31,10 @@ subjects = np.array(range(1, 23))
 sessions = [1, 2, 3]
 
 
-def keys(mode):
+def keys(mode, model_mode):
     for subject in subjects:
         for session in sessions:
-            yield(subject, session, mode)
+            yield(subject, session, mode, model_mode)
 
 
 def stan_data_from_behav_frame(sub, ses, in_dir=join(flex_dir, 'behavior', 'Behav_DataFrames'),
@@ -122,7 +122,7 @@ def stan_data_control(sub, ses, path, swap=False):
     return data
 
 
-def fit_session(sub, ses, data_mode='participant', bids_mr=bids_mr, flex_dir=flex_dir):
+def fit_session(sub, ses, data_mode='participant', model_mode='glaze', bids_mr=bids_mr, flex_dir=flex_dir):
     '''
     Fit Glaze model for subject and session using Stan.
 
@@ -133,14 +133,18 @@ def fit_session(sub, ses, data_mode='participant', bids_mr=bids_mr, flex_dir=fle
         d) output directory
         e)data_mode: participant, 'leak', 'belief_0.014', 'rule_resp'
     '''
+    if model_mode == 'glaze':
+        file = 'inv_glaze_b_fixgen_var'
+    elif model_mode == 'leak':
+        file = 'leaky_acc'
     try:
         if data_mode == 'participant':
             data = stan_data_control(sub, ses, bids_mr)
         else:
             data = stan_data_from_behav_frame(sub, ses, model=data_mode)
 
-        model_file = decim.get_data('stan_models/inv_glaze_b_fixgen_var.stan')
-        compilefile = join(flex_dir, 'inv_glaze_b_fixgen_var.stan')
+        model_file = decim.get_data('stan_models/{}.stan'.format(file))
+        compilefile = join(flex_dir, '{}.stan'.format(file))
         try:                                                                    # reduce memory load by only compiling the model once at the beginning
             sm = pickle.load(open(compilefile, 'rb'))
         except IOError:
@@ -150,7 +154,7 @@ def fit_session(sub, ses, data_mode='participant', bids_mr=bids_mr, flex_dir=fle
         d = pd.DataFrame({parameter: fit.extract(parameter)[parameter] for parameter in ['H', 'V']})
         log_lik = pd.DataFrame(fit.extract()['log_lik'])
         out_dir = join(flex_dir, 'Stan_Fits_{0}'.format(datetime.datetime.now().
-                                                        strftime("%Y-%m-%d")), data_mode)
+                                                        strftime("%Y-%m-%d")), data_mode, model_mode)
         slu.mkdir_p(out_dir)
         print(out_dir)
         d.to_hdf(join(out_dir, 'sub-{0}_stanfit.hdf'.
@@ -174,16 +178,16 @@ def par_execute(chunk):
         p.starmap(fit_session, chunk)
 
 
-def submit(data_mode='participant'):
+def submit(data_mode='participant', model_mode='glaze'):
     print(__version__)
-    for chunk in grouper(keys(data_mode), 6):                                            # more than 6 crashes the node
+    for chunk in grouper(keys(data_mode, model_mode), 6):                                            # more than 6 crashes the node
         slu.pmap(par_execute, chunk, walltime='2:00:00',
                  memory=60, nodes=1, tasks=16, name='bids_stan')
 
 
-def submit_single(sub, ses, mode='participant'):
+def submit_single(sub, ses, mode='participant', model_mode='glaze'):
     print(__version__)
-    slu.pmap(fit_session, sub, ses, mode, walltime='2:00:00',
+    slu.pmap(fit_session, sub, ses, mode, model_mode, walltime='2:00:00',
              memory=60, nodes=1, tasks=16, name='bids_stan_sinlge')
 
 
