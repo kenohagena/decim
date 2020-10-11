@@ -10,6 +10,8 @@ from decim.fmri_workflow import CortexEpochs as cort
 from decim.fmri_workflow import SingleTrialGLM as st
 from decim.fmri_workflow import Decoder as dec
 from decim.fmri_workflow import KernelEpochs as ke
+from decim.fmri_workflow import AlternativeModel as am
+
 import nibabel as nib
 from decim.adjuvant import slurm_submit as slu
 from collections import defaultdict
@@ -253,6 +255,16 @@ class SubjectLevel(object):
                            run, task, self.flex_dir,
                            self.BehavFrame[run], n)
 
+    def AltModel(self):
+        self.AlternativeModel = defaultdict(dict)
+        for run in self.runs:
+            task = 'inference'
+            print('Do alternative model', self.subject, self.session, run)
+            self.AlternativeModel[run] =\
+                am.execute(self.subject, self.session,
+                           run, task, self.flex_dir,
+                           self.BehavFrame[run], n=2)
+
     def CleanEpochs(self, epoch='Choice'):
         '''
         Concatenate runs within a Session per task.
@@ -305,7 +317,7 @@ class SubjectLevel(object):
         print('Output')
         for name, attribute in self.__iter__():
             if name in ['BehavFrame', 'BehavAligned', 'PupilFrame',
-                        'CortRois', 'BrainstemRois', 'ChoiceEpochs', 'CortexEpochs', 'KernelEpochs', 'Residuals', 'Sin']:
+                        'CortRois', 'BrainstemRois', 'ChoiceEpochs', 'CortexEpochs', 'KernelEpochs', 'Residuals', 'Sin', 'AlternativeModel']:
                 for run in attribute.keys():
                     print('Saving', name, run)
                     if name == 'Residuals':
@@ -368,7 +380,7 @@ def execute(sub, ses, environment):
         out_dir = 'Workflow/Sublevel_KernelEpochs_{1}_{0}-{2}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment, n / 4 - 8)
         sl = SubjectLevel(sub, ses, runs=[4, 5, 6], environment=environment, out_dir=out_dir)
         sl.BehavFrames()
-        sl.KernEpochs(n=n)
+        sl.AltModel()
         sl.Output()
 
 
