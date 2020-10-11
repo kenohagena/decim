@@ -376,12 +376,11 @@ class SubjectLevel(object):
 
 
 def execute(sub, ses, environment):
-    for n in np.arange(8, 28, 4):
-        out_dir = 'Workflow/Sublevel_KernelEpochs_{1}_{0}-{2}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment, n / 4 - 8)
-        sl = SubjectLevel(sub, ses, runs=[4, 5, 6], environment=environment, out_dir=out_dir)
-        sl.BehavFrames()
-        sl.AltModel()
-        sl.Output()
+    out_dir = 'Workflow/Sublevel_KernelEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
+    sl = SubjectLevel(sub, ses, runs=[4, 5, 6], environment=environment, out_dir=out_dir)
+    sl.BehavFrames()
+    sl.AltModel()
+    sl.Output()
 
 
 def par_execute(keys):
