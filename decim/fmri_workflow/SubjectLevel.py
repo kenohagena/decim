@@ -251,7 +251,7 @@ class SubjectLevel(object):
         for run in self.runs:
             task = run[:-6]
             print('Do cort epochs', self.subject, self.session, run)
-            self.CortexEpochs[run] =\
+            self.SampleCortexEpochs[run] =\
                 samplecort.execute(self.subject, self.session,
                                    run, task, self.flex_dir,
                                    self.BehavFrame[run],
