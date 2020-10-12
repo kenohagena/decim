@@ -7,6 +7,7 @@ from decim.fmri_workflow import ChoiceEpochs as ce
 from decim.fmri_workflow import LinregVoxel as lv
 from decim.fmri_workflow import SwitchEpochs as se
 from decim.fmri_workflow import CortexEpochs as cort
+from decim.fmri_workflow import SampleCortexEpochs as samplecort
 from decim.fmri_workflow import SingleTrialGLM as st
 from decim.fmri_workflow import Decoder as dec
 from decim.fmri_workflow import KernelEpochs as ke
@@ -245,6 +246,17 @@ class SubjectLevel(object):
                              self.BehavFrame[run],
                              self.CortRois[run])
 
+    def SampleCortexEpochs(self):
+        self.SampleCortexEpochs = defaultdict(dict)
+        for run in self.runs:
+            task = run[:-6]
+            print('Do cort epochs', self.subject, self.session, run)
+            self.CortexEpochs[run] =\
+                samplecort.execute(self.subject, self.session,
+                                   run, task, self.flex_dir,
+                                   self.BehavFrame[run],
+                                   self.CortRois[run])
+
     def KernEpochs(self, n):
         self.KernelEpochs = defaultdict(dict)
         for run in self.runs:
@@ -317,7 +329,7 @@ class SubjectLevel(object):
         print('Output')
         for name, attribute in self.__iter__():
             if name in ['BehavFrame', 'BehavAligned', 'PupilFrame',
-                        'CortRois', 'BrainstemRois', 'ChoiceEpochs', 'CortexEpochs', 'KernelEpochs', 'Residuals', 'Sin', 'AlternativeModel']:
+                        'CortRois', 'BrainstemRois', 'ChoiceEpochs', 'CortexEpochs', 'SampleCortexEpochs', 'KernelEpochs', 'Residuals', 'Sin', 'AlternativeModel']:
                 for run in attribute.keys():
                     print('Saving', name, run)
                     if name == 'Residuals':
@@ -376,10 +388,11 @@ class SubjectLevel(object):
 
 
 def execute(sub, ses, environment):
-    out_dir = 'Workflow/Sublevel_KernelEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
+    out_dir = 'Workflow/Sublevel_SampleEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
     sl = SubjectLevel(sub, ses, runs=[4, 5, 6], environment=environment, out_dir=out_dir)
     sl.BehavFrames()
-    sl.AltModel()
+    sl.RoiExtract()
+    sl.SampleCortexEpochs()
     sl.Output()
 
 
