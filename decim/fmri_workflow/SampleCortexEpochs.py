@@ -85,7 +85,7 @@ class Choiceframe(object):
                                 'surprise': df.loc[df.event == 'GL_TRIAL_LOCATION', 'surprise'].values.astype(float),
                                 'onset': df.loc[df.event == 'GL_TRIAL_LOCATION'].onset.values.astype(float)})
         choices['trial_id'] =\
-            df.loc[df.event == 'CHOICE_TRIAL_ONSET'].trial_id.values.astype(int)
+            df.loc[df.event == 'GL_TRIAL_LOCATION'].trial_id.values.astype(int)
 
         choices = choices.iloc[50:-50]
 
