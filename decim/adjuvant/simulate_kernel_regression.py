@@ -159,9 +159,10 @@ def single():
     for subject in subjects[0:2]:
         V = fits.loc[fits.subject == subject].vmode.mean()
         H = fits.loc[fits.subject == subject].hmode.mean()
+        gen_sigma = 0.75
         for C in [1]:
             for n in [8]:
                 print(subject, n, C, V, H, out_dir)
-                pbs.pmap(simulate_regression, [(100000, H, V, C, n, out_dir, subject)],
+                pbs.pmap(simulate_regression, [(100000, H, V, C, n, out_dir, gen_sigma)],
                          walltime='1:00:00', memory=15, nodes=1, tasks=1,
                          name='kernels')
