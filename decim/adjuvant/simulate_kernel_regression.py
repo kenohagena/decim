@@ -67,9 +67,11 @@ class Choiceframe(object):
             else:
                 trial_points = trial_points['psi'].values[len(trial_points) - self.n_samples]
             p.append(trial_points)
-        points = pd.Series(p)
-        points['trial_id'] = self.choices.trial_id.values
-        self.kernels['prev_psi'] = points
+        pp = pd.DataFrame(columns=['prev_psi', 'trial_id'])
+
+        pp['prev_psi'] = pd.Series(p)
+        pp['trial_id'] = self.choices.trial_id.values
+        self.kernels['prev_psi'] = pp
 
     def merge(self):
         '''
