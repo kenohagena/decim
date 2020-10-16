@@ -81,7 +81,7 @@ class Choiceframe(object):
                                        names=['source', 'type', 'name'])
         self.kernels.prev_psi.columns =\
             pd.MultiIndex.from_product([['behavior'], ['prev_psi'],
-                                        self.choices.columns],
+                                        self.kernels.prev_psi.columns],
                                        names=['source', 'type', 'name'])
         for p in self.parameters:
             self.kernels[p].columns =\
