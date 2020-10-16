@@ -3,6 +3,8 @@ import numpy as np
 from os.path import join, expanduser
 from glob import glob
 from sklearn.linear_model import LogisticRegression
+import datetime
+
 
 from decim.adjuvant import slurm_submit as slu
 from collections import defaultdict
@@ -50,6 +52,25 @@ class Choiceframe(object):
         points['trial_id'] = self.choices.trial_id.values
         self.kernels[parameter] = points
 
+    def prev_psi(self):
+        '''
+        Add last n points before choice onset.
+        '''
+        df = self.BehavFrame
+        points = df.loc[(df.message == 'GL_TRIAL_LOCATION')]
+        points['psi'] = (points['psi'] - points['psi'].mean()) / points['psi'].std()
+        p = []
+        for i, row in self.choices.iterrows():
+            trial_points = points.loc[points.index.astype('float') < row.trial_id]
+            if len(trial_points) < self.n_samples:
+                trial_points = np.full(self.n_samples, np.nan)
+            else:
+                trial_points = trial_points['psi'].values[len(trial_points) - self.n_samples]
+            p.append(trial_points)
+        points = pd.Series(p)
+        points['trial_id'] = self.choices.trial_id.values
+        self.kernels['psi'] = points
+
     def merge(self):
         '''
         Merge everything into one pd.MultiIndex pd.DataFrame.
@@ -58,13 +79,17 @@ class Choiceframe(object):
             pd.MultiIndex.from_product([['behavior'], ['parameters'],
                                         self.choices.columns],
                                        names=['source', 'type', 'name'])
+        self.kernels.prev_psi.columns =\
+            pd.MultiIndex.from_product([['behavior'], ['prev_psi'],
+                                        self.choices.columns],
+                                       names=['source', 'type', 'name'])
         for p in self.parameters:
             self.kernels[p].columns =\
                 pd.MultiIndex.from_product([['behavior'], [p],
                                             list(range(self.kernels[p].shape[1] - 1)) + ['trial_id']],
                                            names=['source', 'type', 'name'])
 
-        master = pd.concat([self.kernels[p] for p in self.parameters] + [self.choices], axis=1)
+        master = pd.concat([self.kernels[p] for p in self.parameters] + [self.choices] + [self.kernels.prev_psi], axis=1)
         self.master = master.set_index([master.behavior.parameters.trial_id])
 
 
@@ -76,6 +101,7 @@ def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, gen_
     c.kernel_samples('LLR')
     c.kernel_samples('PCP', zs=True)
     c.kernel_samples('psi', zs=True)
+    c.prev_psi()
     c.merge()
     coefs = []
     for i in range(regression_iter):
@@ -105,7 +131,7 @@ def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, gen_
 def submit():
     fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
     subjects = fits.loc[fits.vmode < 2.5].subject.unique()
-    out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation/change_gen_H-2')
+    out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation/KernelSimulation_{}'.format(datetime.datetime.now().strftime("%Y-%m-%d")))
     slu.mkdir_p(out_dir)
     '''
     for subject in subjects:
@@ -117,8 +143,8 @@ def submit():
                          walltime='1:00:00', memory=15, nodes=1, tasks=1,
                          name='kernels')\
     '''
-    for H in [0.001, 0.01, 1 / 70, 0.08, 0.2, 0.3]:
-        for gen_sigma in [1, 0.5, 0.75, 1.25]:
+    for H in [1 / 70, 0.08]:
+        for gen_sigma in [0.75, 1.25]:
             for n in [12]:
                 pbs.pmap(simulate_regression, [(100000, H, 1, 1, n, out_dir, gen_sigma)],
                          walltime='1:00:00', memory=15, nodes=1, tasks=1,
@@ -128,7 +154,7 @@ def submit():
 def single():
     fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
     subjects = fits.loc[fits.vmode < 2.5].subject.unique()
-    out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation')
+    out_dir = join('/home/khagena/FLEXRULE/behavior/kernel_simulation/KernelSimulation_{}'.format(datetime.datetime.now().strftime("%Y-%m-%d")))
     slu.mkdir_p(out_dir)
     for subject in subjects[0:2]:
         print(subject)
