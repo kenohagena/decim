@@ -95,7 +95,7 @@ class Choiceframe(object):
         self.master = master.set_index([master.behavior.parameters.trial_id])
 
 
-def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, gen_var, sub='optimal_observer', regression_iter=1000):
+def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, gen_var, psi=True, sub='optimal_observer', regression_iter=1000):
 
     df = pt.complete(pt.fast_sim(trials, gen_var=gen_var, tH=model_H), H=model_H, V=model_V, method='inverse', gen_var=gen_var)
     c = Choiceframe(df, n=n)
@@ -112,7 +112,10 @@ def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, gen_
         llr_cpp = llr_cpp.rename(columns={i: 'cpp{0}'.format(i) for i in llr_cpp.columns})
         llr_psi = -epochs.behavior.psi.drop('trial_id', axis=1).abs().multiply(epochs.behavior.LLR.drop('trial_id', axis=1))
         llr_psi = llr_psi.rename(columns={i: 'psi{0}'.format(i) for i in llr_psi.columns})
-        data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), epochs.behavior.prev_psi.prev_psi, llr_cpp, llr_psi, epochs.behavior.parameters.choice_probability], axis=1)
+        if psi is True:
+            data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), epochs.behavior.prev_psi.prev_psi, llr_cpp, llr_psi, epochs.behavior.parameters.choice_probability], axis=1)
+        elif psi is False:
+            data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.behavior.parameters.choice_probability], axis=1)
         data = data.dropna(axis=0)
         x = data.drop('choice_probability', axis=1)
         x = (x - x.mean()) / x.std()
@@ -127,7 +130,8 @@ def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, gen_
     coefs['C'] = regression_C
     coefs['subject'] = sub
     coefs['gen_var'] = gen_var
-    coefs.to_hdf(join(out_dir, 'simulated_regression_{0}_{1}_{2}_{3}.hdf'.format(gen_var, model_H, sub, trials)), key=str(regression_C))
+    coefs['previous_psi'] = psi
+    coefs.to_hdf(join(out_dir, 'simulated_regression_{0}_{1}_{2}_{3}_psi-{4}.hdf'.format(gen_var, model_H, sub, trials, psi)), key=str(regression_C))
 
 
 def submit():
@@ -148,9 +152,10 @@ def submit():
     for H in [1 / 70, 0.08]:
         for gen_sigma in [0.75, 1.25]:
             for n in [12]:
-                pbs.pmap(simulate_regression, [(100000, H, 1, 1, n, out_dir, gen_sigma)],
-                         walltime='1:00:00', memory=15, nodes=1, tasks=1,
-                         name='kernels')
+                for psi in [False, True]:
+                    pbs.pmap(simulate_regression, [(100000, H, 1, 1, n, out_dir, gen_sigma, psi)],
+                             walltime='1:00:00', memory=15, nodes=1, tasks=1,
+                             name='kernels')
 
 
 def single():
