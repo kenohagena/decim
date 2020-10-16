@@ -69,7 +69,7 @@ class Choiceframe(object):
             p.append(trial_points)
         points = pd.Series(p)
         points['trial_id'] = self.choices.trial_id.values
-        self.kernels['psi'] = points
+        self.kernels['prev_psi'] = points
 
     def merge(self):
         '''
