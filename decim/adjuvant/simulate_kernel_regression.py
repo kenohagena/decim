@@ -79,9 +79,9 @@ class Choiceframe(object):
             pd.MultiIndex.from_product([['behavior'], ['parameters'],
                                         self.choices.columns],
                                        names=['source', 'type', 'name'])
-        self.kernels.prev_psi.columns =\
+        self.kernels['prev_psi'].columns =\
             pd.MultiIndex.from_product([['behavior'], ['prev_psi'],
-                                        self.kernels.prev_psi.columns],
+                                        self.kernels['prev_psi'].columns],
                                        names=['source', 'type', 'name'])
         for p in self.parameters:
             self.kernels[p].columns =\
@@ -89,7 +89,7 @@ class Choiceframe(object):
                                             list(range(self.kernels[p].shape[1] - 1)) + ['trial_id']],
                                            names=['source', 'type', 'name'])
 
-        master = pd.concat([self.kernels[p] for p in self.parameters] + [self.choices] + [self.kernels.prev_psi], axis=1)
+        master = pd.concat([self.kernels[p] for p in self.parameters] + [self.choices] + [self.kernels['prev_psi']], axis=1)
         self.master = master.set_index([master.behavior.parameters.trial_id])
 
 
