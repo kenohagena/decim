@@ -391,8 +391,7 @@ def execute(sub, ses, environment):
     out_dir = 'Workflow/Sublevel_SampleEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
     sl = SubjectLevel(sub, ses, runs=[4, 5, 6], environment=environment, out_dir=out_dir)
     sl.BehavFrames()
-    sl.RoiExtract()
-    sl.SampleCortexEpochs()
+    sl.KernEpochs()
     sl.Output()
 
 
