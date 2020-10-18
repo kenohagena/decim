@@ -134,7 +134,7 @@ class Choiceframe(object):
 
 #@memory.cache
 def execute(subject, session, run, task,
-            flex_dir, BehavFrame, n):
+            flex_dir, BehavFrame, n=12):
     '''
     Execute per subject, session, task and run.
 
