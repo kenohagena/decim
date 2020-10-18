@@ -12,14 +12,7 @@ slu.mkdir_p(cachedir)
 memory = Memory(cachedir=cachedir, verbose=0)
 
 '''
-Extract pupil, behavioral and ROI time series data per choice epoch and build a gigantic pd.MultiIndex DataFrame
-
-1. Extract behavioral parameters per choice trial ("choice_behavior")
-    a) response, rule_response, stimulus, reward, accumulated belief
-2. Extract LLR, CPP and psi of n (default=12) last samples.
-
-Necessary Input files:
-    - preprocessed behavioral pd.DAtaFrame
+CAVE: check in execute if z-scoring of psi and pcp and log of pcp is set (if intended...)
 '''
 
 
@@ -95,6 +88,28 @@ class Choiceframe(object):
         points['trial_id'] = self.choices.trial_id.values
         self.kernels[parameter] = points
 
+    def prev_psi(self, zs=True):
+        '''
+        Add last n points before choice onset.
+        '''
+        df = self.BehavFrame
+        points = df.loc[(df.event == 'GL_TRIAL_LOCATION')]
+        points['psi'] = (points['psi'] - points['psi'].mean()) / points['psi'].std()
+        if zs is True:
+            points['psi'] = (points['psi'] - points['psi'].mean()) / points['psi'].std()
+        p = []
+        for i, row in self.choices.iterrows():
+            trial_points = points.loc[points.index.astype('float') < row.trial_id]
+            if len(trial_points) < self.n_samples:
+                trial_points = np.full(self.n_samples, np.nan)
+            else:
+                trial_points = trial_points['psi'].values[len(trial_points) - self.n_samples]
+            p.append(trial_points)
+        pp = pd.DataFrame(columns=['prev_psi', 'trial_id'])
+        pp['prev_psi'] = pd.Series(p)
+        pp['trial_id'] = self.choices.trial_id.values
+        self.kernels['prev_psi'] = pp
+
     def merge(self):
         '''
         Merge everything into one pd.MultiIndex pd.DataFrame.
@@ -103,13 +118,17 @@ class Choiceframe(object):
             pd.MultiIndex.from_product([['behavior'], ['parameters'],
                                         self.choices.columns],
                                        names=['source', 'type', 'name'])
+        self.kernels['prev_psi'].columns =\
+            pd.MultiIndex.from_product([['behavior'], ['prev_psi'],
+                                        self.kernels['prev_psi'].columns],
+                                       names=['source', 'type', 'name'])
         for p in self.parameters:
             self.kernels[p].columns =\
                 pd.MultiIndex.from_product([['behavior'], [p],
                                             list(range(self.kernels[p].shape[1] - 1)) + ['trial_id']],
                                            names=['source', 'type', 'name'])
 
-        master = pd.concat([self.kernels[p] for p in self.parameters] + [self.choices], axis=1)
+        master = pd.concat([self.kernels[p] for p in self.parameters] + [self.choices] + [self.kernels['prev_psi']], axis=1)
         self.master = master.set_index([master.behavior.parameters.trial_id])
 
 
@@ -130,7 +149,8 @@ def execute(subject, session, run, task,
     c.choice_behavior()
     c.kernel_samples(parameter='LLR')
     c.kernel_samples(parameter='psi', zs=True)
-    c.kernel_samples(parameter='surprise', zs=True, log=False)
+    c.kernel_samples(parameter='surprise', zs=True, log=True)
+    c.prev_psi(zs=True)
     c.merge()
     print(c.master.behavior.surprise)
     return c.master
@@ -145,4 +165,4 @@ __version__ = '2.0'
 -triallocked period now 1000ms before offset and total of 4500ms
 -if rt > 2000ms choicelocked is set to np.nan
 '''
-#execute('sub-17', 'ses-2', 'inference_run-4', 'inference', 'flex_dir', pd.read_hdf('/Users/kenohagena/Desktop/BehavFrame_sub-17_ses-2.hdf', key='inference_run-4'))
+execute('sub-17', 'ses-2', 'inference_run-4', 'inference', 'flex_dir', pd.read_hdf('/Users/kenohagena/Desktop/BehavFrame_sub-17_ses-2.hdf', key='inference_run-4'), n=12)
