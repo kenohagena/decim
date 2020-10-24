@@ -11,7 +11,8 @@ samples = {8: '2020-08-26--6.0',
            12: '2020-08-26--5.0',
            16: '2020-08-26--4.0',
            20: '2020-08-26--3.0',
-           24: '2020-08-26--2.0'}
+           24: '2020-08-26--2.0',
+           'psi': '2020-10-18'}
 
 normative_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
 leaky_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/Stan_Fits_Leaky_2020-08-22/new/summary_stan_fits.csv')
@@ -68,9 +69,11 @@ def regress(n, krun, C, out_dir, mode):
 def submit():
     out_dir = join('/home/khagena/FLEXRULE/behavior/kernels')
     slu.mkdir_p(out_dir)
-    for C in [1, 1e8]:
-        for n, run in samples.items():
-            for mode in ['leak', 'normative']:
-                pbs.pmap(regress, [(n, run, C, out_dir, mode)],
-                         walltime='1:00:00', memory=15, nodes=1, tasks=1,
-                         name='kernels_{0}'.format(n))
+    C = 1
+    n = 12
+    run = samples['psi']
+
+    for mode in ['leak', 'normative']:
+        pbs.pmap(regress, [(n, run, C, out_dir, mode)],
+                 walltime='1:00:00', memory=15, nodes=1, tasks=1,
+                 name='kernels_{0}'.format(n))
