@@ -88,7 +88,7 @@ class Choiceframe(object):
         points['trial_id'] = self.choices.trial_id.values
         self.kernels[parameter] = points
 
-    def prev_psi(self, zs=True):
+    def prev_psi(self, zs=False):
         '''
         Add last n points before choice onset.
         '''
@@ -150,7 +150,7 @@ def execute(subject, session, run, task,
     c.kernel_samples(parameter='LLR')
     c.kernel_samples(parameter='psi', zs=True)
     c.kernel_samples(parameter='surprise', zs=True, log=True)
-    c.prev_psi(zs=True)
+    c.prev_psi(zs=False)
     c.merge()
     print(c.master.behavior.surprise)
     return c.master
