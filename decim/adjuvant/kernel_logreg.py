@@ -67,7 +67,7 @@ def regress(n, krun, C, out_dir, mode):
 
 
 def submit():
-    out_dir = join('/home/khagena/FLEXRULE/behavior/kernels')
+    out_dir = join('/home/khagena/FLEXRULE/behavior/kernels_psi')
     slu.mkdir_p(out_dir)
     C = 1
     n = 12
