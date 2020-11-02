@@ -88,15 +88,13 @@ class Choiceframe(object):
         points['trial_id'] = self.choices.trial_id.values
         self.kernels[parameter] = points
 
-    def prev_psi(self, zs=False):
+    def prev_psi(self):
         '''
         Add last n points before choice onset.
         '''
         df = self.BehavFrame
         points = df.loc[(df.event == 'GL_TRIAL_LOCATION')]
         points['psi'] = (points['psi'] - points['psi'].mean()) / points['psi'].std()
-        if zs is True:
-            points['psi'] = (points['psi'] - points['psi'].mean()) / points['psi'].std()
         p = []
         for i, row in self.choices.iterrows():
             trial_points = points.loc[points.index.astype('float') < row.trial_id]
@@ -150,7 +148,7 @@ def execute(subject, session, run, task,
     c.kernel_samples(parameter='LLR')
     c.kernel_samples(parameter='psi', zs=True)
     c.kernel_samples(parameter='surprise', zs=True, log=True)
-    c.prev_psi(zs=False)
+    c.prev_psi()
     c.merge()
     print(c.master.behavior.surprise)
     return c.master
