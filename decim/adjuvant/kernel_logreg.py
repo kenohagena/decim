@@ -5,6 +5,7 @@ from os.path import join
 from sklearn.linear_model import LogisticRegression
 from pymeg import parallel as pbs
 from scipy.special import expit
+import datetime
 
 
 samples = {8: '2020-08-26--6.0',
@@ -12,7 +13,7 @@ samples = {8: '2020-08-26--6.0',
            16: '2020-08-26--4.0',
            20: '2020-08-26--3.0',
            24: '2020-08-26--2.0',
-           'psi': '2020-11-02'}
+           'psi': '2020-11-03'}
 
 normative_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
 leaky_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/Stan_Fits_Leaky_2020-08-22/new/summary_stan_fits.csv')
@@ -67,7 +68,7 @@ def regress(n, krun, C, out_dir, mode):
 
 
 def submit():
-    out_dir = join('/home/khagena/FLEXRULE/behavior/kernels_psi')
+    out_dir = join('/home/khagena/FLEXRULE/behavior/kernels_psi-{}'.format(datetime.datetime.now().strftime("%Y-%m-%d")))
     slu.mkdir_p(out_dir)
     C = 1
     n = 12
