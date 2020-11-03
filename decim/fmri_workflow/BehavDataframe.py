@@ -65,8 +65,11 @@ class BehavDataframe(object):
     def inference(self, summary, leaky_fits, Hs=[]):
         logs = gm.load_logs_bids(self.subject, self.session, self.bids_path)    # Load data from raw directory
         df = logs[self.run]
+        H = 1 / 70
+        '''
         H = summary.loc[(summary.subject == self.subject) &                     # Retrieve fitted H
                         (summary.session == self.session)].hmode.values[0]
+        '''
         lamb = leaky_fits.loc[(summary.subject == self.subject) &                     # Retrieve fitted lambda leak for leaky acc
                               (summary.session == self.session)].hmode.values[0]
         df['belief'], df['psi'], df['LLR'], df['surprise'], df['leak'] =\
@@ -97,9 +100,9 @@ class BehavDataframe(object):
             set_index(df.loc[df.event == 'CHOICE_TRIAL_ONSET'].index).\
             value.astype('float') * (-2) + 1                                    # stimulus coding: horiz -> -1 | vert -> +1
         df['stimulus_off'] = df.event == 'CHOICE_TRIAL_STIMOFF'
-        df['rule_resp'] = df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP'].\
+        df['rule_resp'] = -df.loc[df.event == 'CHOICE_TRIAL_RULE_RESP'].\
             set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).\
-            value.astype('float') * 2 - 1                                       # rule_reponse coding: vertical-left (A) --> -1 | vertical-right (B) --> 1
+            value.astype('float') * 2 + 1                                       # rule_reponse coding: vertical-left (A) --> -1 | vertical-right (B) --> 1
         df['reward'] = df.loc[df.event == 'GL_TRIAL_REWARD'].\
             set_index(df.loc[df.event == 'CHOICE_TRIAL_RESP'].index).\
             value.astype('float')
