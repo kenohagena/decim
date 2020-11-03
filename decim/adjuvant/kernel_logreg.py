@@ -40,12 +40,14 @@ def regress(n, krun, C, out_dir, mode):
             for i in range(1000):
                 e = []
                 for ses in [2, 3]:
+                    V = fits.loc[(fits.subject == 'sub-{}'.format(sub)) & (fits.session == 'ses-{}'.format(ses))].vmode.values
+                    V = 1
                     for run in [4, 5, 6]:
                         try:
                             epochs = pd.read_hdf('/home/khagena/FLEXRULE/Workflow/Sublevel_KernelEpochs_Climag_{2}/sub-{0}/KernelEpochs_sub-{0}_ses-{1}.hdf'.format(sub, ses, krun),
                                                  key='inference_run-{}'.format(run))
-                            epochs['choice_probabilities'] = expit(epochs.behavior.parameters[bel].values /
-                                                                   fits.loc[(fits.subject == 'sub-{}'.format(sub)) & (fits.session == 'ses-{}'.format(ses))].vmode.values)
+                            epochs['choice_probabilities'] = expit(epochs.behavior.parameters[bel].values / V
+                                                                   )
                             e.append(epochs)
                         except FileNotFoundError:
                             print('no file', sub, ses, run)
@@ -68,7 +70,7 @@ def regress(n, krun, C, out_dir, mode):
 
 
 def submit():
-    out_dir = join('/home/khagena/FLEXRULE/behavior/kernels_psi-{}'.format(datetime.datetime.now().strftime("%Y-%m-%d")))
+    out_dir = join('/home/khagena/FLEXRULE/behavior/kernels_psi-{}_v=1'.format(datetime.datetime.now().strftime("%Y-%m-%d")))
     slu.mkdir_p(out_dir)
     C = 1
     n = 12
