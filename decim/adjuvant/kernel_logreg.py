@@ -13,7 +13,7 @@ samples = {8: '2020-08-26--6.0',
            16: '2020-08-26--4.0',
            20: '2020-08-26--3.0',
            24: '2020-08-26--2.0',
-           'psi': '2020-11-03'}
+           'psi': '2020-11-03_H=1/70'}
 
 normative_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
 leaky_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/Stan_Fits_Leaky_2020-08-22/new/summary_stan_fits.csv')
@@ -41,7 +41,6 @@ def regress(n, krun, C, out_dir, mode):
                 e = []
                 for ses in [2, 3]:
                     V = fits.loc[(fits.subject == 'sub-{}'.format(sub)) & (fits.session == 'ses-{}'.format(ses))].vmode.values
-                    V = 1
                     for run in [4, 5, 6]:
                         try:
                             epochs = pd.read_hdf('/home/khagena/FLEXRULE/Workflow/Sublevel_KernelEpochs_Climag_{2}/sub-{0}/KernelEpochs_sub-{0}_ses-{1}.hdf'.format(sub, ses, krun),
