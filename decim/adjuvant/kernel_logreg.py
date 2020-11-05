@@ -29,11 +29,12 @@ def regress(n, krun, C, out_dir, mode):
     coefs = []
     for sub in range(1, 23):
         if sub == 11:
+            print('11')
             continue
 
-        elif 'sub-{}'.format(sub) in fits.loc[fits.vmode > 2.5].subject.unique():
-            print('discard', sub)
-            continue
+        #elif 'sub-{}'.format(sub) in fits.loc[fits.vmode > 2.5].subject.unique():
+          #  print('discard', sub)
+          #  continue
 
         else:
             coef_mean = []
