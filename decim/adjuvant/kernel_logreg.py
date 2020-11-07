@@ -13,7 +13,7 @@ samples = {8: '2020-08-26--6.0',
            16: '2020-08-26--4.0',
            20: '2020-08-26--3.0',
            24: '2020-08-26--2.0',
-           'psi': '2020-11-04_H=1/70'}
+           'psi': '2020-11-03_H=1/70'}
 
 normative_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
 leaky_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/Stan_Fits_Leaky_2020-08-22/new/summary_stan_fits.csv')
