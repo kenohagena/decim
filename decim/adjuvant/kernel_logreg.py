@@ -81,5 +81,5 @@ def submit():
     for psi in [True, False]:
         for mode in ['leak', 'normative']:
             pbs.pmap(regress, [(n, run, C, out_dir, mode, psi)],
-                     walltime='1:00:00', memory=15, nodes=1, tasks=1,
+                     walltime='4:00:00', memory=15, nodes=1, tasks=1,
                      name='kernels_{0}'.format(n))
