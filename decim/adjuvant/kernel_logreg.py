@@ -13,7 +13,7 @@ samples = {8: '2020-08-26--6.0',
            16: '2020-08-26--4.0',
            20: '2020-08-26--3.0',
            24: '2020-08-26--2.0',
-           'psi': '2020-11-05_H=008'}
+           'psi': '2020-11-04_H=1/70'}
 
 normative_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
 leaky_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/Stan_Fits_Leaky_2020-08-22/new/summary_stan_fits.csv')
@@ -23,7 +23,7 @@ y = {'leak': 'accumulated_leaky_belief',
      'normative': 'accumulated_belief'}
 
 
-def regress(n, krun, C, out_dir, mode):
+def regress(n, krun, C, out_dir, mode, psi=True):
     fits = f[mode]
     bel = y[mode]
     coefs = []
@@ -32,7 +32,7 @@ def regress(n, krun, C, out_dir, mode):
             print('11')
             continue
 
-        #elif 'sub-{}'.format(sub) in fits.loc[fits.vmode > 2.5].subject.unique():
+        # elif 'sub-{}'.format(sub) in fits.loc[fits.vmode > 2.5].subject.unique():
           #  print('discard', sub)
           #  continue
 
@@ -58,7 +58,10 @@ def regress(n, krun, C, out_dir, mode):
                 llr_cpp = llr_cpp.rename(columns={i: 'cpp{0}'.format(i) for i in llr_cpp.columns})
                 llr_psi = -epochs.behavior.psi.drop('trial_id', axis=1).abs().multiply(epochs.behavior.LLR.drop('trial_id', axis=1))
                 llr_psi = llr_psi.rename(columns={i: 'psi{0}'.format(i) for i in llr_psi.columns})
-                data = pd.concat([epochs.behavior.prev_psi.prev_psi, epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
+                if psi is True:
+                    data = pd.concat([epochs.behavior.prev_psi.prev_psi, epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
+                elif psi is False:
+                    data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
                 data = data.dropna(axis=0)
                 x = data.drop('choice_probabilities', axis=1)
                 x = (x - x.mean()) / x.std()
@@ -66,7 +69,7 @@ def regress(n, krun, C, out_dir, mode):
                 l.fit(x.values, np.random.binomial(n=1, p=data.choice_probabilities))
                 coef_mean.append(l.coef_[0])
             coefs.append(pd.DataFrame(coef_mean).mean())
-    pd.DataFrame(coefs).to_hdf(join(out_dir, '{0}_model_kernels_C={1}.hdf'.format(mode, C)), key=str(n))
+    pd.DataFrame(coefs).to_hdf(join(out_dir, '{0}_model_kernels_psi={1}.hdf'.format(mode, psi)), key=str(n))
 
 
 def submit():
@@ -75,8 +78,8 @@ def submit():
     C = 1
     n = 12
     run = samples['psi']
-
-    for mode in ['leak', 'normative']:
-        pbs.pmap(regress, [(n, run, C, out_dir, mode)],
-                 walltime='1:00:00', memory=15, nodes=1, tasks=1,
-                 name='kernels_{0}'.format(n))
+    for psi in [True, False]:
+        for mode in ['leak', 'normative']:
+            pbs.pmap(regress, [(n, run, C, out_dir, mode, psi)],
+                     walltime='1:00:00', memory=15, nodes=1, tasks=1,
+                     name='kernels_{0}'.format(n))
