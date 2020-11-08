@@ -38,7 +38,7 @@ def regress(n, krun, C, out_dir, mode, psi=True):
 
         else:
             coef_mean = []
-            for i in range(1000):
+            for i in range(1):
                 e = []
                 for ses in [2, 3]:
                     V = fits.loc[(fits.subject == 'sub-{}'.format(sub)) & (fits.session == 'ses-{}'.format(ses))].vmode.values
