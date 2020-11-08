@@ -155,7 +155,7 @@ def submit():
             for n in [12]:
                 for psi in [False, True]:
                     pbs.pmap(simulate_regression, [(12000, H, 1, 1, n, out_dir, gen_sigma, psi)],
-                             walltime='4    :00:00', memory=15, nodes=1, tasks=1,
+                             walltime='4:00:00', memory=15, nodes=1, tasks=1,
                              name='kernels')
 
 
