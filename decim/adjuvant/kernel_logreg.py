@@ -65,6 +65,7 @@ def regress(n, krun, C, out_dir, mode, psi=True):
                 data = data.dropna(axis=0)
                 x = data.drop('choice_probabilities', axis=1)
                 x = (x - x.mean()) / x.std()
+                x.to_hdf('/home/khagena/FLEXRULE/delete.hdf', key='psi={}'.format(psi))
                 l = LogisticRegression(C=C)
                 l.fit(x.values, np.random.binomial(n=1, p=data.choice_probabilities))
                 coef_mean.append(l.coef_[0])
@@ -79,7 +80,7 @@ def submit():
     n = 12
     run = samples['psi']
     for psi in [True, False]:
-        for mode in ['leak', 'normative']:
+        for mode in ['normative']:
             pbs.pmap(regress, [(n, run, C, out_dir, mode, psi)],
                      walltime='4:00:00', memory=15, nodes=1, tasks=1,
                      name='kernels_{0}'.format(n))
