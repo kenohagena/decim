@@ -106,8 +106,9 @@ def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, gen_
         c.kernel_samples('psi', zs=True)
         c.prev_psi()
         c.merge()
-        coefs = []
+
         for psi in [True, False]:
+            coefs = []
             for i in range(regression_iter):
                 epochs = c.master
                 llr_cpp = epochs.behavior.PCP.drop('trial_id', axis=1).multiply(epochs.behavior.LLR.drop('trial_id', axis=1))
