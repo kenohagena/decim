@@ -94,7 +94,7 @@ class Choiceframe(object):
         self.master = master.set_index([master.behavior.parameters.trial_id])
 
 
-def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, gen_var, psi=True, sub='optimal_observer', regression_iter=1000):
+def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, gen_var, sub='optimal_observer', regression_iter=1000):
 
     for sub in range(22):
 
@@ -107,32 +107,33 @@ def simulate_regression(trials, model_H, model_V, regression_C, n, out_dir, gen_
         c.prev_psi()
         c.merge()
         coefs = []
-        for i in range(regression_iter):
-            epochs = c.master
-            llr_cpp = epochs.behavior.PCP.drop('trial_id', axis=1).multiply(epochs.behavior.LLR.drop('trial_id', axis=1))
-            llr_cpp = llr_cpp.rename(columns={i: 'cpp{0}'.format(i) for i in llr_cpp.columns})
-            llr_psi = -epochs.behavior.psi.drop('trial_id', axis=1).abs().multiply(epochs.behavior.LLR.drop('trial_id', axis=1))
-            llr_psi = llr_psi.rename(columns={i: 'psi{0}'.format(i) for i in llr_psi.columns})
-            if psi is True:
-                data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), epochs.behavior.prev_psi.prev_psi, llr_cpp, llr_psi, epochs.behavior.parameters.choice_probability], axis=1)
-            elif psi is False:
-                data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.behavior.parameters.choice_probability], axis=1)
-            data = data.dropna(axis=0)
-            x = data.drop('choice_probability', axis=1)
-            x = (x - x.mean()) / x.std()
-            logreg = LogisticRegression(C=regression_C)
-            logreg.fit(x.values, np.random.binomial(n=1, p=data.choice_probability))
-            coefs.append(logreg.coef_[0])
-        coefs = pd.DataFrame(coefs, columns=x.columns).mean()
-        coefs['n'] = n
-        coefs['trials'] = len(df.loc[df.message == 'decision'].belief.values)
-        coefs['H'] = model_H
-        coefs['V'] = model_V
-        coefs['C'] = regression_C
-        coefs['subject'] = sub
-        coefs['gen_var'] = gen_var
-        coefs['previous_psi'] = psi
-        coefs.to_hdf(join(out_dir, 'simulated_regression_{0}_{1}_{2}_{3}_psi-{4}.hdf'.format(gen_var, model_H, sub, trials, psi)), key=str(regression_C))
+        for psi in [True, False]:
+            for i in range(regression_iter):
+                epochs = c.master
+                llr_cpp = epochs.behavior.PCP.drop('trial_id', axis=1).multiply(epochs.behavior.LLR.drop('trial_id', axis=1))
+                llr_cpp = llr_cpp.rename(columns={i: 'cpp{0}'.format(i) for i in llr_cpp.columns})
+                llr_psi = -epochs.behavior.psi.drop('trial_id', axis=1).abs().multiply(epochs.behavior.LLR.drop('trial_id', axis=1))
+                llr_psi = llr_psi.rename(columns={i: 'psi{0}'.format(i) for i in llr_psi.columns})
+                if psi is True:
+                    data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), epochs.behavior.prev_psi.prev_psi, llr_cpp, llr_psi, epochs.behavior.parameters.choice_probability], axis=1)
+                elif psi is False:
+                    data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.behavior.parameters.choice_probability], axis=1)
+                data = data.dropna(axis=0)
+                x = data.drop('choice_probability', axis=1)
+                x = (x - x.mean()) / x.std()
+                logreg = LogisticRegression(C=regression_C)
+                logreg.fit(x.values, np.random.binomial(n=1, p=data.choice_probability))
+                coefs.append(logreg.coef_[0])
+            coefs = pd.DataFrame(coefs, columns=x.columns).mean()
+            coefs['n'] = n
+            coefs['trials'] = len(df.loc[df.message == 'decision'].belief.values)
+            coefs['H'] = model_H
+            coefs['V'] = model_V
+            coefs['C'] = regression_C
+            coefs['subject'] = sub
+            coefs['gen_var'] = gen_var
+            coefs['previous_psi'] = psi
+            coefs.to_hdf(join(out_dir, 'simulated_regression_{0}_{1}_{2}_{3}_psi-{4}.hdf'.format(gen_var, model_H, sub, trials, psi)), key=str(regression_C))
 
 
 def submit():
@@ -153,10 +154,9 @@ def submit():
     for H in [1 / 70, 0.08]:
         for gen_sigma in [0.75, 1, 1.25]:
             for n in [12]:
-                for psi in [False, True]:
-                    pbs.pmap(simulate_regression, [(12000, H, 1, 1, n, out_dir, gen_sigma, psi)],
-                             walltime='4:00:00', memory=15, nodes=1, tasks=1,
-                             name='kernels')
+                pbs.pmap(simulate_regression, [(12000, H, 1, 1, n, out_dir, gen_sigma, psi)],
+                         walltime='4:00:00', memory=15, nodes=1, tasks=1,
+                         name='kernels')
 
 
 def single():
