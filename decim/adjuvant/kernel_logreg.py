@@ -29,7 +29,7 @@ def regress(n, krun, C, out_dir, mode, sub):
     coefs = []
     coef_mean_psi = []
     coef_mean_nopsi = []
-    for i in range(10):
+    for i in range(10000):
         e = []
         for ses in [2, 3]:
             V = fits.loc[(fits.subject == 'sub-{}'.format(sub)) & (fits.session == 'ses-{}'.format(ses))].vmode.values
