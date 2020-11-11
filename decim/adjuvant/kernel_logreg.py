@@ -66,7 +66,7 @@ def regress(n, krun, C, out_dir, mode, psi):
                 data = data.dropna(axis=0)
                 x = data.drop('choice_probabilities', axis=1)
                 x = (x - x.mean()) / x.std()
-                data.to_hdf('/home/khagena/FLEXRULE/delete_{}.hdf'.format(psi), key='psi'.format(psi))
+                data.to_hdf('/home/khagena/FLEXRULE/delete2_{}.hdf'.format(psi), key='psi')
                 logreg = LogisticRegression(C=C)
                 logreg.fit(x.values, np.random.binomial(n=1, p=data.choice_probabilities))
                 coef_mean.append(logreg.coef_[0])
