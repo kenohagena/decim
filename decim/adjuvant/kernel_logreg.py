@@ -23,7 +23,7 @@ y = {'leak': 'accumulated_leaky_belief',
      'normative': 'accumulated_belief'}
 
 
-def regress(n, krun, C, out_dir, mode, psi=True):
+def regress(n, krun, C, out_dir, mode, psi):
     fits = f[mode]
     bel = y[mode]
     coefs = []
@@ -62,13 +62,14 @@ def regress(n, krun, C, out_dir, mode, psi=True):
                     data = pd.concat([epochs.behavior.prev_psi.prev_psi, epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
                 elif psi is False:
                     data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
+                data.to_hdf('/home/khagena/FLEXRULE/delete_{}.hdf'.format(psi), key='psi')
                 data = data.dropna(axis=0)
                 x = data.drop('choice_probabilities', axis=1)
                 x = (x - x.mean()) / x.std()
-                x.to_hdf('/home/khagena/FLEXRULE/delete_{}.hdf'.format(psi), key='psi'.format(psi))
-                l = LogisticRegression(C=C)
-                l.fit(x.values, np.random.binomial(n=1, p=data.choice_probabilities))
-                coef_mean.append(l.coef_[0])
+                data.to_hdf('/home/khagena/FLEXRULE/delete_{}.hdf'.format(psi), key='psi'.format(psi))
+                logreg = LogisticRegression(C=C)
+                logreg.fit(x.values, np.random.binomial(n=1, p=data.choice_probabilities))
+                coef_mean.append(logreg.coef_[0])
             coefs.append(pd.DataFrame(coef_mean).mean())
     pd.DataFrame(coefs).to_hdf(join(out_dir, '{0}_model_kernels_psi={1}.hdf'.format(mode, psi)), key=str(n))
 
