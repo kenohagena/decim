@@ -62,11 +62,11 @@ def regress(n, krun, C, out_dir, mode, psi):
                     data = pd.concat([epochs.behavior.prev_psi.prev_psi, epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
                 elif psi is False:
                     data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
-                data.to_hdf('/home/khagena/FLEXRULE/delete_{}.hdf'.format(psi), key=sub)
+                data.to_hdf('/home/khagena/FLEXRULE/delete_{}.hdf'.format(psi), key='{}'.format(sub))
                 data = data.dropna(axis=0)
                 x = data.drop('choice_probabilities', axis=1)
                 x = (x - x.mean()) / x.std()
-                data.to_hdf('/home/khagena/FLEXRULE/delete2_{}.hdf'.format(psi), key=sub)
+                data.to_hdf('/home/khagena/FLEXRULE/delete2_{}.hdf'.format(psi), key='{}'.format(sub))
                 logreg = LogisticRegression(C=C)
                 logreg.fit(x.values, np.random.binomial(n=1, p=data.choice_probabilities))
                 coef_mean.append(logreg.coef_[0])
