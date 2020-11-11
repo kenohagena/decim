@@ -69,7 +69,6 @@ def regress(n, krun, C, out_dir, mode, sub):
 
     dataframe = pd.DataFrame({'psi': pd.DataFrame(coef_mean_psi).mean(),
                               'no_psi': pd.DataFrame(coef_mean_nopsi).mean()})
-    coefs.append(pd.DataFrame(coef_mean).mean())
     dataframe.to_hdf(join(out_dir, '{0}_model_kernels.hdf'.format(mode)), key=str(sub))
 
 
