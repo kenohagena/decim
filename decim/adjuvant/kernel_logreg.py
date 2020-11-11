@@ -37,8 +37,9 @@ def regress(n, krun, C, out_dir, mode, psi):
           #  continue
 
         else:
-            coef_mean = []
-            for i in range(1):
+            coef_mean_psi = []
+            coef_mean_nopsi = []
+            for i in range(10):
                 e = []
                 for ses in [2, 3]:
                     V = fits.loc[(fits.subject == 'sub-{}'.format(sub)) & (fits.session == 'ses-{}'.format(ses))].vmode.values
@@ -58,20 +59,28 @@ def regress(n, krun, C, out_dir, mode, psi):
                 llr_cpp = llr_cpp.rename(columns={i: 'cpp{0}'.format(i) for i in llr_cpp.columns})
                 llr_psi = -epochs.behavior.psi.drop('trial_id', axis=1).abs().multiply(epochs.behavior.LLR.drop('trial_id', axis=1))
                 llr_psi = llr_psi.rename(columns={i: 'psi{0}'.format(i) for i in llr_psi.columns})
-                if psi is True:
-                    data = pd.concat([epochs.behavior.prev_psi.prev_psi, epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
-                elif psi is False:
-                    data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
-                data.to_hdf('/home/khagena/FLEXRULE/delete_{}.hdf'.format(psi), key='{}'.format(sub))
+                data = pd.concat([epochs.behavior.prev_psi.prev_psi, epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
+
                 data = data.dropna(axis=0)
+
+                #psi is true
                 x = data.drop('choice_probabilities', axis=1)
                 x = (x - x.mean()) / x.std()
-                data.to_hdf('/home/khagena/FLEXRULE/delete2_{}.hdf'.format(psi), key='{}'.format(sub))
                 logreg = LogisticRegression(C=C)
                 logreg.fit(x.values, np.random.binomial(n=1, p=data.choice_probabilities))
-                coef_mean.append(logreg.coef_[0])
+                coef_mean_psi.append(logreg.coef_[0])
+
+                #psi is false
+                x = data.drop(['choice_probabilities', 'prev_psi'], axis=1)
+                x = (x - x.mean()) / x.std()
+                logreg = LogisticRegression(C=C)
+                logreg.fit(x.values, np.random.binomial(n=1, p=data.choice_probabilities))
+                coef_mean_nopsi.append(logreg.coef_[0])
+
+            dataframe = pd.DataFrame({'psi': pd.DataFrame(coef_mean_psi).mean(),
+                                      'no_psi': pd.DataFrame(coef_mean_nopsi).mean()})
             coefs.append(pd.DataFrame(coef_mean).mean())
-    pd.DataFrame(coefs).to_hdf(join(out_dir, '{0}_model_kernels_psi={1}.hdf'.format(mode, psi)), key=str(n))
+            dataframe.to_hdf(join(out_dir, '{0}_model_kernels.hdf'.format(mode)), key=str(sub))
 
 
 def submit():
