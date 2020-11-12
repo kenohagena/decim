@@ -14,7 +14,8 @@ samples = {8: '2020-08-26--6.0',
            20: '2020-08-26--3.0',
            24: '2020-08-26--2.0',
            'psi': '2020-11-12_genH',
-           'psi2': '2020-11-12-3'}
+           'psi2': '2020-11-12-3',
+           'psi4': '2020-11-12-4'}
 
 normative_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
 leaky_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/Stan_Fits_Leaky_2020-08-22/new/summary_stan_fits.csv')
@@ -63,11 +64,11 @@ def regress(n, krun, C, out_dir, mode, sub, psi):
 
 
 def submit():
-    out_dir = join('/home/khagena/FLEXRULE/behavior/kernels_psi-{}-2'.format(datetime.datetime.now().strftime("%Y-%m-%d")))
+    out_dir = join('/home/khagena/FLEXRULE/behavior/kernels_psi-{}-4'.format(datetime.datetime.now().strftime("%Y-%m-%d")))
     slu.mkdir_p(out_dir)
     C = 1
     n = 12
-    run = samples['psi2']
+    run = samples['psi4']
     for sub in range(1, 23):
         for psi in [False, True]:
             for mode in ['normative']:
