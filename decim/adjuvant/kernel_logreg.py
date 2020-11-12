@@ -61,13 +61,13 @@ def regress(n, krun, C, out_dir, mode, sub, psi=True):
 
 
 def submit():
-    out_dir = join('/home/khagena/FLEXRULE/behavior/kernels_psi-{}_V=1'.format(datetime.datetime.now().strftime("%Y-%m-%d")))
+    out_dir = join('/home/khagena/FLEXRULE/behavior/kernels_psi-{}-2'.format(datetime.datetime.now().strftime("%Y-%m-%d")))
     slu.mkdir_p(out_dir)
     C = 1
     n = 12
     run = samples['psi']
     for sub in range(23):
-        for psi in [True, False]:
+        for psi in [False]:
             for mode in ['normative']:
                 pbs.pmap(regress, [(n, run, C, out_dir, mode, sub, psi)],
                          walltime='4:00:00', memory=15, nodes=1, tasks=1,
