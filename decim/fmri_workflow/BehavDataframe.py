@@ -65,7 +65,7 @@ class BehavDataframe(object):
     def inference(self, summary, leaky_fits, Hs=[]):
         logs = gm.load_logs_bids(self.subject, self.session, self.bids_path)    # Load data from raw directory
         df = logs[self.run]
-        H = 0.08
+        H = 1 / 70
         '''
         H = summary.loc[(summary.subject == self.subject) &                     # Retrieve fitted H
                         (summary.session == self.session)].hmode.values[0]
