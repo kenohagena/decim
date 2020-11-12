@@ -28,7 +28,7 @@ def regress(n, krun, C, out_dir, mode, sub, psi):
     fits = f[mode]
     bel = y[mode]
     coef_mean = []
-    for i in range(1000):
+    for i in range(1):
         e = []
         for ses in [2, 3]:
             V = fits.loc[(fits.subject == 'sub-{}'.format(sub)) & (fits.session == 'ses-{}'.format(ses))].vmode.values
@@ -52,6 +52,7 @@ def regress(n, krun, C, out_dir, mode, sub, psi):
             data = pd.concat([epochs.behavior.prev_psi.prev_psi, epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
         elif psi is False:
             data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
+        data.to_hdf('/home/khagena/FLEXRULE/behavior/delete.hdf', key=str(sub))
         data = data.dropna(axis=0)
         x = data.drop('choice_probabilities', axis=1)
         x = (x - x.mean()) / x.std()
