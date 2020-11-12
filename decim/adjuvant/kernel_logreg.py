@@ -68,7 +68,7 @@ def submit():
     C = 1
     n = 12
     run = samples['psi2']
-    for sub in range(23):
+    for sub in range(17, 18):
         for psi in [False]:
             for mode in ['normative']:
                 pbs.pmap(regress, [(n, run, C, out_dir, mode, sub, psi)],
