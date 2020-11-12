@@ -14,7 +14,7 @@ samples = {8: '2020-08-26--6.0',
            20: '2020-08-26--3.0',
            24: '2020-08-26--2.0',
            'psi': '2020-11-12_genH',
-           'psi2': '2020-11-03_H=1/70'}
+           'psi2': '2020-11-12-3'}
 
 normative_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
 leaky_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/Stan_Fits_Leaky_2020-08-22/new/summary_stan_fits.csv')
@@ -28,7 +28,7 @@ def regress(n, krun, C, out_dir, mode, sub, psi):
     fits = f[mode]
     bel = y[mode]
     coef_mean = []
-    for i in range(1):
+    for i in range(1000):
         e = []
         for ses in [2, 3]:
             V = fits.loc[(fits.subject == 'sub-{}'.format(sub)) & (fits.session == 'ses-{}'.format(ses))].vmode.values
@@ -52,7 +52,7 @@ def regress(n, krun, C, out_dir, mode, sub, psi):
             data = pd.concat([epochs.behavior.prev_psi.prev_psi, epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
         elif psi is False:
             data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
-        data.to_hdf('/home/khagena/FLEXRULE/behavior/delete-2.hdf', key=str(sub))
+        #data.to_hdf('/home/khagena/FLEXRULE/behavior/delete-2.hdf', key=str(sub))
         data = data.dropna(axis=0)
         x = data.drop('choice_probabilities', axis=1)
         x = (x - x.mean()) / x.std()
@@ -68,8 +68,8 @@ def submit():
     C = 1
     n = 12
     run = samples['psi']
-    for sub in range(17, 18):
-        for psi in [False]:
+    for sub in range(1, 23):
+        for psi in [False, True]:
             for mode in ['normative']:
                 pbs.pmap(regress, [(n, run, C, out_dir, mode, sub, psi)],
                          walltime='4:00:00', memory=15, nodes=1, tasks=1,
