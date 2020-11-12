@@ -13,7 +13,8 @@ samples = {8: '2020-08-26--6.0',
            16: '2020-08-26--4.0',
            20: '2020-08-26--3.0',
            24: '2020-08-26--2.0',
-           'psi': '2020-11-12_genH'}
+           'psi': '2020-11-12_genH',
+           'psi2': '2020-11-03_H=1/70'}
 
 normative_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/summary_stan_fits.csv')
 leaky_fits = pd.read_csv('/home/khagena/FLEXRULE/behavior/Stan_Fits_Leaky_2020-08-22/new/summary_stan_fits.csv')
@@ -23,7 +24,7 @@ y = {'leak': 'accumulated_leaky_belief',
      'normative': 'accumulated_belief'}
 
 
-def regress(n, krun, C, out_dir, mode, sub, psi=True):
+def regress(n, krun, C, out_dir, mode, sub, psi):
     fits = f[mode]
     bel = y[mode]
     coef_mean = []
@@ -65,7 +66,7 @@ def submit():
     slu.mkdir_p(out_dir)
     C = 1
     n = 12
-    run = samples['psi']
+    run = samples['psi2']
     for sub in range(23):
         for psi in [False]:
             for mode in ['normative']:
