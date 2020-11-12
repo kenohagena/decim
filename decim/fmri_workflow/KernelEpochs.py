@@ -98,7 +98,6 @@ class Choiceframe(object):
         p = []
         for i, row in self.choices.iterrows():
             trial_points = points.loc[points.onset.astype('float') < row.onset]
-            trial_points = points.loc[points.index.astype('float') < row.trial_id]
             if len(trial_points) < self.n_samples:
                 trial_points = np.full(self.n_samples, np.nan)
             else:
