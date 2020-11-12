@@ -52,7 +52,7 @@ def regress(n, krun, C, out_dir, mode, sub, psi):
             data = pd.concat([epochs.behavior.prev_psi.prev_psi, epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
         elif psi is False:
             data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
-        data.to_hdf('/home/khagena/FLEXRULE/behavior/delete.hdf', key=str(sub))
+        data.to_hdf('/home/khagena/FLEXRULE/behavior/delete-2.hdf', key=str(sub))
         data = data.dropna(axis=0)
         x = data.drop('choice_probabilities', axis=1)
         x = (x - x.mean()) / x.std()
@@ -67,7 +67,7 @@ def submit():
     slu.mkdir_p(out_dir)
     C = 1
     n = 12
-    run = samples['psi2']
+    run = samples['psi']
     for sub in range(17, 18):
         for psi in [False]:
             for mode in ['normative']:
