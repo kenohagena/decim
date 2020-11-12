@@ -23,11 +23,10 @@ y = {'leak': 'accumulated_leaky_belief',
      'normative': 'accumulated_belief'}
 
 
-def regress(n, krun, C, out_dir, mode, sub):
+def regress(n, krun, C, out_dir, mode, sub, psi=True):
     fits = f[mode]
     bel = y[mode]
-    coef_mean_psi = []
-    coef_mean_nopsi = []
+    coef_mean = []
     for i in range(1000):
         e = []
         for ses in [2, 3]:
@@ -48,27 +47,18 @@ def regress(n, krun, C, out_dir, mode, sub):
         llr_cpp = llr_cpp.rename(columns={i: 'cpp{0}'.format(i) for i in llr_cpp.columns})
         llr_psi = -epochs.behavior.psi.drop('trial_id', axis=1).abs().multiply(epochs.behavior.LLR.drop('trial_id', axis=1))
         llr_psi = llr_psi.rename(columns={i: 'psi{0}'.format(i) for i in llr_psi.columns})
-        data = pd.concat([epochs.behavior.prev_psi.prev_psi, epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
-
+        if psi is True:
+            data = pd.concat([epochs.behavior.prev_psi.prev_psi, epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
+        elif psi is False:
+            data = pd.concat([epochs.behavior.LLR.drop('trial_id', axis=1), llr_cpp, llr_psi, epochs.choice_probabilities], axis=1)
         data = data.dropna(axis=0)
-
-        #psi is true
         x = data.drop('choice_probabilities', axis=1)
         x = (x - x.mean()) / x.std()
+        x.to_hdf('/home/khagena/FLEXRULE/delete_{}.hdf'.format(psi), key='psi'.format(psi))
         logreg = LogisticRegression(C=C)
         logreg.fit(x.values, np.random.binomial(n=1, p=data.choice_probabilities))
-        coef_mean_psi.append(logreg.coef_[0])
-
-        #psi is false
-        x = data.drop(['choice_probabilities', 'prev_psi'], axis=1)
-        x = (x - x.mean()) / x.std()
-        logreg = LogisticRegression(C=C)
-        logreg.fit(x.values, np.random.binomial(n=1, p=data.choice_probabilities))
-        coef_mean_nopsi.append(logreg.coef_[0])
-
-    dataframe = pd.DataFrame({'psi': pd.DataFrame(coef_mean_psi).mean(),
-                              'no_psi': pd.DataFrame(coef_mean_nopsi).mean()})
-    dataframe.to_hdf(join(out_dir, '{0}_model_kernels.hdf'.format(mode)), key=str(sub))
+        coef_mean.append(logreg.coef_[0])
+    pd.DataFrame(coef_mean).mean().to_hdf(join(out_dir, '{0}_model_kernels_psi={1}.hdf'.format(mode, psi)), key=str(sub))
 
 
 def submit():
@@ -78,7 +68,8 @@ def submit():
     n = 12
     run = samples['psi']
     for sub in range(23):
-        for mode in ['normative']:
-            pbs.pmap(regress, [(n, run, C, out_dir, mode, sub)],
-                     walltime='4:00:00', memory=15, nodes=1, tasks=1,
-                     name='kernels_{0}'.format(n))
+        for psi in [True, False]:
+            for mode in ['normative']:
+                pbs.pmap(regress, [(n, run, C, out_dir, mode, sub, psi)],
+                         walltime='4:00:00', memory=15, nodes=1, tasks=1,
+                         name='kernels_{0}'.format(n))
