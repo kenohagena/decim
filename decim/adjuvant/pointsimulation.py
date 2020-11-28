@@ -70,9 +70,10 @@ def add_belief(df, H, gen_var=1):
     """
     glazes = glaze.belief(df, H, gen_var=gen_var)
     df['belief'] = glazes[0]
+    df['psi'] = glazes[1]
     df['LLR'] = glazes[2]
     df['PCP'] = glazes[3]
-    df['psi'] = glazes[1]
+    df['leak'] = glazes[4]
     return df
 
 
@@ -101,13 +102,14 @@ def dec_choice(df, gauss=1):
     return df
 
 
-def dec_choice_inv(df, V=1):
+def dec_choice_inv(df, V=1, model='belief'):
     '''
     Chooses at decision trials between 0 ('left') and 1 ('right').
 
     Based on belief and internal noise V.
+    model: 'belief' for normative model, 'leak' for leaky acc
     '''
-    df['noisy_belief'] = expit(df.belief / V)
+    df['noisy_belief'] = expit(df[model] / V)
     df = df.fillna(method='ffill')
     df['choice'] = np.random.rand(len(df))
     df['choice'] = df.noisy_belief > df.choice
@@ -115,7 +117,7 @@ def dec_choice_inv(df, V=1):
     return df
 
 
-def complete(df, H, gen_var=1, gauss=1, V=1, method='sign'):
+def complete(df, H, gen_var=1, gauss=1, V=1, method='inverse'):
     """
     Completes simulated dataframe with message, location, belief, rule and correctness
 
@@ -131,7 +133,9 @@ def complete(df, H, gen_var=1, gauss=1, V=1, method='sign'):
     if method == 'erf':
         return dec_choice_depr(add_belief(df, H, gen_var=gen_var), V=V)
     if method == 'inverse':
-        return dec_choice_inv(add_belief(df, H, gen_var=gen_var), V=V)
+        return dec_choice_inv(add_belief(df, H, gen_var=gen_var), V=V, model='glaze')
+    if method == 'leak_inverse':
+        return dec_choice_inv(add_belief(df, H, gen_var=gen_var), V=V, model='leak')
 
 
 def data_from_df(df):

@@ -11,7 +11,7 @@ from scipy.stats import norm
 
 def make_trial(H, V, var, dist_mean, samples=12):
 
-    change_points = np.append([0], [np.random.binomial(n=1, p=H) for i in range(11)])
+    change_points = np.append([0], [np.random.binomial(n=1, p=H) for i in range(n - 1)])
     l = []
     for i, cp in enumerate(change_points):
         if i == 0:

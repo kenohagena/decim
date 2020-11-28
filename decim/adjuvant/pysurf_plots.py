@@ -117,8 +117,8 @@ def concat(SJ_dir, task):
     for sub, hemi in product(range(1, 23), hemis.keys()):
         print(sub)
         subject = 'sub-{}'.format(sub)
-        aparc_file = join('/home/khagena/FLEXRULE/fmri/completed_preprocessed/',
-                          subject, 'freesurfer', 'fsaverage', 'label',
+        aparc_file = join('/Volumes/flxrl/FLEXRULE/fmri/completed_preprocessed/',
+                          subject, 'freesurfer', subject, 'label',
                           '{}.HCPMMP1.annot'.format(hemis[hemi]))  # for fs average replace subject through 'fsaverage'
 
         try:
@@ -202,7 +202,11 @@ def surface_glm_data(df, marker='coef_', output='t_stat'):
     ses_mean = pd.concat([ses_mean, mean_response,
                           response_left_minus_right,
                           response_right_minus_left], sort=False)
-
+    ses_mean.to_hdf('/Users/kenohagena/Desktop/test.hdf', key='test')
+    difference = (ses_mean.loc[ses_mean.hemisphere == 'R'].set_index(['parameter', 'names', 'subject']).drop('hemisphere', axis=1) -
+            ses_mean.loc[ses_mean.hemisphere == 'L'].set_index(['parameter', 'names', 'subject']).drop('hemisphere', axis=1)).reset_index()
+    difference = difference.groupby(['parameter', 'names']).\
+        agg(lambda x: ttest(x, 0)[p_or_t]).reset_index()
     mag = ses_mean.groupby(['parameter', 'names', 'hemisphere']).\
         agg(lambda x: ttest(x, 0)[p_or_t]).reset_index()                        # !! t-test across across subjects
     average = mag.groupby(['parameter', 'names']).mean().reset_index()          # !! average across hemispheres
@@ -212,7 +216,8 @@ def surface_glm_data(df, marker='coef_', output='t_stat'):
         pivot(columns='parameter', index='names', values=marker)
     right_H = mag.loc[mag.hemisphere == 'R'].\
         pivot(columns='parameter', index='names', values=marker)
-    return average, left_H, right_H
+    difference = difference.pivot(columns = 'parameter', index = 'names', values=marker)
+    return average, left_H, right_H, difference
 
 
 def surface_data(SJ_dir, task, exclude=['sub-11', 'sub-20']):
@@ -226,19 +231,23 @@ def surface_data(SJ_dir, task, exclude=['sub-11', 'sub-20']):
     grouped = grouped.loc[~grouped.subject.isin(exclude)]
     print(grouped.subject.unique())
     # grouped = grouped.loc[~((grouped.subject == 'sub-19') & (grouped.session == 'ses-2'))]
-    t_stat_avg, t_stat_L, t_stat_R = surface_glm_data(grouped, output='t_stat')
-    p_val_avg, p_val_L, p_val_R = surface_glm_data(grouped, output='p_val')
+    t_stat_avg, t_stat_L, t_stat_R, t_stat_diff = surface_glm_data(grouped, output='t_stat')
+    p_val_avg, p_val_L, p_val_R, p_val_diff = surface_glm_data(grouped, output='p_val')
     t_stat_L.to_hdf(join(out_dir, 'Surface_{}_L.hdf'
                          .format(task)), key='t_statistic')
     t_stat_R.to_hdf(join(out_dir, 'Surface_{}_R.hdf'
                          .format(task)), key='t_statistic')
     t_stat_avg.to_hdf(join(out_dir, 'Surface_{}_avg.hdf'
                            .format(task)), key='t_statistic')
+    t_stat_diff.to_hdf(join(out_dir, 'Surface_{}_diff.hdf'
+                           .format(task)), key='t_statistic')
     p_val_L.to_hdf(join(out_dir, 'Surface_{}_L.hdf'.
                         format(task)), key='p_values')
     p_val_R.to_hdf(join(out_dir, 'Surface_{}_R.hdf'.
                         format(task)), key='p_values')
     p_val_avg.to_hdf(join(out_dir, 'Surface_{}_avg.hdf'.
+                          format(task)), key='p_values')
+    p_val_diff.to_hdf(join(out_dir, 'Surface_{}_diff.hdf'.
                           format(task)), key='p_values')
 
 
@@ -283,7 +292,7 @@ def fdr_filter(t_data, p_data, parameter):
     '''
     print(t_data.columns)
     data = t_data[parameter].values
-    filte = benjamini_hochberg(p_data[parameter], 0.05).values
+    filte = benjamini_hochberg(p_data[parameter], 0.01).values
     data[filte != True] = 0
     return data
 
@@ -302,7 +311,7 @@ def benjamini_hochberg(pvals, alpha):
     return p_values.sort_values(by='index').reject
 
 
-def montage_plot(parameter, in_dir, task, fdr_correct=True, hemi='lh', input_hemisphere=''):
+def montage_plot(parameter, in_dir, task, fdr_correct=True, hemi='lh', input_hemisphere='', annot=None):
     '''
     Make plots for parameter on the cortical surface using pysurf module
 
@@ -325,8 +334,10 @@ def montage_plot(parameter, in_dir, task, fdr_correct=True, hemi='lh', input_hem
     brain = Brain(fsaverage, hemi, surf,
                   background="white", title=parameter + task)
     brain.add_data(data, -10, 10, thresh=None, colormap="RdBu_r", alpha=.8)
+    if annot is not None:
+        brain.add_annotation(annot, color='white', alpha=1)
     brain.save_imageset(join(out_dir, parameter + '_' + task + input_hemisphere),
-                        ['lateral', 'medial'], colorbar=None)
+                        ['lateral', 'medial', 'par'], colorbar=None)
 
 
 '''
@@ -334,29 +345,27 @@ Third: Helper Functions
 '''
 
 
-def plot_single_roi(rois, views=['lateral']):
+def plot_single_roi(rois, views=['medial']):
     '''
     Function to plot location of an array of Glasser labels in a specified view
     '''
-    in_dir = '/Volumes/flxrl/FLEXRULE/Workflow/Sublevel_GLM_Climag_2018-12-21/GroupLevel/'   # need random data
+    in_dir = '/Users/kenohagena/flexrule/fmri/analyses/Sublevel_GLM_Climag_2020-01-20/GroupLevel/'   # need random data
     fsaverage = "fsaverage"
     hemi = "lh"
     surf = "inflated"
     t, p, str_names, labels = get_data('inference',
-                                       in_dir=in_dir)
+                                       in_dir=in_dir, input_hemisphere='_avg', hemi='lh')
     df = pd.DataFrame({'labs': str_names[0],
                        't': 0})
     df = df.set_index('labs')
-    df.loc[rois, 't'] = -4
+    print(df)
+    df.loc[rois, 't'] = 10
     data = df.t.values
     data = data[labels]
     brain = Brain(fsaverage, hemi, surf,
                   background="white", views=views)
     brain.add_data(data, -10, 11, thresh=None, colormap="RdBu_r", alpha=.9)
-    f, ax = plt.subplots()
-    ax = plt.imshow(brain.save_montage(None,
-                                       ['lateral'], colorbar=None))
-    plt.show()
+    return brain
 
 
 def roi_names_param(parameter, task, correlation, in_dir):
@@ -388,33 +397,35 @@ def submit_surface_data(glm_run):
                  walltime='1:00:00', memory=15, nodes=1, tasks=1,
                  name='surface_data_{0}'.format(task))
 
+
 # USAGE OF THIS SCRIPT
-glm_run = 'Sublevel_GLM_Climag_2020-02-06'
+glm_run = 'Sublevel_GLM_Climag_2020-01-20'
                             # Specify where the GLM results are
 # 1. Make t- and p-maps
-'''
-surface_data(join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run), 'instructed')
-surface_data(join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run), 'inference')
-'''
-'''
-
-'''
+#surface_data(join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run), 'instructed')
+#surface_data(join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run), 'inference')
 # 2. Do plotting
-
+'''
 
 '''
 in_dir = join('/Users/kenohagena/flexrule/fmri/analyses/', glm_run, 'GroupLevel')
-# montage_plot('surprise', in_dir, 'inference', fdr_correct=True, input_hemisphere='_avg')
+#montage_plot('LLR', in_dir=in_dir, task='inference', fdr_correct=True, hemi='rh', input_hemisphere='_R')
+#montage_plot('LLR', in_dir=in_dir, task='inference', fdr_correct=True, hemi='lh', input_hemisphere='_L')
+
+#montage_plot('response_average', in_dir, 'instructed', fdr_correct=True, hemi='lh', input_hemisphere='_avg')
+'''
 for key, value in {'instructed': ['response_average', 'abs_switch'],
                    'inference': ['response_average', 'abs_LLR', 'surprise', 'abs_belief']}.items():
     for param in value:
-        montage_plot(param, in_dir=in_dir, task=key, fdr_correct=True, input_hemisphere='_avg')
-
-
+        montage_plot(param, in_dir=in_dir, task=key, fdr_correct=True, hemi='lh', input_hemisphere='_avg')
+        #montage_plot(param, in_dir=in_dir, task=key, fdr_correct=True, hemi='rh', input_hemisphere='_R')
+'''
+'''
 for task in ['inference', 'instructed']:
     montage_plot('response_left-right', in_dir=in_dir, task=task, fdr_correct=True, hemi='lh', input_hemisphere='_L')
     montage_plot('response_left-right', in_dir=in_dir, task=task, fdr_correct=True, hemi='rh', input_hemisphere='_R')
     montage_plot('response_right-left', in_dir=in_dir, task=task, fdr_correct=True, hemi='lh', input_hemisphere='_L')
     montage_plot('response_right-left', in_dir=in_dir, task=task, fdr_correct=True, hemi='rh', input_hemisphere='_R')
 '''
+plot_single_roi('V8_ROI')
 __version__ = '1.5'
