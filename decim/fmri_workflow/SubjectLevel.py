@@ -388,10 +388,10 @@ class SubjectLevel(object):
 
 
 def execute(sub, ses, environment):
-    out_dir = 'Workflow/Sublevel_KernelEpochs_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
+    out_dir = 'Workflow/Sublevel_Behavior_{1}_{0}'.format(datetime.datetime.now().strftime("%Y-%m-%d"), environment)
     sl = SubjectLevel(sub, ses, runs=[4, 5, 6], environment=environment, out_dir=out_dir)
     sl.BehavFrames()
-    sl.KernEpochs(n=12)
+    #sl.KernEpochs(n=12)
     sl.Output()
 
 
