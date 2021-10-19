@@ -134,7 +134,7 @@ def fit_session(sub, ses, data_mode='participant', model_mode='glaze', bids_mr=b
         e)data_mode: participant, 'leak', 'belief_0.014', 'rule_resp'
     '''
     if model_mode == 'glaze':
-        file = 'inv_glaze_b_fixgen_var'
+        file = 'inv_glaze_fixed_gen_var'
     elif model_mode == 'leak':
         file = 'leaky_acc'
     try:
