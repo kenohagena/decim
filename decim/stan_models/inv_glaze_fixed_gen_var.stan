@@ -30,7 +30,7 @@ transformed parameters {
 }
 model {
     H ~ uniform(0,1);
-    V ~ normal(0, 50);
+    V ~ normal(0, 500);
 
     for (i in 1:I) {
         obs_decisions[i] ~ bernoulli(inv_logit(psi[obs_idx[i]]/V));
