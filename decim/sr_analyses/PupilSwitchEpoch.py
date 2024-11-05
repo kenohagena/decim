@@ -40,17 +40,32 @@ class Choiceframe(object):
         self.BehavFrame = BehavFrame
         self.PupilFrame = PupilFrame
 
-    def choice_behavior(self):
+    def choice_behavior(self, type='belief'):
         '''
-
+        Indicate whether 'belief' switches or 'generative' switches
         '''
         df = self.BehavFrame
-        self.onsets = df.loc[df.switch.isin([-1, 1])].onset.values
-        onsets = pd.DataFrame({'onset': self.onsets,
-                               'direction': df.loc[df.switch.isin([-1, 1])].
-                               switch.values,
-                               'switch_index': df.loc[df.switch.isin([-1, 1])].
-                               index.values})
+
+        df.loc[:, 'gen_switch'] = np.roll(df.gen_side.values, 1)
+        df.loc[:, 'gen_switch'] = df.loc[:, 'gen_side'] - df.loc[:, 'gen_switch']
+        df.loc[0, 'gen_switch'] = 0
+
+        if type == 'belief':
+
+            self.onsets = df.loc[df.switch.isin([-1, 1])].onset.values
+            onsets = pd.DataFrame({'onset': self.onsets,
+                                   'direction': df.loc[df.switch.isin([-1, 1])].
+                                   switch.values,
+                                   'switch_index': df.loc[df.switch.isin([-1, 1])].
+                                   index.values})
+        elif type == 'generative':
+            self.onsets = df.loc[df.gen_switch.isin([-1, 1])].onset.values
+            onsets = pd.DataFrame({'onset': self.onsets,
+                                   'direction': df.loc[df.gen_switch.isin([-1, 1])].
+                                   gen_switch.values,
+                                   'switch_index': df.loc[df.gen_switch.isin([-1, 1])].
+                                   index.values})
+
 
         self.switch_behavior = onsets
 
@@ -118,7 +133,7 @@ class Choiceframe(object):
         self.master = master
 
 def execute(subject, session, run, task, flex_dir,
-            BehavFrame, PupilFrame):
+            BehavFrame, PupilFrame, switch_type='belief'):
     '''
     Execute per subject, session, task and run.
 
@@ -130,7 +145,9 @@ def execute(subject, session, run, task, flex_dir,
     '''
     c = Choiceframe(subject, session, run, flex_dir,
                     BehavFrame, PupilFrame)
-    c.choice_behavior()
+    c.choice_behavior(switch_type)
     c.choice_pupil()
     c.merge()
     return c.master
+
+__version__= 1.1
